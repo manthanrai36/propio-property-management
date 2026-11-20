@@ -1,0 +1,825 @@
+/* ==============================================================================
+   PROPIO - Premium Property Management SaaS Design System
+   ============================================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@500;600;700;800&display=swap');
+
+/* -----------------------------------------------------------------------------
+   1. CSS Custom Properties / Theme Tokens
+   ----------------------------------------------------------------------------- */
+:root {
+  /* Brand Color Palette */
+  --propio-primary: #6C4CF1;
+  --propio-primary-hover: #5736E6;
+  --propio-primary-light: rgba(108, 76, 241, 0.12);
+  --propio-primary-gradient: linear-gradient(135deg, #6C4CF1 0%, #5131E5 100%);
+
+  /* Accent Colors */
+  --propio-teal: #38B2AC;
+  --propio-teal-card: #45A5A7;
+  --propio-pink: #FF4B93;
+  --propio-pink-card: #F85E9F;
+  --propio-purple-card: #5B43EA;
+  --propio-blue: #3B82F6;
+  --propio-cyan: #06B6D4;
+  --propio-success: #10B981;
+  --propio-danger: #EF4444;
+  --propio-warning: #F59E0B;
+
+  /* Light Theme Surfaces & Text */
+  --bg-app: #F0F4FA;
+  --bg-sidebar: #FFFFFF;
+  --bg-topbar: rgba(255, 255, 255, 0.85);
+  --bg-card: #FFFFFF;
+  --bg-card-subtle: #F8FAFC;
+  --bg-input: #F1F4F9;
+  --bg-hover: #F3F4F6;
+
+  --text-main: #1E293B;
+  --text-heading: #0F172A;
+  --text-muted: #8E9BAE;
+  --text-inverse: #FFFFFF;
+
+  --border-light: rgba(226, 232, 240, 0.85);
+  --border-card: rgba(241, 245, 249, 1);
+  --border-focus: rgba(108, 76, 241, 0.45);
+
+  /* Shadows */
+  --shadow-subtle: 0 2px 8px rgba(15, 23, 42, 0.04);
+  --shadow-card: 0 10px 28px -5px rgba(24, 39, 75, 0.05), 0 3px 10px -2px rgba(24, 39, 75, 0.03);
+  --shadow-card-hover: 0 20px 40px -10px rgba(108, 76, 241, 0.14), 0 6px 14px -3px rgba(0, 0, 0, 0.04);
+  --shadow-elevated: 0 20px 45px rgba(15, 23, 42, 0.08);
+
+  /* Radii */
+  --radius-xs: 8px;
+  --radius-sm: 12px;
+  --radius-md: 18px;
+  --radius-lg: 24px;
+  --radius-xl: 32px;
+  --radius-full: 9999px;
+
+  /* Typography */
+  --font-heading: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-body: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+
+  /* Transitions */
+  --transition-fast: 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-normal: 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slow: 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Dark Mode Tokens */
+[data-bs-theme="dark"] {
+  --bg-app: #0B0F19;
+  --bg-sidebar: #121826;
+  --bg-topbar: rgba(18, 24, 38, 0.85);
+  --bg-card: #161E31;
+  --bg-card-subtle: #1C263D;
+  --bg-input: #1C263D;
+  --bg-hover: #222E49;
+
+  --text-main: #E2E8F0;
+  --text-heading: #F8FAFC;
+  --text-muted: #8492A6;
+  --text-inverse: #FFFFFF;
+
+  --border-light: rgba(255, 255, 255, 0.08);
+  --border-card: rgba(255, 255, 255, 0.05);
+  --border-focus: rgba(124, 93, 249, 0.6);
+
+  --shadow-subtle: 0 2px 8px rgba(0, 0, 0, 0.25);
+  --shadow-card: 0 10px 28px -5px rgba(0, 0, 0, 0.4);
+  --shadow-card-hover: 0 20px 40px -10px rgba(108, 76, 241, 0.25);
+  --shadow-elevated: 0 20px 45px rgba(0, 0, 0, 0.55);
+}
+
+/* -----------------------------------------------------------------------------
+   2. Reset & Global Styles
+   ----------------------------------------------------------------------------- */
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: var(--font-body);
+  background-color: var(--bg-app);
+  color: var(--text-main);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  transition: background-color var(--transition-normal), color var(--transition-normal);
+  overflow-x: hidden;
+}
+
+h1, h2, h3, h4, h5, h6, .propio-font-heading {
+  font-family: var(--font-heading);
+  color: var(--text-heading);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+  transition: color var(--transition-fast);
+}
+
+/* -----------------------------------------------------------------------------
+   3. SaaS App Layout Grid (Sidebar + Main Area)
+   ----------------------------------------------------------------------------- */
+.app-wrapper {
+  display: flex;
+  min-height: 100vh;
+  width: 100%;
+}
+
+/* Left Sidebar */
+.app-sidebar {
+  width: 260px;
+  min-width: 260px;
+  background-color: var(--bg-sidebar);
+  border-right: 1px solid var(--border-light);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 28px 18px;
+  transition: all var(--transition-normal);
+  z-index: 1040;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+}
+
+.brand-container {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 10px 28px 10px;
+}
+
+.brand-logo-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: var(--radius-sm);
+  background: var(--propio-primary-gradient);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #FFFFFF;
+  font-size: 1.25rem;
+  font-weight: 800;
+  box-shadow: 0 4px 14px rgba(108, 76, 241, 0.35);
+}
+
+.brand-text {
+  font-family: var(--font-heading);
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: var(--text-heading);
+  letter-spacing: -0.03em;
+}
+
+/* Navigation Links */
+.nav-section-title {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  letter-spacing: 0.08em;
+  padding: 10px 14px;
+}
+
+.nav-pills-propio {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.nav-link-propio {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 11px 16px;
+  border-radius: var(--radius-sm);
+  font-size: 0.92rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  transition: all var(--transition-fast);
+  position: relative;
+}
+
+.nav-link-propio .nav-icon {
+  font-size: 1.15rem;
+  transition: transform var(--transition-fast);
+}
+
+.nav-link-propio:hover {
+  background-color: var(--bg-hover);
+  color: var(--text-heading);
+  transform: translateX(3px);
+}
+
+.nav-link-propio:hover .nav-icon {
+  transform: scale(1.1);
+  color: var(--propio-primary);
+}
+
+.nav-link-propio.active {
+  background: var(--propio-primary);
+  color: #FFFFFF;
+  font-weight: 600;
+  box-shadow: 0 6px 18px rgba(108, 76, 241, 0.32);
+}
+
+.nav-link-propio.active .nav-icon {
+  color: #FFFFFF;
+}
+
+.nav-link-propio .badge-nav {
+  margin-left: auto;
+  font-size: 0.72rem;
+  padding: 3px 8px;
+  border-radius: var(--radius-full);
+}
+
+/* Main Content Area */
+.app-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  background-color: var(--bg-app);
+}
+
+/* Topbar */
+.app-topbar {
+  height: 80px;
+  padding: 0 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: var(--bg-topbar);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border-light);
+  position: sticky;
+  top: 0;
+  z-index: 1020;
+}
+
+/* Search Box */
+.topbar-search {
+  position: relative;
+  width: 380px;
+  max-width: 100%;
+}
+
+.topbar-search input {
+  width: 100%;
+  height: 44px;
+  padding: 0 64px 0 42px;
+  background-color: var(--bg-input);
+  border: 1px solid transparent;
+  border-radius: var(--radius-full);
+  font-size: 0.88rem;
+  color: var(--text-main);
+  transition: all var(--transition-fast);
+}
+
+.topbar-search input:focus {
+  outline: none;
+  background-color: var(--bg-card);
+  border-color: var(--propio-primary);
+  box-shadow: 0 0 0 3px var(--propio-primary-light);
+}
+
+.topbar-search .search-icon {
+  position: absolute;
+  left: 15px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-muted);
+  font-size: 0.95rem;
+}
+
+.topbar-search .kbd-hint {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-light);
+  border-radius: 6px;
+  padding: 2px 7px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  box-shadow: var(--shadow-subtle);
+}
+
+/* Topbar Right Controls */
+.topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.btn-icon-topbar {
+  width: 42px;
+  height: 42px;
+  border-radius: var(--radius-full);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-light);
+  color: var(--text-muted);
+  font-size: 1.15rem;
+  position: relative;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  box-shadow: var(--shadow-subtle);
+}
+
+.btn-icon-topbar:hover {
+  background-color: var(--bg-hover);
+  color: var(--text-heading);
+  transform: translateY(-2px);
+}
+
+.btn-icon-topbar .badge-dot {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 18px;
+  height: 18px;
+  background-color: var(--propio-danger);
+  border: 2px solid var(--bg-card);
+  border-radius: var(--radius-full);
+  color: #FFFFFF;
+  font-size: 0.65rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* User Profile Badge */
+.user-profile-btn {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 5px 12px 5px 6px;
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  box-shadow: var(--shadow-subtle);
+}
+
+.user-profile-btn:hover {
+  background-color: var(--bg-hover);
+  box-shadow: var(--shadow-card);
+}
+
+.user-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-full);
+  object-fit: cover;
+  border: 2px solid var(--propio-primary-light);
+}
+
+.user-info {
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+  line-height: 1.2;
+}
+
+.user-name {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-heading);
+}
+
+.user-role {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+/* Main Content Container */
+.content-body {
+  padding: 32px;
+  flex: 1;
+}
+
+/* -----------------------------------------------------------------------------
+   4. Cards & Component System (Exact Match with Reference)
+   ----------------------------------------------------------------------------- */
+.card-propio {
+  background-color: var(--bg-card);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-card);
+  padding: 24px;
+  box-shadow: var(--shadow-card);
+  transition: transform var(--transition-normal), box-shadow var(--transition-normal), background-color var(--transition-normal);
+  position: relative;
+  overflow: hidden;
+}
+
+.card-propio:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-card-hover);
+}
+
+.card-header-clean {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 18px;
+}
+
+.card-title-subtle {
+  font-size: 0.88rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Trend Pill Badges */
+.trend-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: var(--radius-full);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.trend-pill.positive {
+  background-color: rgba(16, 185, 129, 0.12);
+  color: #10B981;
+}
+
+.trend-pill.negative {
+  background-color: rgba(239, 68, 68, 0.12);
+  color: #EF4444;
+}
+
+/* Vibrant Hero Accent Cards (From Reference Screenshot) */
+.card-accent-purple {
+  background: var(--propio-purple-card);
+  color: #FFFFFF;
+  border-radius: var(--radius-lg);
+  padding: 22px;
+  box-shadow: 0 14px 30px rgba(91, 67, 234, 0.28);
+  transition: transform var(--transition-normal), box-shadow var(--transition-normal);
+}
+.card-accent-purple:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 18px 36px rgba(91, 67, 234, 0.38);
+}
+
+.card-accent-teal {
+  background: var(--propio-teal-card);
+  color: #FFFFFF;
+  border-radius: var(--radius-lg);
+  padding: 22px;
+  box-shadow: 0 14px 30px rgba(69, 165, 167, 0.28);
+  transition: transform var(--transition-normal), box-shadow var(--transition-normal);
+}
+.card-accent-teal:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 18px 36px rgba(69, 165, 167, 0.38);
+}
+
+.card-accent-pink {
+  background: var(--propio-pink-card);
+  color: #FFFFFF;
+  border-radius: var(--radius-lg);
+  padding: 22px;
+  box-shadow: 0 14px 30px rgba(248, 94, 159, 0.28);
+  transition: transform var(--transition-normal), box-shadow var(--transition-normal);
+}
+.card-accent-pink:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 18px 36px rgba(248, 94, 159, 0.38);
+}
+
+.accent-card-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.accent-card-time {
+  font-size: 0.85rem;
+  opacity: 0.85;
+  margin-bottom: 20px;
+}
+
+.accent-card-user {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.accent-card-user img {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-full);
+  border: 2px solid rgba(255, 255, 255, 0.6);
+}
+
+.accent-card-user span {
+  font-weight: 600;
+  font-size: 0.88rem;
+}
+
+/* Stat Numbers */
+.stat-display-value {
+  font-family: var(--font-heading);
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--text-heading);
+  margin-bottom: 6px;
+}
+
+.stat-footnote {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+/* Progress Bars */
+.progress-propio {
+  height: 8px;
+  background-color: var(--bg-input);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+  margin: 12px 0;
+}
+
+.progress-propio .progress-bar {
+  background: linear-gradient(90deg, #10B981 0%, #34D399 100%);
+  border-radius: var(--radius-full);
+  transition: width 1s ease-in-out;
+}
+
+/* Buttons */
+.btn-propio-primary {
+  background: var(--propio-primary);
+  color: #FFFFFF;
+  border: none;
+  border-radius: var(--radius-full);
+  padding: 10px 22px;
+  font-weight: 600;
+  font-size: 0.88rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  box-shadow: 0 4px 14px rgba(108, 76, 241, 0.28);
+}
+
+.btn-propio-primary:hover {
+  background: var(--propio-primary-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(108, 76, 241, 0.38);
+  color: #FFFFFF;
+}
+
+.btn-propio-primary:active {
+  transform: translateY(1px);
+}
+
+.btn-propio-dark {
+  background: #111827;
+  color: #FFFFFF;
+  border: none;
+  border-radius: var(--radius-full);
+  padding: 12px 24px;
+  font-weight: 600;
+  font-size: 0.92rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  box-shadow: 0 4px 14px rgba(17, 24, 39, 0.2);
+}
+
+[data-bs-theme="dark"] .btn-propio-dark {
+  background: var(--propio-primary);
+  box-shadow: 0 4px 14px rgba(108, 76, 241, 0.3);
+}
+
+.btn-propio-dark:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(17, 24, 39, 0.3);
+  color: #FFFFFF;
+}
+
+.btn-propio-outline {
+  background: var(--bg-card);
+  color: var(--text-heading);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-full);
+  padding: 11px 24px;
+  font-weight: 600;
+  font-size: 0.92rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.btn-propio-outline:hover {
+  background: var(--bg-hover);
+  border-color: var(--propio-primary);
+  color: var(--propio-primary);
+  transform: translateY(-2px);
+}
+
+/* Filter Dropdown Pills */
+.filter-pill {
+  background: var(--bg-input);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-full);
+  padding: 5px 14px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.filter-pill:hover {
+  color: var(--text-heading);
+  background: var(--bg-hover);
+}
+
+/* -----------------------------------------------------------------------------
+   5. Keyframe Animations & Micro-Interactions
+   ----------------------------------------------------------------------------- */
+@keyframes fadeInSlideUp {
+  0% {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fade-in-up {
+  animation: fadeInSlideUp 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.stagger-1 { animation-delay: 0.05s; }
+.stagger-2 { animation-delay: 0.12s; }
+.stagger-3 { animation-delay: 0.18s; }
+.stagger-4 { animation-delay: 0.25s; }
+
+/* Button Click Ripple Effect */
+.ripple {
+  position: relative;
+  overflow: hidden;
+}
+
+.ripple::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 5px;
+  height: 5px;
+  background: rgba(255, 255, 255, 0.45);
+  opacity: 0;
+  border-radius: 100%;
+  transform: scale(1, 1) translate(-50%, -50%);
+  transform-origin: 50% 50%;
+}
+
+.ripple:focus:not(:active)::after {
+  animation: rippleAnimation 0.6s ease-out;
+}
+
+@keyframes rippleAnimation {
+  0% {
+    transform: scale(0, 0);
+    opacity: 0.5;
+  }
+  100% {
+    transform: scale(30, 30);
+    opacity: 0;
+  }
+}
+
+/* Skeleton Loading Shimmer */
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.skeleton-loading {
+  background: linear-gradient(90deg, var(--bg-input) 25%, var(--bg-hover) 50%, var(--bg-input) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: var(--radius-sm);
+}
+
+/* Accessibility: Respect Reduced Motion Preference */
+@media (prefers-reduced-motion: reduce) {
+  *, ::before, ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .card-propio:hover,
+  .card-accent-purple:hover,
+  .card-accent-teal:hover,
+  .card-accent-pink:hover,
+  .btn-propio-primary:hover,
+  .btn-propio-dark:hover,
+  .btn-propio-outline:hover {
+    transform: none !important;
+  }
+}
+
+/* -----------------------------------------------------------------------------
+   6. Responsive Adaptations
+   ----------------------------------------------------------------------------- */
+.sidebar-backdrop {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(4px);
+  z-index: 1030;
+}
+
+@media (max-width: 991.98px) {
+  .app-sidebar {
+    position: fixed;
+    top: 0;
+    left: -280px;
+    height: 100vh;
+    box-shadow: var(--shadow-elevated);
+  }
+
+  .app-sidebar.show {
+    left: 0;
+  }
+
+  .sidebar-backdrop.show {
+    display: block;
+  }
+
+  .topbar-search {
+    width: 220px;
+  }
+
+  .content-body {
+    padding: 20px;
+  }
+}
+
+@media (max-width: 767.98px) {
+  .app-topbar {
+    padding: 0 16px;
+    height: 70px;
+  }
+
+  .topbar-search {
+    display: none;
+  }
+
+  .user-info {
+    display: none;
+  }
+}

@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head></head>
+<body>
+<!-- Propio Navigation Sidebar Fragment -->
+<aside th:fragment="sidebar" id="app-sidebar" class="app-sidebar" aria-label="Main Navigation">
+  <div>
+    <!-- Brand Logo -->
+    <a th:href="@{/dashboard}" class="brand-container text-decoration-none" aria-label="Propio Home">
+      <div class="brand-logo-icon">
+        <i class="bi bi-layers-half"></i>
+      </div>
+      <span class="brand-text">Propio</span>
+    </a>
+
+    <!-- Main Navigation Menu -->
+    <div class="nav-section-title">Navigation</div>
+    <ul class="nav-pills-propio">
+      <li>
+        <a th:href="@{/dashboard}" 
+           th:classappend="${activeNav == 'dashboard' or activeNav == null} ? 'active' : ''" 
+           class="nav-link-propio ripple" 
+           aria-label="Dashboard Overview">
+          <i class="bi bi-grid-fill nav-icon"></i>
+          <span>Dashboard</span>
+        </a>
+      </li>
+
+      <!-- Admin Specific Navigation Items -->
+      <li sec:authorize="hasRole('ADMIN')">
+        <a th:href="@{/properties}" 
+           th:classappend="${activeNav == 'properties'} ? 'active' : ''" 
+           class="nav-link-propio ripple" 
+           aria-label="Properties">
+          <i class="bi bi-building nav-icon"></i>
+          <span>Properties</span>
+        </a>
+      </li>
+      <li sec:authorize="hasRole('ADMIN')">
+        <a th:href="@{/tenants}" 
+           th:classappend="${activeNav == 'tenants'} ? 'active' : ''" 
+           class="nav-link-propio ripple" 
+           aria-label="Tenants">
+          <i class="bi bi-people-fill nav-icon"></i>
+          <span>Tenants</span>
+          <i class="bi bi-chevron-down ms-auto text-muted fs-7"></i>
+        </a>
+      </li>
+
+      <!-- Shared & Tenant Navigation Items -->
+      <li>
+        <a th:href="@{/leasing}" 
+           th:classappend="${activeNav == 'leasing'} ? 'active' : ''" 
+           class="nav-link-propio ripple" 
+           aria-label="Leasing">
+          <i class="bi bi-file-earmark-text nav-icon"></i>
+          <span sec:authorize="hasRole('ADMIN')">Leasing</span>
+          <span sec:authorize="hasRole('TENANT')">My Leases</span>
+        </a>
+      </li>
+      <li>
+        <a th:href="@{/maintenance}" 
+           th:classappend="${activeNav == 'maintenance'} ? 'active' : ''" 
+           class="nav-link-propio ripple" 
+           aria-label="Maintenance">
+          <i class="bi bi-tools nav-icon"></i>
+          <span sec:authorize="hasRole('ADMIN')">Maintenance</span>
+          <span sec:authorize="hasRole('TENANT')">Service Requests</span>
+        </a>
+      </li>
+      <li>
+        <a th:href="@{/payments}" 
+           th:classappend="${activeNav == 'payments'} ? 'active' : ''" 
+           class="nav-link-propio ripple" 
+           aria-label="Payments">
+          <i class="bi bi-credit-card-2-front nav-icon"></i>
+          <span sec:authorize="hasRole('ADMIN')">Payments</span>
+          <span sec:authorize="hasRole('TENANT')">My Payments</span>
+        </a>
+      </li>
+      <li>
+        <a th:href="@{/documents}" 
+           th:classappend="${activeNav == 'documents'} ? 'active' : ''" 
+           class="nav-link-propio ripple" 
+           aria-label="Documents">
+          <i class="bi bi-folder2-open nav-icon"></i>
+          <span>Documents</span>
+        </a>
+      </li>
+    </ul>
+  </div>
+
+  <!-- Bottom Utility Navigation -->
+  <div>
+    <div class="nav-section-title">Preferences</div>
+    <ul class="nav-pills-propio">
+      <li>
+        <a href="#settings" class="nav-link-propio ripple" aria-label="Settings">
+          <i class="bi bi-gear nav-icon"></i>
+          <span>Settings</span>
+        </a>
+      </li>
+      <li>
+        <a href="#help" class="nav-link-propio ripple" aria-label="Help and Support">
+          <i class="bi bi-question-circle nav-icon"></i>
+          <span>Help & Support</span>
+        </a>
+      </li>
+      <li>
+        <!-- Direct Logout Action Form with CSRF -->
+        <form th:action="@{/logout}" method="post" class="m-0 p-0">
+          <button type="submit" class="nav-link-propio ripple text-danger border-0 bg-transparent w-100 text-start" aria-label="Logout">
+            <i class="bi bi-box-arrow-right nav-icon"></i>
+            <span>Logout</span>
+          </button>
+        </form>
+      </li>
+    </ul>
+  </div>
+</aside>
+</body>
+</html>

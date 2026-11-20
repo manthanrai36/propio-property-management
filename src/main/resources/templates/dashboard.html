@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security" th:replace="~{layout/main :: html}">
+<head>
+  <title>Dashboard Overview | Propio</title>
+</head>
+<body>
+<div th:fragment="content">
+
+  <!-- =========================================================================
+       ADMIN VIEW: PORTFOLIO & REVENUE DASHBOARD (Matches Screenshot Reference)
+       ========================================================================= -->
+  <div th:if="${isAdmin != false}">
+    <!-- Row 1: Key Metric Cards & Event Highlights -->
+    <div class="row g-4 mb-4">
+      <!-- Stat Card: Rent Overdue -->
+      <div class="col-xl-3 col-md-6 fade-in-up stagger-1">
+        <div class="card-propio h-100">
+          <div class="card-header-clean">
+            <div class="card-title-subtle">
+              <i class="bi bi-clock-history text-muted"></i>
+              <span>Rent overdue</span>
+            </div>
+            <i class="bi bi-info-circle text-muted" role="button" aria-label="Information"></i>
+          </div>
+          <div class="d-flex align-items-baseline gap-2 mb-2">
+            <span class="stat-display-value" 
+                  th:attr="data-counter=${totalOverdue != null ? totalOverdue : '1450.00'}" 
+                  data-prefix="$" 
+                  data-decimals="2" 
+                  th:text="${'$' + (totalOverdue != null ? totalOverdue : '1,450.00')}">$1,450.00</span>
+            <span class="trend-pill negative">
+              <span>15.8%</span>
+              <i class="bi bi-arrow-down-right"></i>
+            </span>
+          </div>
+          <div class="stat-footnote">
+            <span class="fw-semibold text-danger" th:text="${(overdueCount != null ? overdueCount : '5') + ' Overdue'}">5 Overdue</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Stat Card: Upcoming Payments -->
+      <div class="col-xl-3 col-md-6 fade-in-up stagger-2">
+        <div class="card-propio h-100">
+          <div class="card-header-clean">
+            <div class="card-title-subtle">
+              <i class="bi bi-calendar-event text-muted"></i>
+              <span>Upcoming payments</span>
+            </div>
+            <i class="bi bi-info-circle text-muted" role="button" aria-label="Information"></i>
+          </div>
+          <div class="d-flex align-items-baseline gap-2 mb-2">
+            <span class="stat-display-value" 
+                  th:attr="data-counter=${totalUpcoming != null ? totalUpcoming : '2450.00'}" 
+                  data-prefix="$" 
+                  data-decimals="2" 
+                  th:text="${'$' + (totalUpcoming != null ? totalUpcoming : '2,450.00')}">$2,450.00</span>
+            <span class="trend-pill positive">
+              <span>15.8%</span>
+              <i class="bi bi-arrow-up-right"></i>
+            </span>
+          </div>
+          <div class="stat-footnote">
+            <span class="fw-semibold text-primary">2 this month</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Accent Card: Lease expires today! (Purple Hero) -->
+      <div class="col-xl-2 col-md-4 fade-in-up stagger-3">
+        <div class="card-accent-purple h-100 d-flex flex-column justify-content-between">
+          <div>
+            <div class="accent-card-title">Lease expires today!</div>
+            <div class="accent-card-time">12:25 - 1:20 PM</div>
+          </div>
+          <div class="accent-card-user">
+            <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=100&h=100&q=80" alt="Jacob Jones">
+            <span>Jacob Jones</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Accent Card: Check bill (Teal Hero) -->
+      <div class="col-xl-2 col-md-4 fade-in-up stagger-4">
+        <div class="card-accent-teal h-100 d-flex flex-column justify-content-between">
+          <div>
+            <div class="accent-card-title">Check bill</div>
+            <div class="accent-card-time">11:05 - 12:40 PM</div>
+          </div>
+          <div class="accent-card-user">
+            <img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=100&h=100&q=80" alt="Jacob Jones">
+            <span>Jacob Jones</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Accent Card: Insurance (Pink Hero) -->
+      <div class="col-xl-2 col-md-4 fade-in-up stagger-4">
+        <div class="card-accent-pink h-100 d-flex flex-column justify-content-between">
+          <div>
+            <div class="accent-card-title">Insurance</div>
+            <div class="accent-card-time">9:25 - 10:30 AM</div>
+          </div>
+          <div class="accent-card-user">
+            <img src="https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=100&h=100&q=80" alt="Jacob Jones">
+            <span>Jacob Jones</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Row 2: Analytical Visualizations -->
+    <div class="row g-4 mb-4">
+      <!-- Property Units Donut Card -->
+      <div class="col-xl-4 col-lg-5 fade-in-up stagger-1">
+        <div class="card-propio h-100 d-flex flex-column justify-content-between">
+          <div>
+            <div class="card-header-clean mb-2">
+              <div class="d-flex align-items-center gap-2">
+                <i class="bi bi-grid text-muted"></i>
+                <span class="fw-bold">Property Units</span>
+              </div>
+              <i class="bi bi-three-dots text-muted" role="button"></i>
+            </div>
+
+            <!-- Donut Chart with Centered Number -->
+            <div class="position-relative my-3" style="height: 190px;">
+              <canvas id="unitsDonutChart"></canvas>
+              <div class="position-absolute top-50 start-50 translate-middle text-center pointer-events-none">
+                <div class="fs-2 fw-bold font-heading lh-1" data-counter="289" th:text="${totalUnits != null ? totalUnits : '289'}">289</div>
+                <div class="text-muted fs-8 fw-semibold text-uppercase">Units</div>
+              </div>
+            </div>
+
+            <!-- Legend -->
+            <div class="d-flex justify-content-center gap-4 fs-8 fw-semibold text-muted mb-3">
+              <span class="d-flex align-items-center gap-2">
+                <span class="d-inline-block rounded-circle" style="width: 8px; height: 8px; background-color: #FF4B93;"></span>
+                Booked
+              </span>
+              <span class="d-flex align-items-center gap-2">
+                <span class="d-inline-block rounded-circle" style="width: 8px; height: 8px; background-color: #5B43EA;"></span>
+                Occupied
+              </span>
+              <span class="d-flex align-items-center gap-2">
+                <span class="d-inline-block rounded-circle" style="width: 8px; height: 8px; background-color: #38BDF8;"></span>
+                Vacant
+              </span>
+            </div>
+          </div>
+
+          <!-- Month Selector & Avatars -->
+          <div class="d-flex align-items-center justify-content-between pt-3 border-top border-light">
+            <div class="d-flex align-items-center">
+              <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=60&h=60&q=80" class="rounded-circle border border-2 border-white" style="width: 28px; height: 28px; margin-right: -8px;" alt="User">
+              <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=60&h=60&q=80" class="rounded-circle border border-2 border-white" style="width: 28px; height: 28px; margin-right: -8px;" alt="User">
+              <div class="rounded-circle bg-dark text-white fs-8 fw-bold d-flex align-items-center justify-content-center border border-2 border-white" style="width: 28px; height: 28px;">4+</div>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+              <button class="btn btn-sm btn-light rounded-circle p-1" style="width: 26px; height: 26px;" aria-label="Previous month"><i class="bi bi-chevron-left"></i></button>
+              <span class="fs-8 fw-bold">February</span>
+              <button class="btn btn-sm btn-light rounded-circle p-1" style="width: 26px; height: 26px;" aria-label="Next month"><i class="bi bi-chevron-right"></i></button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Rental Payments Wave/Area Chart Card -->
+      <div class="col-xl-8 col-lg-7 fade-in-up stagger-2">
+        <div class="card-propio h-100">
+          <div class="card-header-clean">
+            <div class="d-flex align-items-center gap-2">
+              <i class="bi bi-ui-checks-grid text-muted"></i>
+              <span class="fw-bold">Rental Payments</span>
+            </div>
+            <div class="filter-pill">
+              <i class="bi bi-calendar3"></i>
+              <span>Last 30 days</span>
+            </div>
+          </div>
+
+          <div class="row align-items-center">
+            <!-- Metrics Breakdown -->
+            <div class="col-md-4">
+              <div class="mb-3">
+                <div class="text-muted fs-8 fw-medium">Total Income</div>
+                <div class="d-flex align-items-center gap-2 mt-1">
+                  <span class="fs-5 fw-bold" data-counter="9245.25" data-prefix="$" data-decimals="2">$9,245.25</span>
+                  <span class="trend-pill positive fs-9">15.8% ↗</span>
+                </div>
+              </div>
+              <div class="mb-3">
+                <div class="text-muted fs-8 fw-medium">Total Overdue</div>
+                <div class="d-flex align-items-center gap-2 mt-1">
+                  <span class="fs-5 fw-bold" 
+                        th:attr="data-counter=${totalOverdue != null ? totalOverdue : '5245.00'}" 
+                        data-prefix="$" 
+                        data-decimals="2" 
+                        th:text="${'$' + (totalOverdue != null ? totalOverdue : '5,245.00')}">$5,245.00</span>
+                  <span class="trend-pill negative fs-9">15.8% ↘</span>
+                </div>
+              </div>
+              <div>
+                <div class="text-muted fs-8 fw-medium">Maintenance cost</div>
+                <div class="d-flex align-items-center gap-2 mt-1">
+                  <span class="fs-5 fw-bold" data-counter="2257.47" data-prefix="$" data-decimals="2">$2,257.47</span>
+                  <span class="trend-pill positive fs-9">15.8% ↗</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Chart Area -->
+            <div class="col-md-8">
+              <div style="height: 220px;">
+                <canvas id="rentalPaymentsChart"></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Row 3: Operational Cards, Tenant Highlights, Property View & Quick Actions -->
+    <div class="row g-4">
+      <!-- Featured Tenant Listing: Kathryn Murphy -->
+      <div class="col-xl-3 col-md-6 fade-in-up stagger-1">
+        <div class="card-propio h-100 p-0 overflow-hidden">
+          <div class="position-relative">
+            <img src="https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=500&h=260&q=80" 
+                 alt="Hermiston Property" 
+                 class="w-100" 
+                 style="height: 160px; object-fit: cover;">
+            <span class="position-absolute top-0 end-0 m-3 badge bg-white text-primary rounded-pill shadow-sm px-3 py-2 fs-8 fw-bold">
+              In search
+            </span>
+          </div>
+          <div class="p-3">
+            <h6 class="fw-bold mb-1">Kathryn Murphy</h6>
+            <div class="text-muted fs-8 mb-2">
+              <i class="bi bi-geo-alt me-1 text-primary"></i> 377 NW 10th Hermiston
+            </div>
+            <div class="text-muted fs-9 mb-3">
+              <i class="bi bi-clock me-1"></i> Updated Jan 10
+            </div>
+            <div class="d-flex justify-content-between pt-2 border-top border-light text-muted fs-8">
+              <span role="button" class="d-flex align-items-center gap-1 hover-primary"><i class="bi bi-house"></i> Tenants</span>
+              <span role="button" class="d-flex align-items-center gap-1 hover-primary"><i class="bi bi-cash-stack"></i> Accounting</span>
+              <span role="button" class="d-flex align-items-center gap-1 hover-primary"><i class="bi bi-wrench"></i> Maintenance</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tenant Profile Card: Leslie Alexander -->
+      <div class="col-xl-3 col-md-6 fade-in-up stagger-2">
+        <div class="card-propio h-100 text-center d-flex flex-column justify-content-between">
+          <div class="d-flex justify-content-end gap-2">
+            <button class="btn btn-sm btn-icon-topbar" style="width: 32px; height: 32px;" aria-label="Message"><i class="bi bi-chat fs-8"></i></button>
+            <button class="btn btn-sm btn-icon-topbar" style="width: 32px; height: 32px;" aria-label="More"><i class="bi bi-three-dots fs-8"></i></button>
+          </div>
+          <div class="my-2">
+            <img src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=120&h=120&q=80" 
+                 alt="Leslie Alexander" 
+                 class="rounded-circle mb-3 border border-3 border-light" 
+                 style="width: 72px; height: 72px; object-fit: cover;">
+            <h6 class="fw-bold mb-1">Leslie Alexander</h6>
+            <div class="text-muted fs-8">Rent from Dec 2023</div>
+          </div>
+          <div>
+            <button class="btn btn-propio-outline w-100 py-2 fs-8">View profile</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Middle Column: Total Revenue Bar Chart + Rent Received Progress -->
+      <div class="col-xl-4 col-md-6 fade-in-up stagger-3">
+        <div class="d-flex flex-column gap-4 h-100">
+          <!-- Revenue Bar Chart -->
+          <div class="card-propio flex-grow-1">
+            <div class="card-header-clean mb-2">
+              <div>
+                <div class="fw-bold fs-7">Total Revenue</div>
+                <div class="d-flex gap-3 fs-9 text-muted mt-1">
+                  <span><span class="text-info fw-bold">●</span> Rental Income: $9,245.25</span>
+                  <span><span class="text-primary fw-bold">●</span> Expenses: $2,125.74</span>
+                </div>
+              </div>
+              <div class="filter-pill fs-8">
+                <span>Last 1 Year</span>
+              </div>
+            </div>
+            <div style="height: 130px;">
+              <canvas id="revenueBarChart"></canvas>
+            </div>
+          </div>
+
+          <!-- Rent Received Progress Card -->
+          <div class="card-propio">
+            <div class="card-header-clean mb-1">
+              <div class="card-title-subtle">
+                <i class="bi bi-wallet2 text-muted"></i>
+                <span>Rent received</span>
+              </div>
+              <i class="bi bi-info-circle text-muted"></i>
+            </div>
+            <div class="d-flex justify-content-between align-items-baseline">
+              <div class="stat-display-value mb-0" data-counter="1450" data-prefix="$" data-decimals="2">$1,450.00</div>
+              <div class="text-end">
+                <div class="fw-bold fs-7" data-counter="6000" data-prefix="$" data-decimals="0">$6,000</div>
+                <div class="text-muted fs-9">Due this month</div>
+              </div>
+            </div>
+            <div class="progress-propio">
+              <div class="progress-bar" style="width: 24%;" role="progressbar" aria-valuenow="24" aria-valuemin="0" aria-valuemax="100"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Quick Action Widgets -->
+      <div class="col-xl-2 col-md-6 fade-in-up stagger-4">
+        <div class="d-flex flex-column gap-3 h-100">
+          <!-- Single Unit Type Card -->
+          <div class="card-propio p-3">
+            <div class="text-center py-2">
+              <div class="rounded-4 p-3 mb-2 d-inline-flex" style="background: rgba(56, 189, 248, 0.12); color: #0284C7;">
+                <i class="bi bi-house-door-fill fs-2"></i>
+              </div>
+            </div>
+            <div class="d-flex align-items-center gap-1 text-success fs-8 fw-bold mb-1">
+              <i class="bi bi-check-circle-fill"></i>
+              <span>Single Unit type</span>
+            </div>
+            <p class="text-muted fs-9 mb-0">
+              Single-family rentals (SFR) are standalone properties rented as a single unit per address.
+            </p>
+          </div>
+
+          <!-- Payment Due Card -->
+          <div class="card-propio p-3">
+            <div class="text-muted fs-9 fw-semibold">Payment Due</div>
+            <div class="fs-5 fw-bold mb-2" data-counter="16254" data-prefix="$" data-decimals="0">$16,254</div>
+            <button class="btn btn-sm btn-propio-outline w-100 py-1 fs-9 d-flex align-items-center justify-content-center gap-1 text-primary">
+              <i class="bi bi-box-arrow-in-down-left"></i> Receive
+            </button>
+          </div>
+
+          <!-- Primary Action Buttons -->
+          <button class="btn-propio-dark ripple py-2 fs-8" type="button">
+            <i class="bi bi-plus-lg"></i>
+            <span>Add Property</span>
+          </button>
+
+          <button class="btn-propio-outline ripple py-2 fs-8" type="button">
+            <i class="bi bi-sliders"></i>
+            <span>Customise</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- =========================================================================
+       TENANT VIEW: PERSONALIZED TENANT PORTAL (Tenant Only Sees Their Own Data)
+       ========================================================================= -->
+  <div th:if="${isAdmin == false}">
+    <!-- Welcome Header -->
+    <div class="d-flex align-items-center justify-content-between mb-4 fade-in-up">
+      <div>
+        <h3 class="fw-bold mb-1">
+          Welcome back, <span class="text-primary" th:text="${user.fullName}">Tenant</span>! 👋
+        </h3>
+        <p class="text-muted fs-8 mb-0">Here is your lease overview, active billing, and maintenance tickets.</p>
+      </div>
+      <div>
+        <button class="btn-propio-primary py-2 px-3 fs-8" type="button">
+          <i class="bi bi-plus-circle"></i>
+          <span>Report an Issue</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Tenant Stats Row -->
+    <div class="row g-4 mb-4">
+      <!-- Active Leased Unit -->
+      <div class="col-lg-4 col-md-6 fade-in-up stagger-1">
+        <div class="card-propio h-100">
+          <div class="card-header-clean mb-2">
+            <div class="card-title-subtle">
+              <i class="bi bi-house-door text-primary"></i>
+              <span>My Leased Unit</span>
+            </div>
+            <span class="badge bg-success-subtle text-success rounded-pill px-3 py-1 fs-9">Active Lease</span>
+          </div>
+          <div th:if="${activeLease != null}">
+            <h5 class="fw-bold mb-1" th:text="${activeLease.unit.property.name + ' - ' + activeLease.unit.unitNumber}">Ledeberg 25 - Apt 101</h5>
+            <div class="text-muted fs-8 mb-3" th:text="${activeLease.unit.property.address}">377 NW 10th Hermiston</div>
+            <div class="d-flex justify-content-between pt-2 border-top border-light fs-8">
+              <div>
+                <span class="text-muted">Monthly Rent:</span>
+                <span class="fw-bold ms-1" th:text="${'$' + activeLease.monthlyRent}">$1,450.00</span>
+              </div>
+              <div>
+                <span class="text-muted">Expires:</span>
+                <span class="fw-semibold ms-1" th:text="${#temporals.format(activeLease.endDate, 'MMM dd, yyyy')}">Nov 30, 2025</span>
+              </div>
+            </div>
+          </div>
+          <div th:if="${activeLease == null}" class="py-4 text-center text-muted fs-8">
+            <i class="bi bi-info-circle fs-3 d-block mb-2 text-primary"></i>
+            No active lease found. Please contact your property manager.
+          </div>
+        </div>
+      </div>
+
+      <!-- Current Rent Balance Card -->
+      <div class="col-lg-4 col-md-6 fade-in-up stagger-2">
+        <div class="card-propio h-100">
+          <div class="card-header-clean mb-2">
+            <div class="card-title-subtle">
+              <i class="bi bi-credit-card text-danger"></i>
+              <span>Rent Payment Due</span>
+            </div>
+            <span class="badge bg-danger-subtle text-danger rounded-pill px-2 py-1 fs-9">Action Required</span>
+          </div>
+          <div class="d-flex align-items-baseline gap-2 mb-2">
+            <span class="stat-display-value mb-0" data-counter="1450" data-prefix="$" data-decimals="2">$1,450.00</span>
+            <span class="text-danger fs-8 fw-semibold">Overdue</span>
+          </div>
+          <p class="text-muted fs-9 mb-3">Due date was on 1st of the month. Please clear your dues.</p>
+          <button class="btn-propio-primary w-100 py-2 justify-content-center fs-8">
+            <i class="bi bi-wallet2"></i>
+            <span>Pay Rent Online</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Maintenance Summary -->
+      <div class="col-lg-4 col-md-6 fade-in-up stagger-3">
+        <div class="card-propio h-100 d-flex flex-column justify-content-between">
+          <div>
+            <div class="card-header-clean mb-2">
+              <div class="card-title-subtle">
+                <i class="bi bi-tools text-info"></i>
+                <span>Service Requests</span>
+              </div>
+              <span class="badge bg-info-subtle text-info rounded-pill px-2 py-1 fs-9" th:text="${tenantRequests != null ? tenantRequests.size() + ' Tickets' : '1 Ticket'}">1 Ticket</span>
+            </div>
+            <div th:each="req : ${tenantRequests}" class="p-2 mb-2 rounded-3 bg-light fs-8">
+              <div class="d-flex justify-content-between">
+                <strong th:text="${req.title}">Water heater inspection</strong>
+                <span class="badge bg-warning text-dark fs-9" th:text="${req.status}">IN_PROGRESS</span>
+              </div>
+              <div class="text-muted fs-9 mt-1" th:text="${req.description}">Minor temperature fluctuation reported</div>
+            </div>
+          </div>
+          <a th:href="@{/maintenance}" class="btn btn-propio-outline w-100 py-2 fs-8 mt-2">View Maintenance History</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tenant Billing History & Documents -->
+    <div class="row g-4">
+      <div class="col-lg-8 fade-in-up stagger-1">
+        <div class="card-propio">
+          <div class="card-header-clean mb-3">
+            <div class="fw-bold fs-7">Recent Billing & Payments</div>
+            <div class="filter-pill fs-8"><span>All Receipts</span></div>
+          </div>
+          <div class="table-responsive">
+            <table class="table table-hover align-middle fs-8">
+              <thead class="text-muted fs-9 text-uppercase">
+                <tr>
+                  <th>Reference</th>
+                  <th>Amount</th>
+                  <th>Due Date</th>
+                  <th>Status</th>
+                  <th>Method</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr th:each="p : ${tenantPayments}">
+                  <td class="fw-bold" th:text="${p.transactionReference}">TXN-OD-90214</td>
+                  <td class="fw-semibold" th:text="${'$' + p.amount}">$1,450.00</td>
+                  <td class="text-muted" th:text="${#temporals.format(p.dueDate, 'MMM dd, yyyy')}">Feb 01, 2024</td>
+                  <td>
+                    <span th:if="${p.status.name() == 'PAID'}" class="badge bg-success-subtle text-success rounded-pill px-2 py-1">PAID</span>
+                    <span th:if="${p.status.name() == 'OVERDUE'}" class="badge bg-danger-subtle text-danger rounded-pill px-2 py-1">OVERDUE</span>
+                    <span th:if="${p.status.name() == 'PENDING'}" class="badge bg-warning-subtle text-warning rounded-pill px-2 py-1">PENDING</span>
+                  </td>
+                  <td class="text-muted" th:text="${p.paymentMethod}">Bank Transfer</td>
+                </tr>
+                <tr th:if="${tenantPayments == null or tenantPayments.empty}">
+                  <td colspan="5" class="text-center py-3 text-muted">No payment records found.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tenant Documents -->
+      <div class="col-lg-4 fade-in-up stagger-2">
+        <div class="card-propio h-100">
+          <div class="card-header-clean mb-3">
+            <div class="fw-bold fs-7">My Documents</div>
+            <i class="bi bi-folder2-open text-primary"></i>
+          </div>
+          <div class="d-flex flex-column gap-2">
+            <div th:each="doc : ${tenantDocuments}" class="d-flex align-items-center justify-content-between p-2 rounded-3 border border-light">
+              <div class="d-flex align-items-center gap-2">
+                <i class="bi bi-file-earmark-pdf text-danger fs-5"></i>
+                <div>
+                  <div class="fw-semibold fs-8" th:text="${doc.fileName}">Lease_Agreement.pdf</div>
+                  <div class="text-muted fs-9" th:text="${doc.category}">LEASE_AGREEMENT</div>
+                </div>
+              </div>
+              <button class="btn btn-sm btn-light rounded-circle p-1" style="width: 28px; height: 28px;"><i class="bi bi-download"></i></button>
+            </div>
+            <div th:if="${tenantDocuments == null or tenantDocuments.empty}" class="text-center py-4 text-muted fs-8">
+              No documents uploaded yet.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

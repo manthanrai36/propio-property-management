@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head></head>
+<body>
+<!-- Propio Topbar Fragment with Dynamic Authenticated User Details -->
+<header th:fragment="topbar" class="app-topbar">
+  <div class="d-flex align-items-center gap-3">
+    <!-- Mobile Hamburger Toggle -->
+    <button id="sidebar-toggle-btn" class="btn btn-icon-topbar d-lg-none" type="button" aria-label="Toggle navigation menu">
+      <i class="bi bi-list fs-4"></i>
+    </button>
+
+    <!-- Global Search Input with Keyboard Shortcut Pill -->
+    <div class="topbar-search">
+      <i class="bi bi-search search-icon" aria-hidden="true"></i>
+      <input id="topbar-search-input" 
+             type="text" 
+             placeholder="Search properties, leases, records..." 
+             aria-label="Global Search">
+      <span class="kbd-hint" title="Press Ctrl + / to search">⌘ + /</span>
+    </div>
+  </div>
+
+  <!-- Right Actions: Theme Toggle, Notifications, User Profile -->
+  <div class="topbar-actions">
+    <!-- Role Badge Indicator -->
+    <div class="d-none d-md-flex align-items-center">
+      <span sec:authorize="hasRole('ADMIN')" class="badge bg-primary-subtle text-primary border border-primary-subtle px-3 py-2 rounded-pill fs-9 fw-bold">
+        <i class="bi bi-shield-check me-1"></i> Admin Portal
+      </span>
+      <span sec:authorize="hasRole('TENANT')" class="badge bg-success-subtle text-success border border-success-subtle px-3 py-2 rounded-pill fs-9 fw-bold">
+        <i class="bi bi-person-check me-1"></i> Tenant Portal
+      </span>
+    </div>
+
+    <!-- Light / Dark Theme Switcher Button -->
+    <button id="theme-toggle-btn" 
+            class="btn-icon-topbar ripple" 
+            type="button" 
+            aria-label="Toggle theme mode"
+            title="Toggle theme (Light / Dark)">
+      <i id="theme-toggle-icon" class="bi bi-moon-stars-fill text-muted"></i>
+    </button>
+
+    <!-- Chat / Message Icon -->
+    <button class="btn-icon-topbar ripple" type="button" aria-label="Messages" title="Messages">
+      <i class="bi bi-chat-dots"></i>
+    </button>
+
+    <!-- Notification Bell with Count Badge -->
+    <button class="btn-icon-topbar ripple" type="button" aria-label="Notifications" title="Notifications">
+      <i class="bi bi-bell"></i>
+      <span class="badge-dot" aria-label="8 unread notifications">8</span>
+    </button>
+
+    <!-- Authenticated User Profile Dropdown -->
+    <div class="dropdown" sec:authorize="isAuthenticated()">
+      <button class="user-profile-btn ripple dropdown-toggle" 
+              type="button" 
+              id="userProfileDropdown" 
+              data-bs-toggle="dropdown" 
+              aria-expanded="false" 
+              aria-label="User profile menu">
+        <img th:src="${#authentication.principal.avatarUrl != null ? #authentication.principal.avatarUrl : 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=120&h=120&q=80'}" 
+             th:alt="${#authentication.principal.fullName}" 
+             class="user-avatar">
+        <div class="user-info">
+          <span class="user-name" th:text="${#authentication.principal.fullName}">User Name</span>
+          <span class="user-role" th:text="${#authentication.principal.displayRole}">Role</span>
+        </div>
+        <i class="bi bi-chevron-down text-muted fs-8 ms-1"></i>
+      </button>
+      <ul class="dropdown-menu dropdown-menu-end shadow-card border-0 rounded-4 mt-2" aria-labelledby="userProfileDropdown">
+        <li>
+          <div class="px-3 py-2 border-bottom border-light">
+            <div class="fw-bold fs-8" th:text="${#authentication.principal.fullName}">User Name</div>
+            <div class="text-muted fs-9" th:text="${#authentication.principal.username}">email@example.com</div>
+          </div>
+        </li>
+        <li><h6 class="dropdown-header text-uppercase fs-9 text-muted fw-bold mt-1">Account</h6></li>
+        <li><a class="dropdown-item py-2 fs-8" href="#profile"><i class="bi bi-person me-2"></i>My Profile</a></li>
+        <li><a class="dropdown-item py-2 fs-8" href="#settings"><i class="bi bi-gear me-2"></i>Preferences</a></li>
+        <li><hr class="dropdown-divider"></li>
+        <li>
+          <!-- CSRF-protected Spring Security Logout Form -->
+          <form th:action="@{/logout}" method="post" class="m-0 p-0">
+            <button type="submit" class="dropdown-item py-2 text-danger fs-8 d-flex align-items-center w-100 border-0 bg-transparent">
+              <i class="bi bi-box-arrow-right me-2"></i>Sign Out
+            </button>
+          </form>
+        </li>
+      </ul>
+    </div>
+  </div>
+</header>
+</body>
+</html>

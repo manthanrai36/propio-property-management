@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Register - Propio Tenant Portal">
+  <title>Create Tenant Account | Propio</title>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Bootstrap 5 CSS & Icons -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+  <!-- Propio Custom Theme -->
+  <link rel="stylesheet" th:href="@{/css/theme.css}">
+
+  <style>
+    .auth-canvas {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: radial-gradient(circle at 10% 20%, rgba(108, 76, 241, 0.08) 0%, transparent 40%),
+                  radial-gradient(circle at 90% 80%, rgba(56, 189, 248, 0.08) 0%, transparent 40%),
+                  var(--bg-app);
+      padding: 32px 24px;
+      position: relative;
+    }
+    .auth-card {
+      width: 100%;
+      max-width: 480px;
+      background-color: var(--bg-card);
+      border: 1px solid var(--border-card);
+      border-radius: var(--radius-xl);
+      padding: 40px 36px;
+      box-shadow: var(--shadow-elevated);
+    }
+    .theme-corner-toggle {
+      position: absolute;
+      top: 24px;
+      right: 24px;
+    }
+  </style>
+</head>
+<body>
+  <div class="auth-canvas">
+    <!-- Top-right theme switcher -->
+    <div class="theme-corner-toggle">
+      <button id="theme-toggle-btn" class="btn-icon-topbar ripple" type="button" aria-label="Toggle theme mode">
+        <i id="theme-toggle-icon" class="bi bi-moon-stars-fill text-muted"></i>
+      </button>
+    </div>
+
+    <div class="auth-card fade-in-up">
+      <!-- Brand Logo -->
+      <div class="d-flex align-items-center gap-2 mb-4">
+        <div class="brand-logo-icon">
+          <i class="bi bi-layers-half"></i>
+        </div>
+        <span class="brand-text">Propio</span>
+      </div>
+
+      <h2 class="fs-4 fw-bold mb-1">Create Tenant Account</h2>
+      <p class="text-muted fs-8 mb-4">Sign up to manage your leases, payments, and service requests</p>
+
+      <!-- Feedback Alerts -->
+      <div th:if="${errorMessage}" class="alert alert-danger d-flex align-items-center gap-2 py-2 fs-8 rounded-3 mb-3" role="alert">
+        <i class="bi bi-exclamation-triangle-fill fs-6"></i>
+        <span th:text="${errorMessage}">Registration error</span>
+      </div>
+
+      <!-- Registration Form -->
+      <form th:action="@{/register}" th:object="${registerDto}" method="post">
+        <!-- Full Name -->
+        <div class="mb-3">
+          <label for="fullName" class="form-label fs-8 fw-semibold text-muted">Full name</label>
+          <div class="position-relative">
+            <input type="text" 
+                   th:field="*{fullName}" 
+                   id="fullName" 
+                   class="form-control" 
+                   th:classappend="${#fields.hasErrors('fullName')} ? 'is-invalid' : ''"
+                   style="height: 44px; border-radius: var(--radius-sm); padding-left: 38px; background-color: var(--bg-input); border-color: var(--border-light); color: var(--text-main);" 
+                   placeholder="e.g. Leslie Alexander" 
+                   required>
+            <i class="bi bi-person text-muted position-absolute top-50 start-0 translate-middle-y ms-3"></i>
+            <div class="invalid-feedback fs-9" th:if="${#fields.hasErrors('fullName')}" th:errors="*{fullName}">Invalid name</div>
+          </div>
+        </div>
+
+        <!-- Email -->
+        <div class="mb-3">
+          <label for="email" class="form-label fs-8 fw-semibold text-muted">Email address</label>
+          <div class="position-relative">
+            <input type="email" 
+                   th:field="*{email}" 
+                   id="email" 
+                   class="form-control" 
+                   th:classappend="${#fields.hasErrors('email')} ? 'is-invalid' : ''"
+                   style="height: 44px; border-radius: var(--radius-sm); padding-left: 38px; background-color: var(--bg-input); border-color: var(--border-light); color: var(--text-main);" 
+                   placeholder="tenant@example.com" 
+                   required>
+            <i class="bi bi-envelope text-muted position-absolute top-50 start-0 translate-middle-y ms-3"></i>
+            <div class="invalid-feedback fs-9" th:if="${#fields.hasErrors('email')}" th:errors="*{email}">Invalid email</div>
+          </div>
+        </div>
+
+        <!-- Phone -->
+        <div class="mb-3">
+          <label for="phone" class="form-label fs-8 fw-semibold text-muted">Phone number</label>
+          <div class="position-relative">
+            <input type="text" 
+                   th:field="*{phone}" 
+                   id="phone" 
+                   class="form-control" 
+                   style="height: 44px; border-radius: var(--radius-sm); padding-left: 38px; background-color: var(--bg-input); border-color: var(--border-light); color: var(--text-main);" 
+                   placeholder="+1 (555) 000-0000">
+            <i class="bi bi-telephone text-muted position-absolute top-50 start-0 translate-middle-y ms-3"></i>
+          </div>
+        </div>
+
+        <!-- Password -->
+        <div class="row g-2 mb-4">
+          <div class="col-sm-6">
+            <label for="password" class="form-label fs-8 fw-semibold text-muted">Password</label>
+            <div class="position-relative">
+              <input type="password" 
+                     th:field="*{password}" 
+                     id="password" 
+                     class="form-control" 
+                     th:classappend="${#fields.hasErrors('password')} ? 'is-invalid' : ''"
+                     style="height: 44px; border-radius: var(--radius-sm); padding-left: 38px; background-color: var(--bg-input); border-color: var(--border-light); color: var(--text-main);" 
+                     placeholder="••••••••" 
+                     required>
+              <i class="bi bi-lock text-muted position-absolute top-50 start-0 translate-middle-y ms-3"></i>
+              <div class="invalid-feedback fs-9" th:if="${#fields.hasErrors('password')}" th:errors="*{password}">Invalid password</div>
+            </div>
+          </div>
+          <div class="col-sm-6">
+            <label for="confirmPassword" class="form-label fs-8 fw-semibold text-muted">Confirm</label>
+            <div class="position-relative">
+              <input type="password" 
+                     th:field="*{confirmPassword}" 
+                     id="confirmPassword" 
+                     class="form-control" 
+                     th:classappend="${#fields.hasErrors('confirmPassword')} ? 'is-invalid' : ''"
+                     style="height: 44px; border-radius: var(--radius-sm); padding-left: 38px; background-color: var(--bg-input); border-color: var(--border-light); color: var(--text-main);" 
+                     placeholder="••••••••" 
+                     required>
+              <i class="bi bi-shield-check text-muted position-absolute top-50 start-0 translate-middle-y ms-3"></i>
+              <div class="invalid-feedback fs-9" th:if="${#fields.hasErrors('confirmPassword')}" th:errors="*{confirmPassword}">Passwords must match</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Submit Button -->
+        <button type="submit" class="btn-propio-primary w-100 py-2 justify-content-center fs-7 mb-4">
+          <span>Complete Registration</span>
+          <i class="bi bi-arrow-right"></i>
+        </button>
+      </form>
+
+      <!-- Footer Link to Login -->
+      <div class="text-center fs-8 text-muted">
+        Already have an account? 
+        <a th:href="@{/login}" class="text-primary fw-semibold text-decoration-none">Sign in here</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script th:src="@{/js/theme.js}"></script>
+</body>
+</html>
