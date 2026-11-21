@@ -53,17 +53,24 @@ public class SecurityConfig {
                 .requestMatchers(
                     "/login",
                     "/register",
+                    "/error",
+                    "/error/**",
                     "/css/**",
                     "/js/**",
                     "/images/**",
+                    "/uploads/**",
                     "/webjars/**",
                     "/h2-console/**",
                     "/favicon.ico"
                 ).permitAll()
                 // Role-restricted endpoints
-                .requestMatchers("/admin/**").hasRole("ADMIN")
+                .requestMatchers("/properties", "/properties/**").hasRole("ADMIN")
+                .requestMatchers("/admin", "/admin/**").hasRole("ADMIN")
                 // All other requests require an active authenticated session
                 .anyRequest().authenticated()
+            )
+            .exceptionHandling(ex -> ex
+                .accessDeniedPage("/error/403")
             )
             .formLogin(form -> form
                 .loginPage("/login")

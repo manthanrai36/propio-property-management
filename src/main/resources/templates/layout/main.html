@@ -15,6 +15,10 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 
+  <!-- Spring Security CSRF Meta Tags for AJAX/JS Requests -->
+  <meta th:if="${_csrf != null}" name="_csrf" th:content="${_csrf.token}"/>
+  <meta th:if="${_csrf != null}" name="_csrf_header" th:content="${_csrf.headerName}"/>
+
   <!-- Propio Custom Theme & Design System -->
   <link rel="stylesheet" th:href="@{/css/theme.css}">
 </head>
@@ -35,6 +39,37 @@
       <main class="content-body" role="main">
         <div th:replace="${content}"></div>
       </main>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container (Fixed Top-Right) -->
+  <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1095;">
+    <!-- Success Toast -->
+    <div th:if="${successMessage != null}" 
+         class="toast align-items-center text-white border-0 show animate-toast mb-2 shadow-lg" 
+         style="background: linear-gradient(135deg, #10B981 0%, #059669 100%);"
+         role="alert" aria-live="assertive" aria-atomic="true" id="appSuccessToast">
+      <div class="d-flex p-2 align-items-center">
+        <i class="bi bi-check-circle-fill fs-5 me-2 ms-2 text-white"></i>
+        <div class="toast-body text-white fw-semibold fs-8" th:text="${successMessage}">
+          Action succeeded!
+        </div>
+        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+      </div>
+    </div>
+
+    <!-- Error Toast -->
+    <div th:if="${errorMessage != null}" 
+         class="toast align-items-center text-white border-0 show animate-toast mb-2 shadow-lg" 
+         style="background: linear-gradient(135deg, #EF4444 0%, #DC2626 100%);"
+         role="alert" aria-live="assertive" aria-atomic="true" id="appErrorToast">
+      <div class="d-flex p-2 align-items-center">
+        <i class="bi bi-exclamation-octagon-fill fs-5 me-2 ms-2 text-white"></i>
+        <div class="toast-body text-white fw-semibold fs-8" th:text="${errorMessage}">
+          An error occurred.
+        </div>
+        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+      </div>
     </div>
   </div>
 

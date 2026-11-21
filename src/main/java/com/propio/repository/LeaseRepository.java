@@ -32,6 +32,12 @@ public interface LeaseRepository extends JpaRepository<Lease, Long> {
 
     List<Lease> findByEndDateAndActiveTrue(LocalDate date);
 
+    @Query("SELECT COUNT(l) FROM Lease l WHERE l.unit.property.id = :propertyId AND l.active = true")
+    long countActiveLeasesByPropertyId(@Param("propertyId") Long propertyId);
+
+    @Query("SELECT COUNT(l) FROM Lease l WHERE l.unit.id = :unitId AND l.active = true")
+    long countActiveLeasesByUnitId(@Param("unitId") Long unitId);
+
     @Query("SELECT l FROM Lease l JOIN FETCH l.unit JOIN FETCH l.tenant WHERE l.endDate BETWEEN :start AND :end AND l.active = true")
     List<Lease> findExpiringLeasesWithDetails(@Param("start") LocalDate start, @Param("end") LocalDate end);
 }

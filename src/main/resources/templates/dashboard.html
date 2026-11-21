@@ -125,41 +125,44 @@
 
             <!-- Donut Chart with Centered Number -->
             <div class="position-relative my-3" style="height: 190px;">
-              <canvas id="unitsDonutChart"></canvas>
+              <canvas id="unitsDonutChart" 
+                      th:data-occupied="${occupiedUnits != null ? occupiedUnits : 0}" 
+                      th:data-booked="${bookedUnits != null ? bookedUnits : 0}" 
+                      th:data-vacant="${vacantUnits != null ? vacantUnits : 0}"></canvas>
               <div class="position-absolute top-50 start-50 translate-middle text-center pointer-events-none">
-                <div class="fs-2 fw-bold font-heading lh-1" data-counter="289" th:text="${totalUnits != null ? totalUnits : '289'}">289</div>
+                <div class="fs-2 fw-bold font-heading lh-1" th:data-counter="${totalUnits != null ? totalUnits : 0}" th:text="${totalUnits != null ? totalUnits : '0'}">0</div>
                 <div class="text-muted fs-8 fw-semibold text-uppercase">Units</div>
               </div>
             </div>
 
-            <!-- Legend -->
-            <div class="d-flex justify-content-center gap-4 fs-8 fw-semibold text-muted mb-3">
-              <span class="d-flex align-items-center gap-2">
-                <span class="d-inline-block rounded-circle" style="width: 8px; height: 8px; background-color: #FF4B93;"></span>
-                Booked
-              </span>
+            <!-- Legend with dynamic counts -->
+            <div class="d-flex justify-content-center gap-3 fs-8 fw-semibold text-muted mb-3 flex-wrap">
               <span class="d-flex align-items-center gap-2">
                 <span class="d-inline-block rounded-circle" style="width: 8px; height: 8px; background-color: #5B43EA;"></span>
-                Occupied
+                <span>Occupied (<span th:text="${occupiedUnits != null ? occupiedUnits : 0}">0</span>)</span>
+              </span>
+              <span class="d-flex align-items-center gap-2">
+                <span class="d-inline-block rounded-circle" style="width: 8px; height: 8px; background-color: #FF4B93;"></span>
+                <span>Booked (<span th:text="${bookedUnits != null ? bookedUnits : 0}">0</span>)</span>
               </span>
               <span class="d-flex align-items-center gap-2">
                 <span class="d-inline-block rounded-circle" style="width: 8px; height: 8px; background-color: #38BDF8;"></span>
-                Vacant
+                <span>Vacant (<span th:text="${vacantUnits != null ? vacantUnits : 0}">0</span>)</span>
               </span>
             </div>
           </div>
 
           <!-- Month Selector & Avatars -->
-          <div class="d-flex align-items-center justify-content-between pt-3 border-top border-light">
+          <div class="d-flex align-items-center justify-content-between pt-3 border-top" style="border-color: var(--border-light) !important;">
             <div class="d-flex align-items-center">
-              <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=60&h=60&q=80" class="rounded-circle border border-2 border-white" style="width: 28px; height: 28px; margin-right: -8px;" alt="User">
-              <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=60&h=60&q=80" class="rounded-circle border border-2 border-white" style="width: 28px; height: 28px; margin-right: -8px;" alt="User">
-              <div class="rounded-circle bg-dark text-white fs-8 fw-bold d-flex align-items-center justify-content-center border border-2 border-white" style="width: 28px; height: 28px;">4+</div>
+              <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=60&h=60&q=80" class="rounded-circle border border-2" style="border-color: var(--bg-card) !important; width: 28px; height: 28px; margin-right: -8px;" alt="User">
+              <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=60&h=60&q=80" class="rounded-circle border border-2" style="border-color: var(--bg-card) !important; width: 28px; height: 28px; margin-right: -8px;" alt="User">
+              <div class="avatar-stack-more fs-9 fw-bold" style="width: 28px; height: 28px;">4+</div>
             </div>
             <div class="d-flex align-items-center gap-2">
-              <button class="btn btn-sm btn-light rounded-circle p-1" style="width: 26px; height: 26px;" aria-label="Previous month"><i class="bi bi-chevron-left"></i></button>
+              <button class="btn-icon-subtle rounded-circle" style="width: 26px; height: 26px;" aria-label="Previous month"><i class="bi bi-chevron-left fs-9"></i></button>
               <span class="fs-8 fw-bold">February</span>
-              <button class="btn btn-sm btn-light rounded-circle p-1" style="width: 26px; height: 26px;" aria-label="Next month"><i class="bi bi-chevron-right"></i></button>
+              <button class="btn-icon-subtle rounded-circle" style="width: 26px; height: 26px;" aria-label="Next month"><i class="bi bi-chevron-right fs-9"></i></button>
             </div>
           </div>
         </div>
@@ -230,7 +233,7 @@
                  alt="Hermiston Property" 
                  class="w-100" 
                  style="height: 160px; object-fit: cover;">
-            <span class="position-absolute top-0 end-0 m-3 badge bg-white text-primary rounded-pill shadow-sm px-3 py-2 fs-8 fw-bold">
+            <span class="position-absolute top-0 end-0 m-3 badge rounded-pill shadow-sm px-3 py-2 fs-8 fw-bold" style="background-color: var(--bg-card); color: var(--propio-primary); border: 1px solid var(--border-light);">
               In search
             </span>
           </div>
@@ -346,10 +349,10 @@
           </div>
 
           <!-- Primary Action Buttons -->
-          <button class="btn-propio-dark ripple py-2 fs-8" type="button">
+          <a th:href="@{/properties/new}" class="btn-propio-dark ripple py-2 fs-8 text-decoration-none justify-content-center">
             <i class="bi bi-plus-lg"></i>
             <span>Add Property</span>
-          </button>
+          </a>
 
           <button class="btn-propio-outline ripple py-2 fs-8" type="button">
             <i class="bi bi-sliders"></i>
@@ -448,22 +451,33 @@
       <div class="col-lg-4 col-md-6 fade-in-up stagger-3">
         <div class="card-propio h-100 d-flex flex-column justify-content-between">
           <div>
-            <div class="card-header-clean mb-2">
+            <div class="card-header-clean mb-3">
               <div class="card-title-subtle">
                 <i class="bi bi-tools text-info"></i>
-                <span>Service Requests</span>
+                <span class="fw-semibold">Service Requests</span>
               </div>
-              <span class="badge bg-info-subtle text-info rounded-pill px-2 py-1 fs-9" th:text="${tenantRequests != null ? tenantRequests.size() + ' Tickets' : '0 Tickets'}">0 Tickets</span>
+              <!-- Requirement 2: Dynamic Pluralisation (1 Ticket / 2 Tickets) -->
+              <span class="badge-status badge-status-progress" 
+                    th:text="${tenantRequests != null ? (tenantRequests.size() + (tenantRequests.size() == 1 ? ' Ticket' : ' Tickets')) : '0 Tickets'}">
+                1 Ticket
+              </span>
             </div>
-            <div th:each="req : ${tenantRequests}" class="p-2 mb-2 rounded-3 bg-light fs-8">
-              <div class="d-flex justify-content-between">
-                <strong th:text="${req?.title != null ? req.title : 'Service Ticket'}">Water heater inspection</strong>
-                <span class="badge bg-warning text-dark fs-9" th:text="${req?.status != null ? req.status : 'PENDING'}">IN_PROGRESS</span>
+
+            <!-- Requirement 1: Theme-Aware Surface & WCAG Contrast for Ticket Items -->
+            <div th:each="req : ${tenantRequests}" class="subtle-item-card p-3 mb-2.5">
+              <div class="d-flex justify-content-between align-items-start gap-2 mb-1">
+                <span class="item-title fs-8" th:text="${req?.title != null ? req.title : 'Service Ticket'}">Water heater inspection</span>
+                <span th:if="${req?.status != null and req.status.name() == 'RESOLVED'}" class="badge-status badge-status-paid" th:text="${req.status}">RESOLVED</span>
+                <span th:if="${req?.status != null and req.status.name() == 'IN_PROGRESS'}" class="badge-status badge-status-pending" th:text="${req.status}">IN_PROGRESS</span>
+                <span th:if="${req?.status != null and req.status.name() == 'PENDING'}" class="badge-status badge-status-progress" th:text="${req.status}">PENDING</span>
+                <span th:if="${req?.status != null and req.status.name() == 'CANCELLED'}" class="badge-status badge-status-neutral" th:text="${req.status}">CANCELLED</span>
               </div>
-              <div class="text-muted fs-9 mt-1" th:text="${req?.description != null ? req.description : 'No notes'}">Minor temperature fluctuation reported</div>
+              <div class="item-subtitle fs-9" th:text="${req?.description != null ? req.description : 'No notes'}">Minor temperature fluctuation reported</div>
             </div>
-            <div th:if="${tenantRequests == null or tenantRequests.empty}" class="text-center py-3 text-muted fs-9">
-              No active service requests.
+
+            <div th:if="${tenantRequests == null or tenantRequests.empty}" class="text-center py-4 text-muted fs-8">
+              <i class="bi bi-check2-circle fs-4 d-block mb-1 text-success"></i>
+              No active service tickets.
             </div>
           </div>
           <a th:href="@{/maintenance}" class="btn btn-propio-outline w-100 py-2 fs-8 mt-2">View Maintenance History</a>
@@ -479,9 +493,10 @@
             <div class="fw-bold fs-7">Recent Billing & Payments</div>
             <div class="filter-pill fs-8"><span>All Receipts</span></div>
           </div>
+          <!-- Requirement 5: Audit every table for hardcoded colors -->
           <div class="table-responsive">
-            <table class="table table-hover align-middle fs-8">
-              <thead class="text-muted fs-9 text-uppercase">
+            <table class="table-propio align-middle">
+              <thead>
                 <tr>
                   <th>Reference</th>
                   <th>Amount</th>
@@ -496,15 +511,15 @@
                   <td class="fw-semibold" th:text="${p?.amount != null ? '$' + p.amount : '$0.00'}">$1,450.00</td>
                   <td class="text-muted" th:text="${p?.dueDate != null ? #temporals.format(p.dueDate, 'MMM dd, yyyy') : 'N/A'}">Feb 01, 2024</td>
                   <td>
-                    <span th:if="${p?.status != null and p.status.name() == 'PAID'}" class="badge bg-success-subtle text-success rounded-pill px-2 py-1">PAID</span>
-                    <span th:if="${p?.status != null and p.status.name() == 'OVERDUE'}" class="badge bg-danger-subtle text-danger rounded-pill px-2 py-1">OVERDUE</span>
-                    <span th:if="${p?.status != null and p.status.name() == 'PENDING'}" class="badge bg-warning-subtle text-warning rounded-pill px-2 py-1">PENDING</span>
-                    <span th:if="${p?.status != null and p.status.name() == 'CANCELLED'}" class="badge bg-secondary-subtle text-secondary rounded-pill px-2 py-1">CANCELLED</span>
+                    <span th:if="${p?.status != null and p.status.name() == 'PAID'}" class="badge-status badge-status-paid">PAID</span>
+                    <span th:if="${p?.status != null and p.status.name() == 'OVERDUE'}" class="badge-status badge-status-overdue">OVERDUE</span>
+                    <span th:if="${p?.status != null and p.status.name() == 'PENDING'}" class="badge-status badge-status-pending">PENDING</span>
+                    <span th:if="${p?.status != null and p.status.name() == 'CANCELLED'}" class="badge-status badge-status-neutral">CANCELLED</span>
                   </td>
                   <td class="text-muted" th:text="${p?.paymentMethod != null ? p.paymentMethod : 'Standard'}">Bank Transfer</td>
                 </tr>
                 <tr th:if="${tenantPayments == null or tenantPayments.empty}">
-                  <td colspan="5" class="text-center py-3 text-muted">No payment records found.</td>
+                  <td colspan="5" class="text-center py-4 text-muted fs-8">No payment records found.</td>
                 </tr>
               </tbody>
             </table>
@@ -519,16 +534,19 @@
             <div class="fw-bold fs-7">My Documents</div>
             <i class="bi bi-folder2-open text-primary"></i>
           </div>
+          <!-- Requirement 3: Truncate file names with ellipsis and keep download button visible -->
           <div class="d-flex flex-column gap-2">
-            <div th:each="doc : ${tenantDocuments}" class="d-flex align-items-center justify-content-between p-2 rounded-3 border border-light">
-              <div class="d-flex align-items-center gap-2">
-                <i class="bi bi-file-earmark-pdf text-danger fs-5"></i>
-                <div>
-                  <div class="fw-semibold fs-8" th:text="${doc?.fileName != null ? doc.fileName : 'Document.pdf'}">Lease_Agreement.pdf</div>
-                  <div class="text-muted fs-9" th:text="${doc?.category != null ? doc.category : 'General'}">LEASE_AGREEMENT</div>
+            <div th:each="doc : ${tenantDocuments}" class="subtle-item-card d-flex align-items-center justify-content-between p-2.5 gap-2" style="min-width: 0;">
+              <div class="d-flex align-items-center gap-2.5 overflow-hidden me-2" style="min-width: 0;">
+                <i class="bi bi-file-earmark-pdf text-danger fs-5 flex-shrink-0"></i>
+                <div class="overflow-hidden" style="min-width: 0;">
+                  <div class="item-title fs-8 text-truncate-file" th:text="${doc?.fileName != null ? doc.fileName : 'Document.pdf'}" th:title="${doc?.fileName}">Lease_Agreement.pdf</div>
+                  <div class="item-subtitle fs-9 text-truncate" th:text="${doc?.category != null ? doc.category : 'General'}">LEASE_AGREEMENT</div>
                 </div>
               </div>
-              <button class="btn btn-sm btn-light rounded-circle p-1" style="width: 28px; height: 28px;"><i class="bi bi-download"></i></button>
+              <button class="btn btn-sm btn-icon-subtle flex-shrink-0" style="width: 32px; height: 32px;" title="Download document" aria-label="Download document">
+                <i class="bi bi-download fs-8"></i>
+              </button>
             </div>
             <div th:if="${tenantDocuments == null or tenantDocuments.empty}" class="text-center py-4 text-muted fs-8">
               No documents uploaded yet.

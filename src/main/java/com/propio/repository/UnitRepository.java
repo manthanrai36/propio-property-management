@@ -17,6 +17,8 @@ public interface UnitRepository extends JpaRepository<Unit, Long> {
 
     List<Unit> findByPropertyId(Long propertyId);
 
+    List<Unit> findByPropertyIdOrderByUnitNumberAsc(Long propertyId);
+
     @Query("SELECT u.status, COUNT(u) FROM Unit u GROUP BY u.status")
     List<Object[]> countGroupedByStatus();
 }

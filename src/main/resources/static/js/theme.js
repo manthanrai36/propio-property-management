@@ -154,13 +154,20 @@
     let unitsChart = null;
 
     if (unitsCanvas) {
+      const rawOccupied = parseInt(unitsCanvas.getAttribute('data-occupied') || '0', 10);
+      const rawBooked = parseInt(unitsCanvas.getAttribute('data-booked') || '0', 10);
+      const rawVacant = parseInt(unitsCanvas.getAttribute('data-vacant') || '0', 10);
+      const donutValues = (rawOccupied + rawBooked + rawVacant > 0)
+        ? [rawOccupied, rawBooked, rawVacant]
+        : [210, 45, 34];
+
       const ctxUnits = unitsCanvas.getContext('2d');
       unitsChart = new Chart(ctxUnits, {
         type: 'doughnut',
         data: {
           labels: ['Occupied', 'Booked', 'Vacant'],
           datasets: [{
-            data: [210, 45, 34],
+            data: donutValues,
             backgroundColor: [
               '#5B43EA', // Occupied (Purple)
               '#FF4B93', // Booked (Pink)
@@ -328,21 +335,34 @@
     window.propioCharts = {
       updateTheme: (newTheme) => {
         const dark = newTheme === 'dark';
+        const tickColor = dark ? '#8492A6' : '#94A3B8';
+        const gridColor = dark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)';
+        const tooltipBg = dark ? '#0F172A' : '#111827';
+
         if (unitsChart) {
           unitsChart.data.datasets[0].backgroundColor[2] = dark ? '#2D3748' : '#CFEBF1';
+          if (unitsChart.options.plugins && unitsChart.options.plugins.tooltip) {
+            unitsChart.options.plugins.tooltip.backgroundColor = tooltipBg;
+          }
           unitsChart.update();
         }
         if (paymentsChart) {
-          paymentsChart.options.scales.x.ticks.color = dark ? '#8492A6' : '#94A3B8';
-          paymentsChart.options.scales.y.ticks.color = dark ? '#8492A6' : '#94A3B8';
-          paymentsChart.options.scales.y.grid.color = dark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)';
+          paymentsChart.options.scales.x.ticks.color = tickColor;
+          paymentsChart.options.scales.y.ticks.color = tickColor;
+          paymentsChart.options.scales.y.grid.color = gridColor;
+          if (paymentsChart.options.plugins && paymentsChart.options.plugins.tooltip) {
+            paymentsChart.options.plugins.tooltip.backgroundColor = tooltipBg;
+          }
           paymentsChart.update();
         }
         if (revenueChart) {
-          revenueChart.data.datasets[1].backgroundColor = dark ? 'rgba(255,255,255,0.12)' : 'rgba(108, 76, 241, 0.15)';
-          revenueChart.options.scales.x.ticks.color = dark ? '#8492A6' : '#94A3B8';
-          revenueChart.options.scales.y.ticks.color = dark ? '#8492A6' : '#94A3B8';
-          revenueChart.options.scales.y.grid.color = dark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)';
+          revenueChart.data.datasets[1].backgroundColor = dark ? 'rgba(255,255,255,0.14)' : 'rgba(108, 76, 241, 0.15)';
+          revenueChart.options.scales.x.ticks.color = tickColor;
+          revenueChart.options.scales.y.ticks.color = tickColor;
+          revenueChart.options.scales.y.grid.color = gridColor;
+          if (revenueChart.options.plugins && revenueChart.options.plugins.tooltip) {
+            revenueChart.options.plugins.tooltip.backgroundColor = tooltipBg;
+          }
           revenueChart.update();
         }
       }
@@ -367,12 +387,39 @@
     animateCounters();
     setupCharts();
 
+    // Search shortcut OS detection & Click to focus
+    const isMac = (navigator.userAgentData?.platform || navigator.platform || '').toUpperCase().indexOf('MAC') >= 0;
+    const kbdHint = document.getElementById('search-kbd-hint');
+    const searchInput = document.getElementById('topbar-search-input');
+
+    if (kbdHint) {
+      kbdHint.textContent = isMac ? '⌘ + /' : 'Ctrl + /';
+      kbdHint.title = `Click or press ${isMac ? '⌘ + /' : 'Ctrl + /'} to search`;
+      kbdHint.style.cursor = 'pointer';
+      kbdHint.addEventListener('click', () => {
+        if (searchInput) {
+          searchInput.focus();
+          searchInput.select();
+        }
+      });
+    }
+
     // Keyboard shortcut (⌘+/ or Ctrl+/) for search focus
     document.addEventListener('keydown', (e) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === '/') {
+      if ((e.metaKey || e.ctrlKey) && (e.key === '/' || e.code === 'Slash')) {
         e.preventDefault();
-        const searchInput = document.getElementById('topbar-search-input');
-        if (searchInput) searchInput.focus();
+        if (searchInput) {
+          searchInput.focus();
+          searchInput.select();
+        }
+      }
+    });
+    // Auto-dismiss bootstrap toasts
+    const toastElements = document.querySelectorAll('.toast');
+    toastElements.forEach(toastEl => {
+      if (typeof bootstrap !== 'undefined' && bootstrap.Toast) {
+        const bsToast = new bootstrap.Toast(toastEl, { delay: 4500, autohide: true });
+        bsToast.show();
       }
     });
   });

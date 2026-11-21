@@ -823,3 +823,337 @@ a {
     display: none;
   }
 }
+
+/* -----------------------------------------------------------------------------
+   7. Theme Polish: Dynamic Surfaces, High Contrast & Responsive Badges
+   ----------------------------------------------------------------------------- */
+.subtle-item-card {
+  background-color: var(--bg-card-subtle);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-sm);
+  color: var(--text-main);
+  transition: all var(--transition-fast);
+}
+
+.subtle-item-card:hover {
+  background-color: var(--bg-hover);
+  border-color: var(--propio-primary);
+}
+
+.subtle-item-card .item-title {
+  color: var(--text-heading);
+  font-weight: 600;
+}
+
+.subtle-item-card .item-subtitle {
+  color: var(--text-muted);
+}
+
+/* Propio SaaS Table (Theme-Aware Light & Dark Mode) */
+.table-propio {
+  width: 100%;
+  color: var(--text-main);
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.table-propio th {
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border-light);
+  background-color: transparent;
+}
+
+.table-propio td {
+  color: var(--text-main);
+  font-size: 0.83rem;
+  padding: 14px;
+  vertical-align: middle;
+  border-bottom: 1px solid var(--border-light);
+  background-color: transparent;
+}
+
+.table-propio tr:hover td {
+  background-color: var(--bg-hover);
+}
+
+/* Theme-Aware Semantic Status Badges (WCAG AA Compliant in Light & Dark) */
+.badge-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.badge-status-paid {
+  background-color: rgba(16, 185, 129, 0.15);
+  color: #10B981;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.badge-status-overdue {
+  background-color: rgba(239, 68, 68, 0.15);
+  color: #EF4444;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.badge-status-pending {
+  background-color: rgba(245, 158, 11, 0.15);
+  color: #F59E0B;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.badge-status-progress {
+  background-color: rgba(59, 130, 246, 0.15);
+  color: #3B82F6;
+  border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+.badge-status-neutral {
+  background-color: rgba(148, 163, 184, 0.15);
+  color: var(--text-muted);
+  border: 1px solid var(--border-light);
+}
+
+/* Subtle Action Buttons */
+.btn-icon-subtle {
+  background-color: var(--bg-card-subtle);
+  border: 1px solid var(--border-light);
+  color: var(--text-main);
+  border-radius: var(--radius-full);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.btn-icon-subtle:hover {
+  background-color: var(--bg-hover);
+  color: var(--propio-primary);
+  border-color: var(--propio-primary);
+}
+
+/* Avatar Stack More Pill */
+.avatar-stack-more {
+  background-color: var(--text-heading);
+  color: var(--bg-card);
+  border: 2px solid var(--bg-card);
+  border-radius: var(--radius-full);
+  font-size: 0.7rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Ellipsis container for file listings */
+.text-truncate-file {
+  max-width: 190px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+@media (min-width: 1400px) {
+  .text-truncate-file {
+    max-width: 240px;
+  }
+}
+
+/* ==============================================================================
+   PHASE 3 - Properties & Units Module Styles
+   ============================================================================== */
+
+/* Property Cards */
+.property-card {
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  box-shadow: var(--shadow-card);
+  transition: transform var(--transition-normal), box-shadow var(--transition-normal), border-color var(--transition-normal);
+}
+
+.property-card:hover {
+  transform: translateY(-6px);
+  box-shadow: var(--shadow-card-hover);
+  border-color: rgba(108, 76, 241, 0.35);
+}
+
+.property-card-cover {
+  position: relative;
+  height: 190px;
+  width: 100%;
+  overflow: hidden;
+  background-color: var(--bg-card-subtle);
+}
+
+.property-card-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.property-card:hover .property-card-img {
+  transform: scale(1.06);
+}
+
+.property-badge-overlay {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  right: 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  pointer-events: none;
+}
+
+.property-badge-type {
+  background-color: rgba(15, 23, 42, 0.72);
+  color: #FFFFFF;
+  backdrop-filter: blur(8px);
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+
+.property-badge-status {
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+  font-size: 0.75rem;
+  font-weight: 600;
+  backdrop-filter: blur(8px);
+}
+
+.property-card-body {
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+}
+
+.property-card-footer {
+  padding: 0.85rem 1.25rem;
+  background-color: var(--bg-card-subtle);
+  border-top: 1px solid var(--border-light);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* Skeleton Loading Cards */
+.skeleton {
+  background: linear-gradient(90deg, var(--bg-card-subtle) 25%, var(--bg-hover) 50%, var(--bg-card-subtle) 75%);
+  background-size: 200% 100%;
+  animation: skeletonShimmer 1.5s infinite;
+  border-radius: var(--radius-xs);
+}
+
+@keyframes skeletonShimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.skeleton-cover {
+  height: 190px;
+  width: 100%;
+  border-top-left-radius: var(--radius-md);
+  border-top-right-radius: var(--radius-md);
+}
+
+/* Toast Notifications */
+.animate-toast {
+  animation: toastSlideIn 0.35s cubic-bezier(0.16, 1, 0.3, 1), fadeIn 0.35s ease;
+  border-radius: var(--radius-sm) !important;
+}
+
+@keyframes toastSlideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+/* Custom Propio Pagination */
+.pagination-propio {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.pagination-propio .page-item .page-link {
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-light);
+  color: var(--text-main);
+  border-radius: var(--radius-sm);
+  padding: 6px 14px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  transition: all var(--transition-fast);
+  text-decoration: none;
+}
+
+.pagination-propio .page-item.active .page-link {
+  background-color: var(--propio-primary);
+  border-color: var(--propio-primary);
+  color: #FFFFFF;
+  box-shadow: 0 4px 12px rgba(108, 76, 241, 0.3);
+}
+
+.pagination-propio .page-item .page-link:hover:not(.disabled) {
+  background-color: var(--bg-hover);
+  border-color: var(--propio-primary);
+  color: var(--propio-primary);
+}
+
+.pagination-propio .page-item.disabled .page-link {
+  color: var(--text-muted);
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+/* Property Hero Details Banner */
+.property-hero-banner {
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  box-shadow: var(--shadow-card);
+}
+
+.property-hero-cover {
+  height: 240px;
+  width: 100%;
+  position: relative;
+  overflow: hidden;
+  background-color: var(--bg-card-subtle);
+}
+
+.property-hero-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}

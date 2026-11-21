@@ -50,16 +50,16 @@ public class DashboardController {
     }
 
     private void populateAdminDashboard(Model model) {
-        // Unit status counts
+        // Unit status counts directly from database
         long totalUnits = unitRepository.count();
         long occupiedUnits = unitRepository.countByStatus(UnitStatus.OCCUPIED);
         long bookedUnits = unitRepository.countByStatus(UnitStatus.BOOKED);
         long vacantUnits = unitRepository.countByStatus(UnitStatus.VACANT);
 
-        model.addAttribute("totalUnits", totalUnits > 0 ? totalUnits : 289);
-        model.addAttribute("occupiedUnits", occupiedUnits > 0 ? occupiedUnits : 210);
-        model.addAttribute("bookedUnits", bookedUnits > 0 ? bookedUnits : 45);
-        model.addAttribute("vacantUnits", vacantUnits > 0 ? vacantUnits : 34);
+        model.addAttribute("totalUnits", totalUnits);
+        model.addAttribute("occupiedUnits", occupiedUnits);
+        model.addAttribute("bookedUnits", bookedUnits);
+        model.addAttribute("vacantUnits", vacantUnits);
 
         // Payments metrics
         BigDecimal totalOverdue = paymentRepository.sumAmountByStatus(PaymentStatus.OVERDUE);
@@ -150,14 +150,6 @@ public class DashboardController {
                     .openTicketsCount(0)
                     .build());
         }
-    }
-
-    @GetMapping("/properties")
-    public String properties(@AuthenticationPrincipal CustomUserDetails userDetails, Model model) {
-        model.addAttribute("activeNav", "properties");
-        model.addAttribute("user", userDetails);
-        model.addAttribute("properties", propertyRepository.findAll());
-        return "dashboard";
     }
 
     @GetMapping("/tenants")

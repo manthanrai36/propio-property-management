@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      th:replace="~{layout/main :: layout(~{::#property-details-content})}">
+<head>
+  <title th:text="${property.name + ' | Propio'}">Property Details | Propio</title>
+</head>
+<body>
+
+<div id="property-details-content">
+  <!-- Back Link & Action Header -->
+  <div class="d-flex flex-column flex-md-row align-items-start align-items-md-center justify-content-between gap-3 mb-4 fade-in-up">
+    <div>
+      <a th:href="@{/properties}" 
+         class="d-inline-flex align-items-center gap-1 text-decoration-none fs-8 fw-semibold mb-2" 
+         style="color: var(--propio-primary);">
+        <i class="bi bi-arrow-left"></i>
+        <span>Back to Properties Portfolio</span>
+      </a>
+      <h3 class="fw-bold font-heading mb-1" th:text="${property.name}">Hermiston Residence</h3>
+      <div class="text-muted fs-8 d-flex align-items-center gap-1">
+        <i class="bi bi-geo-alt text-primary"></i>
+        <span th:text="${property.address + ', ' + property.city + ', ' + property.state + ' ' + property.zipCode}">
+          377 NW 10th, Hermiston, OR 97838
+        </span>
+      </div>
+    </div>
+    <div class="d-flex align-items-center gap-2">
+      <button type="button" 
+              class="btn-propio-primary py-2 px-3 fs-8 text-decoration-none ripple" 
+              data-bs-toggle="modal" 
+              data-bs-target="#addUnitModal">
+        <i class="bi bi-plus-circle me-1"></i>
+        <span>Add Unit</span>
+      </button>
+      <a th:href="@{/properties/{id}/edit(id=${property.id})}" 
+         class="btn btn-outline-secondary py-2 px-3 fs-8 ripple">
+        <i class="bi bi-pencil me-1"></i>
+        <span>Edit</span>
+      </a>
+      <button type="button" 
+              class="btn btn-outline-danger py-2 px-3 fs-8 ripple" 
+              data-bs-toggle="modal" 
+              data-bs-target="#deletePropertyModal">
+        <i class="bi bi-trash me-1"></i>
+        <span>Delete</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Hero Details Banner -->
+  <div class="card-propio overflow-hidden mb-4 fade-in-up stagger-1">
+    <div class="row g-0">
+      <div class="col-lg-5 col-md-6">
+        <div style="height: 220px; background-color: var(--bg-card-subtle);">
+          <img th:if="${property.imageUrl != null and !property.imageUrl.isBlank()}" 
+               th:src="${property.imageUrl}" 
+               class="w-100 h-100 object-fit-cover" 
+               th:alt="${property.name}">
+          <div th:unless="${property.imageUrl != null and !property.imageUrl.isBlank()}" 
+               class="w-100 h-100 d-flex align-items-center justify-content-center"
+               style="background: linear-gradient(135deg, #6C4CF1 0%, #8E74F8 100%);">
+            <i class="bi bi-building fs-1 text-white opacity-75"></i>
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-7 col-md-6 p-4 d-flex flex-column justify-content-between">
+        <div>
+          <div class="d-flex align-items-center gap-2 mb-2">
+            <span class="badge bg-primary-subtle text-primary rounded-pill px-3 py-1 fs-9" th:text="${property.propertyType}">
+              Multi-family Apartment
+            </span>
+            <span th:if="${totalUnits > 0 and vacantCount == 0}" class="badge bg-success-subtle text-success rounded-pill px-3 py-1 fs-9">
+              Fully Occupied
+            </span>
+            <span th:if="${totalUnits > 0 and vacantCount > 0}" class="badge bg-info-subtle text-info rounded-pill px-3 py-1 fs-9" th:text="${vacantCount + ' Vacant'}">
+              1 Vacant
+            </span>
+          </div>
+          <h4 class="fw-bold font-heading mb-2" th:text="${property.name}">Property Name</h4>
+          <p class="text-muted fs-8 mb-0" th:text="${property.description != null ? property.description : 'High-quality residential property maintained through the Propio portfolio system.'}">
+            Description text...
+          </p>
+        </div>
+        <div class="pt-3 border-top d-flex align-items-center gap-4 text-muted fs-8 mt-3" style="border-color: var(--border-light) !important;">
+          <div><i class="bi bi-calendar3 me-1 text-primary"></i> Added: <span th:text="${#temporals.format(property.createdAt, 'MMM dd, yyyy')}">Nov 20, 2026</span></div>
+          <div><i class="bi bi-shield-check me-1 text-success"></i> Lease Active Protection Enabled</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- KPI Stat Metrics Row -->
+  <div class="row g-4 mb-4">
+    <!-- Total Units -->
+    <div class="col-xl-3 col-sm-6 fade-in-up stagger-1">
+      <div class="card-propio p-3">
+        <div class="card-title-subtle mb-2">
+          <i class="bi bi-grid-3x3 text-primary"></i>
+          <span>Total Units</span>
+        </div>
+        <div class="fs-2 fw-bold font-heading" th:text="${totalUnits}">4</div>
+        <div class="text-muted fs-9 mt-1">Configured leasable spaces</div>
+      </div>
+    </div>
+
+    <!-- Occupancy Rate -->
+    <div class="col-xl-3 col-sm-6 fade-in-up stagger-2">
+      <div class="card-propio p-3">
+        <div class="card-title-subtle mb-2">
+          <i class="bi bi-pie-chart text-success"></i>
+          <span>Occupancy Rate</span>
+        </div>
+        <div class="d-flex align-items-baseline gap-2">
+          <div class="fs-2 fw-bold font-heading text-success" th:text="${occupancyRate + '%'}">75%</div>
+          <span class="fs-8 text-muted" th:text="${occupiedCount + ' / ' + totalUnits}">3 / 4</span>
+        </div>
+        <div class="progress mt-2" style="height: 6px; background-color: var(--bg-card-subtle);">
+          <div class="progress-bar bg-success rounded-pill" role="progressbar" th:style="'width: ' + ${occupancyRate} + '%;'" aria-valuenow="75" aria-valuemin="0" aria-valuemax="100"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Monthly Gross Rent -->
+    <div class="col-xl-3 col-sm-6 fade-in-up stagger-3">
+      <div class="card-propio p-3">
+        <div class="card-title-subtle mb-2">
+          <i class="bi bi-cash-stack text-warning"></i>
+          <span>Monthly Potential</span>
+        </div>
+        <div class="fs-2 fw-bold font-heading" th:text="${'$' + totalMonthlyRent}">$6,200.00</div>
+        <div class="text-muted fs-9 mt-1">Combined scheduled rent</div>
+      </div>
+    </div>
+
+    <!-- Vacancies -->
+    <div class="col-xl-3 col-sm-6 fade-in-up stagger-4">
+      <div class="card-propio p-3">
+        <div class="card-title-subtle mb-2">
+          <i class="bi bi-door-open text-info"></i>
+          <span>Available Vacant</span>
+        </div>
+        <div class="fs-2 fw-bold font-heading text-info" th:text="${vacantCount}">1</div>
+        <div class="text-muted fs-9 mt-1">Ready for tenant lease</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Units Table Card -->
+  <div class="card-propio p-4 mb-4 fade-in-up stagger-2">
+    <div class="card-header-clean mb-3">
+      <div>
+        <h5 class="fw-bold font-heading mb-1">Units Portfolio</h5>
+        <p class="text-muted fs-8 mb-0">List of all leasable apartments, suites, or rooms in this property.</p>
+      </div>
+      <button type="button" class="btn btn-sm btn-propio-primary py-2 px-3 fs-8 ripple" data-bs-toggle="modal" data-bs-target="#addUnitModal">
+        <i class="bi bi-plus-circle me-1"></i>
+        <span>Add Unit</span>
+      </button>
+    </div>
+
+    <!-- Table -->
+    <div class="table-responsive">
+      <table class="table-propio align-middle">
+        <thead>
+          <tr>
+            <th>Unit #</th>
+            <th>Layout</th>
+            <th>Square Feet</th>
+            <th>Monthly Rent</th>
+            <th>Security Deposit</th>
+            <th>Status</th>
+            <th class="text-end">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Units loop -->
+          <tr th:if="${units != null and !units.isEmpty()}" th:each="u : ${units}">
+            <td>
+              <span class="fw-bold" style="color: var(--text-heading);" th:text="${u.unitNumber}">Apt 101</span>
+            </td>
+            <td>
+              <span class="fs-8 text-muted" th:text="${u.bedrooms + ' Beds • ' + u.bathrooms + ' Bath'}">2 Beds • 1 Bath</span>
+            </td>
+            <td>
+              <span class="fs-8" th:text="${u.squareFeet != null ? u.squareFeet + ' sq ft' : '—'}">920 sq ft</span>
+            </td>
+            <td>
+              <span class="fw-bold fs-8" style="color: var(--propio-primary);" th:text="${'$' + u.rentAmount}">$1,450.00</span>
+            </td>
+            <td>
+              <span class="fs-8 text-muted" th:text="${u.depositAmount != null ? '$' + u.depositAmount : '—'}">$1,450.00</span>
+            </td>
+            <td>
+              <span th:if="${u.status == T(com.propio.model.UnitStatus).OCCUPIED}" class="badge-status badge-status-paid">OCCUPIED</span>
+              <span th:if="${u.status == T(com.propio.model.UnitStatus).VACANT}" class="badge-status badge-status-progress">VACANT</span>
+              <span th:if="${u.status == T(com.propio.model.UnitStatus).BOOKED}" class="badge-status badge-status-overdue">BOOKED</span>
+              <span th:if="${u.status == T(com.propio.model.UnitStatus).MAINTENANCE}" class="badge-status badge-status-pending">MAINTENANCE</span>
+            </td>
+            <td class="text-end">
+              <div class="d-inline-flex align-items-center gap-1">
+                <button type="button" 
+                        class="btn-icon-subtle btn-edit-unit" 
+                        style="width: 32px; height: 32px;"
+                        title="Edit Unit" 
+                        aria-label="Edit Unit"
+                        data-bs-toggle="modal" 
+                        data-bs-target="#editUnitModal"
+                        th:data-unit-id="${u.id}"
+                        th:data-unit-number="${u.unitNumber}"
+                        th:data-bedrooms="${u.bedrooms}"
+                        th:data-bathrooms="${u.bathrooms}"
+                        th:data-sqft="${u.squareFeet}"
+                        th:data-rent="${u.rentAmount}"
+                        th:data-deposit="${u.depositAmount}"
+                        th:data-status="${u.status}">
+                  <i class="bi bi-pencil fs-8"></i>
+                </button>
+                <button type="button" 
+                        class="btn-icon-subtle text-danger btn-delete-unit" 
+                        style="width: 32px; height: 32px;"
+                        title="Delete Unit" 
+                        aria-label="Delete Unit"
+                        data-bs-toggle="modal" 
+                        data-bs-target="#deleteUnitModal"
+                        th:data-unit-id="${u.id}"
+                        th:data-unit-number="${u.unitNumber}">
+                  <i class="bi bi-trash fs-8"></i>
+                </button>
+              </div>
+            </td>
+          </tr>
+
+          <!-- Empty units fallback -->
+          <tr th:if="${units == null or units.isEmpty()}">
+            <td colspan="7" class="text-center py-5">
+              <div class="text-muted fs-8 mb-2">No units currently configured for this property.</div>
+              <button type="button" class="btn btn-sm btn-propio-primary py-2 px-3 fs-9 ripple" data-bs-toggle="modal" data-bs-target="#addUnitModal">
+                <i class="bi bi-plus-circle me-1"></i> Add First Unit
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Modal 1: Add Unit -->
+  <div class="modal fade" id="addUnitModal" tabindex="-1" aria-labelledby="addUnitModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content card-propio p-3">
+        <form th:action="@{/properties/{propertyId}/units(propertyId=${property.id})}" method="post">
+          <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+          <div class="modal-header border-0 pb-0">
+            <h5 class="modal-title fw-bold font-heading text-primary" id="addUnitModalLabel">
+              <i class="bi bi-plus-circle me-1"></i> Add New Unit
+            </h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body py-3">
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label fs-8 fw-semibold" style="color: var(--text-heading);">Unit Number *</label>
+                <input type="text" name="unitNumber" class="form-control fs-8" 
+                       style="background-color: var(--bg-card-subtle); border-color: var(--border-light); color: var(--text-main);"
+                       placeholder="e.g. Apt 101, Suite 2B" required />
+              </div>
+              <div class="col-md-6">
+                <label class="form-label fs-8 fw-semibold" style="color: var(--text-heading);">Status *</label>
+                <select name="status" class="form-select fs-8" 
+                        style="background-color: var(--bg-card-subtle); border-color: var(--border-light); color: var(--text-main);" required>
+                  <option value="VACANT">VACANT</option>
+                  <option value="OCCUPIED">OCCUPIED</option>
+                  <option value="BOOKED">BOOKED</option>
+                  <option value="MAINTENANCE">MAINTENANCE</option>
+                </select>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label fs-8 fw-semibold" style="color: var(--text-heading);">Bedrooms *</label>
+                <input type="number" name="bedrooms" min="0" value="1" class="form-control fs-8" 
+                       style="background-color: var(--bg-card-subtle); border-color: var(--border-light); color: var(--text-main);" required />
+              </div>
+              <div class="col-md-6">
+                <label class="form-label fs-8 fw-semibold" style="color: var(--text-heading);">Bathrooms *</label>
+                <input type="number" name="bathrooms" min="0" value="1" class="form-control fs-8" 
+                       style="background-color: var(--bg-card-subtle); border-color: var(--border-light); color: var(--text-main);" required />
+              </div>
+              <div class="col-md-4">
+                <label class="form-label fs-8 fw-semibold" style="color: var(--text-heading);">Sq Footage *</label>
+                <input type="number" step="0.1" name="squareFeet" min="50" value="750" class="form-control fs-8" 
+                       style="background-color: var(--bg-card-subtle); border-color: var(--border-light); color: var(--text-main);" required />
+              </div>
+              <div class="col-md-4">
+                <label class="form-label fs-8 fw-semibold" style="color: var(--text-heading);">Rent ($/mo) *</label>
+                <input type="number" step="0.01" name="rentAmount" min="1" value="1200.00" class="form-control fs-8" 
+                       style="background-color: var(--bg-card-subtle); border-color: var(--border-light); color: var(--text-main);" required />
+              </div>
+              <div class="col-md-4">
+                <label class="form-label fs-8 fw-semibold" style="color: var(--text-heading);">Deposit ($)</label>
+                <input type="number" step="0.01" name="depositAmount" min="0" value="1200.00" class="form-control fs-8" 
+                       style="background-color: var(--bg-card-subtle); border-color: var(--border-light); color: var(--text-main);" />
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer border-0 pt-0">
+            <button type="button" class="btn btn-outline-secondary py-2 px-3 fs-8" data-bs-dismiss="modal">Cancel</button>
+            <button type="submit" class="btn-propio-primary py-2 px-3 fs-8 ripple">Save Unit</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 2: Edit Unit -->
+  <div class="modal fade" id="editUnitModal" tabindex="-1" aria-labelledby="editUnitModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content card-propio p-3">
+        <form id="editUnitForm" method="post" action="">
+          <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+          <div class="modal-header border-0 pb-0">
+            <h5 class="modal-title fw-bold font-heading text-primary" id="editUnitModalLabel">
+              <i class="bi bi-pencil-square me-1"></i> Edit Unit
+            </h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body py-3">
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label fs-8 fw-semibold" style="color: var(--text-heading);">Unit Number *</label>
+                <input type="text" id="editUnitNumber" name="unitNumber" class="form-control fs-8" 
+                       style="background-color: var(--bg-card-subtle); border-color: var(--border-light); color: var(--text-main);" required />
+              </div>
+              <div class="col-md-6">
+                <label class="form-label fs-8 fw-semibold" style="color: var(--text-heading);">Status *</label>
+                <select id="editUnitStatus" name="status" class="form-select fs-8" 
+                        style="background-color: var(--bg-card-subtle); border-color: var(--border-light); color: var(--text-main);" required>
+                  <option value="VACANT">VACANT</option>
+                  <option value="OCCUPIED">OCCUPIED</option>
+                  <option value="BOOKED">BOOKED</option>
+                  <option value="MAINTENANCE">MAINTENANCE</option>
+                </select>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label fs-8 fw-semibold" style="color: var(--text-heading);">Bedrooms *</label>
+                <input type="number" id="editBedrooms" name="bedrooms" min="0" class="form-control fs-8" 
+                       style="background-color: var(--bg-card-subtle); border-color: var(--border-light); color: var(--text-main);" required />
+              </div>
+              <div class="col-md-6">
+                <label class="form-label fs-8 fw-semibold" style="color: var(--text-heading);">Bathrooms *</label>
+                <input type="number" id="editBathrooms" name="bathrooms" min="0" class="form-control fs-8" 
+                       style="background-color: var(--bg-card-subtle); border-color: var(--border-light); color: var(--text-main);" required />
+              </div>
+              <div class="col-md-4">
+                <label class="form-label fs-8 fw-semibold" style="color: var(--text-heading);">Sq Footage *</label>
+                <input type="number" step="0.1" id="editSqft" name="squareFeet" min="50" class="form-control fs-8" 
+                       style="background-color: var(--bg-card-subtle); border-color: var(--border-light); color: var(--text-main);" required />
+              </div>
+              <div class="col-md-4">
+                <label class="form-label fs-8 fw-semibold" style="color: var(--text-heading);">Rent ($/mo) *</label>
+                <input type="number" step="0.01" id="editRent" name="rentAmount" min="1" class="form-control fs-8" 
+                       style="background-color: var(--bg-card-subtle); border-color: var(--border-light); color: var(--text-main);" required />
+              </div>
+              <div class="col-md-4">
+                <label class="form-label fs-8 fw-semibold" style="color: var(--text-heading);">Deposit ($)</label>
+                <input type="number" step="0.01" id="editDeposit" name="depositAmount" min="0" class="form-control fs-8" 
+                       style="background-color: var(--bg-card-subtle); border-color: var(--border-light); color: var(--text-main);" />
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer border-0 pt-0">
+            <button type="button" class="btn btn-outline-secondary py-2 px-3 fs-8" data-bs-dismiss="modal">Cancel</button>
+            <button type="submit" class="btn-propio-primary py-2 px-3 fs-8 ripple">Update Unit</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 3: Delete Unit Confirmation -->
+  <div class="modal fade" id="deleteUnitModal" tabindex="-1" aria-labelledby="deleteUnitModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content card-propio p-3">
+        <div class="modal-header border-0 pb-0">
+          <h5 class="modal-title fw-bold font-heading text-danger d-flex align-items-center gap-2" id="deleteUnitModalLabel">
+            <i class="bi bi-exclamation-triangle-fill"></i>
+            <span>Delete Unit</span>
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body py-3">
+          <p class="fs-8 text-muted mb-2">
+            Are you sure you want to delete unit <strong id="deleteUnitNumSpan" style="color: var(--text-heading);">this unit</strong>?
+          </p>
+          <div class="alert alert-warning fs-9 mb-0">
+            If this unit has an active tenant lease, deletion will be blocked automatically.
+          </div>
+        </div>
+        <div class="modal-footer border-0 pt-0">
+          <button type="button" class="btn btn-outline-secondary py-2 px-3 fs-8" data-bs-dismiss="modal">Cancel</button>
+          <form id="deleteUnitForm" method="post" action="">
+            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+            <button type="submit" class="btn btn-danger py-2 px-3 fs-8 ripple">
+              <i class="bi bi-trash me-1"></i> Delete Unit
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 4: Delete Property Confirmation -->
+  <div class="modal fade" id="deletePropertyModal" tabindex="-1" aria-labelledby="deletePropModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content card-propio p-3">
+        <div class="modal-header border-0 pb-0">
+          <h5 class="modal-title fw-bold font-heading text-danger d-flex align-items-center gap-2" id="deletePropModalLabel">
+            <i class="bi bi-exclamation-triangle-fill"></i>
+            <span>Confirm Property Deletion</span>
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body py-3">
+          <p class="fs-8 text-muted mb-2">
+            Are you sure you want to delete property <strong th:text="${property.name}" style="color: var(--text-heading);">this property</strong>?
+          </p>
+          <div class="alert alert-warning fs-9 d-flex align-items-start gap-2 mb-0">
+            <i class="bi bi-shield-lock-fill fs-6 mt-1 flex-shrink-0 text-warning"></i>
+            <span>
+              <strong>Active Lease Protection:</strong> If any unit inside this property currently has an active tenant agreement, deletion will be blocked with a clear warning to protect legal tenant records.
+            </span>
+          </div>
+        </div>
+        <div class="modal-footer border-0 pt-0">
+          <button type="button" class="btn btn-outline-secondary py-2 px-3 fs-8" data-bs-dismiss="modal">Cancel</button>
+          <form th:action="@{/properties/{id}/delete(id=${property.id})}" method="post">
+            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+            <button type="submit" class="btn btn-danger py-2 px-3 fs-8 ripple">
+              <i class="bi bi-trash me-1"></i> Delete Property
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- JavaScript for Hooking up Unit Modals -->
+  <script th:inline="javascript">
+    document.addEventListener('DOMContentLoaded', function () {
+      const propertyId = /*[[${property.id}]]*/ 1;
+
+      // Edit Unit Modal Handler
+      const editModal = document.getElementById('editUnitModal');
+      if (editModal) {
+        editModal.addEventListener('show.bs.modal', function (event) {
+          const btn = event.relatedTarget;
+          const unitId = btn.getAttribute('data-unit-id');
+          const unitNum = btn.getAttribute('data-unit-number');
+          const beds = btn.getAttribute('data-bedrooms');
+          const baths = btn.getAttribute('data-bathrooms');
+          const sqft = btn.getAttribute('data-sqft');
+          const rent = btn.getAttribute('data-rent');
+          const deposit = btn.getAttribute('data-deposit');
+          const status = btn.getAttribute('data-status');
+
+          editModal.querySelector('#editUnitForm').action = '/properties/' + propertyId + '/units/' + unitId + '/edit';
+          editModal.querySelector('#editUnitNumber').value = unitNum || '';
+          editModal.querySelector('#editBedrooms').value = beds || '1';
+          editModal.querySelector('#editBathrooms').value = baths || '1';
+          editModal.querySelector('#editSqft').value = sqft || '';
+          editModal.querySelector('#editRent').value = rent || '';
+          editModal.querySelector('#editDeposit').value = deposit || '';
+          if (status) {
+            editModal.querySelector('#editUnitStatus').value = status;
+          }
+        });
+      }
+
+      // Delete Unit Modal Handler
+      const deleteUnitModal = document.getElementById('deleteUnitModal');
+      if (deleteUnitModal) {
+        deleteUnitModal.addEventListener('show.bs.modal', function (event) {
+          const btn = event.relatedTarget;
+          const unitId = btn.getAttribute('data-unit-id');
+          const unitNum = btn.getAttribute('data-unit-number');
+
+          const numSpan = deleteUnitModal.querySelector('#deleteUnitNumSpan');
+          const form = deleteUnitModal.querySelector('#deleteUnitForm');
+
+          if (numSpan) numSpan.textContent = unitNum ? '#' + unitNum : 'this unit';
+          if (form) form.action = '/properties/' + propertyId + '/units/' + unitId + '/delete';
+        });
+      }
+    });
+  </script>
+</div>
+
+</body>
+</html>
