@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      th:replace="~{layout/main :: layout(~{::#tenant-leases-content})}">
+<head>
+  <title>My Leases | Propio</title>
+</head>
+<body>
+
+<div id="tenant-leases-content">
+  <!-- Page Header -->
+  <div class="d-flex flex-column flex-md-row align-items-start align-items-md-center justify-content-between gap-3 mb-4 fade-in-up">
+    <div>
+      <h3 class="fw-bold font-heading mb-1">My Leases & Agreements</h3>
+      <p class="text-muted fs-8 mb-0">View your active tenancy contract, payment schedule ledger, and official lease documents.</p>
+    </div>
+    <div class="d-flex align-items-center gap-2">
+      <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-2 rounded-pill fs-9 fw-bold">
+        <i class="bi bi-shield-check me-1"></i> Verified Resident
+      </span>
+    </div>
+  </div>
+
+  <!-- Empty State if Tenant has no leases -->
+  <div th:if="${primaryLease == null}" class="card-propio text-center py-5 fade-in-up">
+    <div class="rounded-circle d-inline-flex align-items-center justify-content-center p-3 mb-3" style="background: rgba(108, 76, 241, 0.1);">
+      <i class="bi bi-house-door text-primary fs-1"></i>
+    </div>
+    <h5 class="fw-bold font-heading mb-1">No Active Lease Agreement</h5>
+    <p class="text-muted fs-8 mb-3">You do not currently have an active residential lease assigned to your account.</p>
+    <a th:href="@{/dashboard}" class="btn-propio-primary py-2 px-3 fs-8 text-decoration-none">Return to Dashboard</a>
+  </div>
+
+  <!-- Active Lease Hero Card -->
+  <div th:if="${primaryLease != null}" class="card-propio p-4 mb-4 fade-in-up stagger-1">
+    <div class="row g-4 align-items-center">
+      <!-- Property Photo -->
+      <div class="col-lg-4 col-md-5">
+        <div class="position-relative rounded-4 overflow-hidden shadow-sm" style="height: 220px;">
+          <img th:if="${primaryLease.unit.property.imageUrl != null}" 
+               th:src="${primaryLease.unit.property.imageUrl}" 
+               th:alt="${primaryLease.unit.property.name}" 
+               class="w-100 h-100 object-fit-cover">
+          <div th:unless="${primaryLease.unit.property.imageUrl != null}" 
+               class="w-100 h-100 d-flex align-items-center justify-content-center" 
+               style="background: linear-gradient(135deg, var(--color-primary), #8B5CF6);">
+            <i class="bi bi-building text-white fs-1"></i>
+          </div>
+          <!-- Unit Badge -->
+          <span class="position-absolute top-0 start-0 m-3 badge bg-dark bg-opacity-75 text-white backdrop-blur px-3 py-2 rounded-pill fs-8 fw-bold">
+            Unit <span th:text="${primaryLease.unit.unitNumber}">Apt 101</span>
+          </span>
+        </div>
+      </div>
+
+      <!-- Lease Contract Details -->
+      <div class="col-lg-8 col-md-7">
+        <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-2">
+          <div>
+            <h4 class="fw-bold font-heading mb-0 text-main" th:text="${primaryLease.unit.property.name}">Ledeberg 25</h4>
+            <p class="text-muted fs-8 mb-0" th:text="${primaryLease.unit.property.address + ', ' + primaryLease.unit.property.city + ', ' + primaryLease.unit.property.state}">Address</p>
+          </div>
+          <div>
+            <span th:if="${primaryLease.active and (primaryLease.endDate.isBefore(T(java.time.LocalDate).now().plusDays(60)) and !primaryLease.endDate.isBefore(T(java.time.LocalDate).now()))}" 
+                  class="badge bg-warning-subtle text-warning border border-warning-subtle px-3 py-2 rounded-pill fs-8 fw-bold">
+              <i class="bi bi-clock-history me-1"></i>Expiring Soon
+            </span>
+            <span th:if="${primaryLease.active and (!primaryLease.endDate.isBefore(T(java.time.LocalDate).now().plusDays(60)) or primaryLease.endDate.isBefore(T(java.time.LocalDate).now()))}" 
+                  class="badge bg-success-subtle text-success border border-success-subtle px-3 py-2 rounded-pill fs-8 fw-bold">
+              <i class="bi bi-check-circle-fill me-1"></i>Active Contract
+            </span>
+          </div>
+        </div>
+
+        <hr class="my-3 border-light">
+
+        <!-- Financial & Term Stats -->
+        <div class="row g-3 text-center mb-3">
+          <div class="col-4">
+            <div class="p-2 rounded-3" style="background: var(--bg-card-subtle); border: 1px solid var(--border-light);">
+              <span class="text-muted fs-9 d-block">Monthly Rent</span>
+              <strong class="fs-7 text-primary fw-bold" th:text="${primaryLease.monthlyRent != null ? '$' + #numbers.formatDecimal(primaryLease.monthlyRent, 1, 'COMMA', 2, 'POINT') : '$0.00'}">$1,450.00</strong>
+            </div>
+          </div>
+          <div class="col-4">
+            <div class="p-2 rounded-3" style="background: var(--bg-card-subtle); border: 1px solid var(--border-light);">
+              <span class="text-muted fs-9 d-block">Security Deposit</span>
+              <strong class="fs-7 text-main fw-bold" th:text="${primaryLease.securityDeposit != null ? '$' + #numbers.formatDecimal(primaryLease.securityDeposit, 1, 'COMMA', 2, 'POINT') : '$0.00'}">$1,450.00</strong>
+            </div>
+          </div>
+          <div class="col-4">
+            <div class="p-2 rounded-3" style="background: var(--bg-card-subtle); border: 1px solid var(--border-light);">
+              <span class="text-muted fs-9 d-block">Lease Expiry</span>
+              <strong class="fs-8 text-main fw-bold" th:text="${#temporals.format(primaryLease.endDate, 'MMM dd, yyyy')}">Sep 21, 2027</strong>
+            </div>
+          </div>
+        </div>
+
+        <div class="d-flex align-items-center justify-content-between fs-8 text-muted">
+          <span><i class="bi bi-calendar3 me-1"></i> Commencement: <strong class="text-main" th:text="${#temporals.format(primaryLease.startDate, 'MMM dd, yyyy')}">Dec 01, 2023</strong></span>
+          <span><i class="bi bi-door-open me-1"></i> Layout: <strong class="text-main" th:text="${primaryLease.unit.bedrooms + ' Beds / ' + primaryLease.unit.bathrooms + ' Baths'}">2 Beds / 1 Bath</strong></span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Payment Schedule Ledger -->
+  <div th:if="${primaryLease != null}" class="card-propio p-4 mb-4 fade-in-up stagger-2">
+    <div class="d-flex align-items-center justify-content-between mb-3">
+      <h5 class="fw-bold font-heading fs-7 mb-0 text-main">
+        <i class="bi bi-calendar-check text-primary me-2"></i>Automated Payment Schedule
+      </h5>
+      <span class="fs-9 text-muted" th:text="${payments.size() + ' Billing Cycles'}">Cycles</span>
+    </div>
+
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0 fs-8 table-propio" style="color: var(--text-main);">
+        <thead class="table-light fs-9 text-uppercase text-muted" style="background-color: var(--bg-card-subtle);">
+          <tr>
+            <th class="py-3 px-3">Invoice #</th>
+            <th class="py-3 px-3">Due Date</th>
+            <th class="py-3 px-3">Amount</th>
+            <th class="py-3 px-3">Status</th>
+            <th class="py-3 px-3">Paid On</th>
+            <th class="py-3 px-3 text-end">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr th:if="${payments == null or payments.empty}">
+            <td colspan="6" class="text-center py-4 text-muted">No scheduled payments generated yet.</td>
+          </tr>
+          <tr th:each="p : ${payments}">
+            <td class="px-3 fw-semibold font-monospace" th:text="${p.transactionReference}">INV-1-2611</td>
+            <td class="px-3" th:text="${#temporals.format(p.dueDate, 'MMM dd, yyyy')}">Nov 13, 2026</td>
+            <td class="px-3 fw-bold text-main" th:text="${p.amount != null ? '$' + #numbers.formatDecimal(p.amount, 1, 'COMMA', 2, 'POINT') : '$0.00'}">$1,450.00</td>
+            <td class="px-3">
+              <span th:if="${p.status != null and p.status.name() == 'PAID'}" class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1 rounded-pill fs-9 fw-semibold">
+                <i class="bi bi-check-circle-fill me-1"></i>PAID
+              </span>
+              <span th:if="${p.status != null and p.status.name() == 'OVERDUE'}" class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-1 rounded-pill fs-9 fw-semibold">
+                <i class="bi bi-exclamation-circle-fill me-1"></i>OVERDUE
+              </span>
+              <span th:if="${p.status != null and p.status.name() == 'PENDING'}" class="badge bg-warning-subtle text-warning border border-warning-subtle px-2 py-1 rounded-pill fs-9 fw-semibold">
+                <i class="bi bi-clock-history me-1"></i>PENDING
+              </span>
+            </td>
+            <td class="px-3 text-muted" th:text="${p.paidDate != null ? #temporals.format(p.paidDate, 'MMM dd, yyyy') : '—'}">—</td>
+            <td class="px-3 text-end">
+              <span th:if="${p.status.name() == 'PAID'}" class="text-success fs-9 fw-semibold">
+                <i class="bi bi-receipt me-1"></i>Receipt
+              </span>
+              <a th:unless="${p.status.name() == 'PAID'}" th:href="@{/payments}" class="btn btn-sm btn-propio-primary py-1 px-3 fs-9 rounded-pill">
+                Pay Now
+              </a>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Documents & Inspection Reports -->
+  <div th:if="${primaryLease != null}" class="card-propio p-4 mb-4 fade-in-up stagger-3">
+    <div class="d-flex align-items-center justify-content-between mb-3">
+      <h5 class="fw-bold font-heading fs-7 mb-0 text-main">
+        <i class="bi bi-folder2-open text-primary me-2"></i>Official Lease Documents
+      </h5>
+      <span class="fs-9 text-muted" th:text="${documents.size() + ' Documents'}">Docs</span>
+    </div>
+
+    <div th:if="${documents == null or documents.empty}" class="text-center py-4 text-muted fs-8">
+      No digital documents uploaded for this lease.
+    </div>
+
+    <div th:if="${documents != null and !documents.empty}" class="row g-3">
+      <div class="col-md-6" th:each="doc : ${documents}">
+        <div class="p-3 rounded-3 d-flex align-items-center justify-content-between" 
+             style="background: var(--bg-card-subtle); border: 1px solid var(--border-light);">
+          <div class="d-flex align-items-center gap-3">
+            <div class="rounded-3 p-2 bg-primary-subtle text-primary">
+              <i class="bi bi-file-earmark-pdf fs-4"></i>
+            </div>
+            <div>
+              <span class="fw-semibold fs-8 text-main d-block text-truncate" style="max-width: 220px;" th:text="${doc.fileName}">Agreement.pdf</span>
+              <span class="text-muted fs-9" th:text="${doc.category}">LEASE_AGREEMENT</span>
+            </div>
+          </div>
+          <a th:href="@{${doc.fileUrl}}" target="_blank" class="btn btn-sm btn-outline-primary rounded-pill px-3 py-1 fs-9">
+            <i class="bi bi-download me-1"></i> Download
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

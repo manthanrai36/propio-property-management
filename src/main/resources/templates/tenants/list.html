@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      th:replace="~{layout/main :: layout(~{::#tenants-content})}">
+<head>
+  <title>Tenants | Propio</title>
+</head>
+<body>
+
+<div id="tenants-content">
+  <!-- Page Header & Action Bar -->
+  <div class="d-flex flex-column flex-md-row align-items-start align-items-md-center justify-content-between gap-3 mb-4 fade-in-up">
+    <div>
+      <h3 class="fw-bold font-heading mb-1">Tenants Portfolio</h3>
+      <p class="text-muted fs-8 mb-0">Manage resident profiles, track lease status, review payment compliance, and provision accounts.</p>
+    </div>
+    <div class="d-flex align-items-center gap-2">
+      <a th:href="@{/tenants/add}" class="btn-propio-primary py-2 px-3 fs-8 text-decoration-none ripple">
+        <i class="bi bi-person-plus-fill me-1"></i>
+        <span>Add Tenant</span>
+      </a>
+    </div>
+  </div>
+
+  <!-- Temporary Password Alert Callout (Shown once upon tenant creation) -->
+  <div th:if="${tempPassword != null}" class="card-propio p-3 mb-4 border-primary fade-in-up" 
+       style="border: 2px dashed var(--color-primary); background: rgba(108, 76, 241, 0.05);">
+    <div class="d-flex align-items-center gap-3">
+      <div class="rounded-circle d-flex align-items-center justify-content-center text-white" 
+           style="width: 48px; height: 48px; background: var(--color-primary); flex-shrink: 0;">
+        <i class="bi bi-key-fill fs-4"></i>
+      </div>
+      <div class="flex-grow-1">
+        <h6 class="fw-bold text-primary mb-1">Temporary Login Credentials Generated!</h6>
+        <p class="fs-8 text-muted mb-2">A secure tenant login account was created. Please share these credentials with the tenant; this temporary password is shown once.</p>
+        <div class="d-flex flex-wrap align-items-center gap-3">
+          <div class="px-3 py-1 rounded-3 fs-8 fw-semibold" style="background: var(--bg-card-subtle); border: 1px solid var(--border-light);">
+            <span class="text-muted">Email:</span> <strong th:text="${createdTenantEmail}" class="text-main">tenant@example.com</strong>
+          </div>
+          <div class="px-3 py-1 rounded-3 fs-8 fw-semibold" style="background: var(--bg-card-subtle); border: 1px solid var(--border-light);">
+            <span class="text-muted">Temporary Password:</span> 
+            <strong id="tempPassText" th:text="${tempPassword}" class="text-primary font-monospace ms-1">Propio@1234!</strong>
+          </div>
+          <button type="button" class="btn btn-sm btn-outline-primary fs-9 rounded-pill px-3 py-1" onclick="copyPassword()">
+            <i class="bi bi-clipboard me-1"></i> Copy Password
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Search & Filter Controls -->
+  <div class="card-propio p-3 mb-4 fade-in-up stagger-1">
+    <form th:action="@{/tenants}" method="get" class="row g-2 align-items-center" id="tenantFilterForm">
+      <!-- Search Input -->
+      <div class="col-lg-5 col-md-6">
+        <div class="input-group">
+          <span class="input-group-text bg-transparent border-end-0 text-muted" style="border-color: var(--border-light);">
+            <i class="bi bi-search"></i>
+          </span>
+          <input type="text" 
+                 name="search" 
+                 class="form-control border-start-0 fs-8" 
+                 style="background-color: var(--bg-card-subtle); border-color: var(--border-light); color: var(--text-main);"
+                 placeholder="Search by name, email, or phone..." 
+                 th:value="${search}">
+        </div>
+      </div>
+
+      <!-- Filter Tabs / Status Select -->
+      <div class="col-lg-4 col-md-6">
+        <div class="d-flex gap-1 p-1 rounded-3" style="background: var(--bg-card-subtle); border: 1px solid var(--border-light);">
+          <a th:href="@{/tenants(search=${search}, filter='ALL')}" 
+             class="btn btn-sm flex-fill fs-9 fw-semibold rounded-2 text-decoration-none py-1"
+             th:classappend="${filter == null or filter == 'ALL'} ? 'btn-propio-primary' : 'text-muted'">All</a>
+          <a th:href="@{/tenants(search=${search}, filter='ACTIVE')}" 
+             class="btn btn-sm flex-fill fs-9 fw-semibold rounded-2 text-decoration-none py-1"
+             th:classappend="${filter == 'ACTIVE'} ? 'btn-propio-primary' : 'text-muted'">Active</a>
+          <a th:href="@{/tenants(search=${search}, filter='OVERDUE')}" 
+             class="btn btn-sm flex-fill fs-9 fw-semibold rounded-2 text-decoration-none py-1"
+             th:classappend="${filter == 'OVERDUE'} ? 'btn-propio-primary' : 'text-muted'">Overdue</a>
+          <a th:href="@{/tenants(search=${search}, filter='MOVED_OUT')}" 
+             class="btn btn-sm flex-fill fs-9 fw-semibold rounded-2 text-decoration-none py-1"
+             th:classappend="${filter == 'MOVED_OUT'} ? 'btn-propio-primary' : 'text-muted'">Moved Out</a>
+        </div>
+      </div>
+
+      <!-- Submit & Reset Buttons -->
+      <div class="col-lg-3 col-md-12 d-flex justify-content-lg-end gap-2">
+        <button type="submit" class="btn-propio-primary py-2 px-3 fs-8 flex-fill flex-lg-grow-0 ripple">
+          <i class="bi bi-funnel me-1"></i> Filter
+        </button>
+        <a th:href="@{/tenants}" class="btn-propio-secondary py-2 px-3 fs-8 flex-fill flex-lg-grow-0 text-decoration-none text-center ripple">
+          Reset
+        </a>
+      </div>
+    </form>
+  </div>
+
+  <!-- Empty State -->
+  <div th:if="${tenantsPage == null or tenantsPage.content.empty}" class="card-propio text-center py-5 fade-in-up">
+    <div class="mb-3">
+      <div class="rounded-circle d-inline-flex align-items-center justify-content-center p-3" style="background: rgba(108, 76, 241, 0.1);">
+        <i class="bi bi-people text-primary fs-1"></i>
+      </div>
+    </div>
+    <h5 class="fw-bold font-heading mb-1">No Tenants Found</h5>
+    <p class="text-muted fs-8 mb-3">No tenant records match your current search criteria or filter.</p>
+    <a th:href="@{/tenants/add}" class="btn-propio-primary py-2 px-4 fs-8 text-decoration-none d-inline-flex align-items-center gap-2">
+      <i class="bi bi-person-plus-fill"></i> Add New Tenant
+    </a>
+  </div>
+
+  <!-- Tenant Cards Portfolio Grid -->
+  <div th:if="${tenantsPage != null and !tenantsPage.content.empty}" class="row g-4 mb-4">
+    <div class="col-xl-3 col-lg-4 col-md-6" th:each="t, iter : ${tenantsPage.content}">
+      <div class="card-propio h-100 p-3 d-flex flex-column justify-content-between hover-lift fade-in-up"
+           th:classappend="'stagger-' + (${iter.index % 4} + 1)">
+        
+        <!-- Card Header: Avatar, Name & Role -->
+        <div>
+          <div class="d-flex align-items-start justify-content-between mb-3">
+            <div class="d-flex align-items-center gap-3">
+              <!-- Avatar or Initials -->
+              <div class="position-relative" style="width: 52px; height: 52px; flex-shrink: 0;">
+                <img th:if="${t.avatarUrl != null and !t.avatarUrl.isBlank()}" 
+                     th:src="${t.avatarUrl}" 
+                     th:alt="${t.fullName}" 
+                     class="rounded-circle object-fit-cover shadow-sm w-100 h-100" 
+                     style="border: 2px solid var(--border-light);">
+                <div th:unless="${t.avatarUrl != null and !t.avatarUrl.isBlank()}"
+                     class="rounded-circle d-flex align-items-center justify-content-center fw-bold fs-7 text-white shadow-sm w-100 h-100"
+                     th:style="'background: ' + ${t.avatarColor} + ';'"
+                     th:text="${t.initials}">TA</div>
+                <!-- Status Dot Indicator -->
+                <span class="position-absolute bottom-0 end-0 rounded-circle"
+                      th:style="${t.leaseStatus == 'Active' or t.leaseStatus == 'Expiring Soon'} ? 'background-color: var(--propio-success); width: 13px; height: 13px; border: 2px solid var(--bg-card);' : 'background-color: var(--text-muted); width: 13px; height: 13px; border: 2px solid var(--bg-card);'"></span>
+              </div>
+              <div>
+                <a th:href="@{'/tenants/' + ${t.id}}" class="fw-bold font-heading text-main text-decoration-none fs-8 mb-0 d-block text-truncate" style="max-width: 140px;" th:text="${t.fullName}">Leslie Alexander</a>
+                <span class="text-muted fs-9 d-block text-truncate" style="max-width: 140px;" th:text="${t.occupation != null and !t.occupation.isBlank() ? t.occupation : 'Tenant'}">Designer</span>
+              </div>
+            </div>
+
+            <!-- Dropdown Menu -->
+            <div class="dropdown">
+              <button class="btn btn-sm btn-icon-topbar border-0" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                <i class="bi bi-three-dots-vertical text-muted"></i>
+              </button>
+              <ul class="dropdown-menu dropdown-menu-end shadow-card border-0 rounded-3 fs-8">
+                <li><a class="dropdown-item py-2" th:href="@{'/tenants/' + ${t.id}}"><i class="bi bi-eye me-2 text-primary"></i>View Profile</a></li>
+                <li><a class="dropdown-item py-2" th:href="@{'/tenants/' + ${t.id} + '/edit'}"><i class="bi bi-pencil me-2 text-muted"></i>Edit Details</a></li>
+                <li><hr class="dropdown-divider"></li>
+                <li>
+                  <button type="button" class="dropdown-item py-2 text-danger" 
+                          th:data-id="${t.id}"
+                          th:data-name="${t.fullName}"
+                          onclick="openDeleteTenantModal(this.getAttribute('data-id'), this.getAttribute('data-name'))">
+                    <i class="bi bi-trash me-2"></i>Delete Tenant
+                  </button>
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          <!-- Unit & Property Info -->
+          <div class="p-2 rounded-3 mb-3" style="background-color: var(--bg-card-subtle); border: 1px solid var(--border-light);">
+            <div class="d-flex align-items-center justify-content-between mb-1">
+              <span class="text-muted fs-9">Current Unit</span>
+              <span class="fw-bold fs-9 text-main" th:text="${t.currentUnitNumber}">Apt 101</span>
+            </div>
+            <div class="text-muted fs-9 text-truncate" th:text="${t.propertyName}">Ledeberg 25</div>
+          </div>
+
+          <!-- Contact Details -->
+          <div class="mb-3 fs-9">
+            <div class="d-flex align-items-center gap-2 mb-1 text-muted text-truncate">
+              <i class="bi bi-envelope text-primary"></i>
+              <span th:text="${t.email}">tenant@example.com</span>
+            </div>
+            <div class="d-flex align-items-center gap-2 text-muted">
+              <i class="bi bi-telephone text-primary"></i>
+              <span th:text="${t.phone != null and !t.phone.isBlank() ? t.phone : 'No phone'}">+1 555-0192</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card Footer: Badges & Profile Link -->
+        <div class="pt-2 border-top border-light d-flex align-items-center justify-content-between">
+          <!-- Lease Status Badge -->
+          <div>
+            <span th:if="${t.leaseStatus == 'Active'}" class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1 rounded-pill fs-9 fw-semibold">
+              <i class="bi bi-check-circle-fill me-1"></i>Active
+            </span>
+            <span th:if="${t.leaseStatus == 'Expiring Soon'}" class="badge bg-warning-subtle text-warning border border-warning-subtle px-2 py-1 rounded-pill fs-9 fw-semibold">
+              <i class="bi bi-clock-history me-1"></i>Expiring
+            </span>
+            <span th:if="${t.leaseStatus == 'Moved Out'}" class="badge bg-secondary-subtle text-secondary border border-secondary-subtle px-2 py-1 rounded-pill fs-9 fw-semibold">
+              Moved Out
+            </span>
+            <span th:if="${t.leaseStatus == 'No Lease'}" class="badge bg-secondary-subtle text-secondary border border-secondary-subtle px-2 py-1 rounded-pill fs-9 fw-semibold">
+              <i class="bi bi-dash-circle me-1"></i>No Lease
+            </span>
+
+            <!-- Rent Compliance Badge -->
+            <span th:if="${t.overdue}" class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-1 rounded-pill fs-9 fw-semibold ms-1">
+              Overdue
+            </span>
+          </div>
+
+          <a th:href="@{'/tenants/' + ${t.id}}" class="btn btn-sm btn-outline-primary rounded-pill px-3 py-1 fs-9 fw-semibold text-decoration-none">
+            Profile <i class="bi bi-arrow-right ms-1"></i>
+          </a>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Server-side Pagination -->
+  <div th:if="${tenantsPage != null and tenantsPage.totalPages > 1}" class="d-flex justify-content-between align-items-center mt-4">
+    <div class="text-muted fs-8">
+      Showing <span th:text="${tenantsPage.number * tenantsPage.size + 1}">1</span>
+      to <span th:text="${tenantsPage.number * tenantsPage.size + tenantsPage.numberOfElements}">8</span>
+      of <span th:text="${tenantsPage.totalElements}">12</span> tenants
+    </div>
+    <nav aria-label="Tenant Pagination">
+      <ul class="pagination pagination-sm mb-0">
+        <li class="page-item" th:classappend="${tenantsPage.first} ? 'disabled' : ''">
+          <a class="page-link" th:href="@{/tenants(page=${tenantsPage.number - 1}, search=${search}, filter=${filter})}">Previous</a>
+        </li>
+        <li class="page-item" 
+            th:each="i : ${#numbers.sequence(0, tenantsPage.totalPages - 1)}"
+            th:classappend="${i == tenantsPage.number} ? 'active' : ''">
+          <a class="page-link" th:href="@{/tenants(page=${i}, search=${search}, filter=${filter})}" th:text="${i + 1}">1</a>
+        </li>
+        <li class="page-item" th:classappend="${tenantsPage.last} ? 'disabled' : ''">
+          <a class="page-link" th:href="@{/tenants(page=${tenantsPage.number + 1}, search=${search}, filter=${filter})}">Next</a>
+        </li>
+      </ul>
+    </nav>
+  </div>
+
+  <!-- Delete Tenant Confirmation Modal -->
+  <div class="modal fade" id="deleteTenantModal" tabindex="-1" aria-labelledby="deleteTenantModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content card-propio border-0 shadow-lg">
+        <div class="modal-header border-0 pb-0">
+          <h5 class="modal-title font-heading fw-bold" id="deleteTenantModalLabel">Confirm Deletion</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body py-3">
+          <p class="fs-8 text-muted mb-0">Are you sure you want to delete tenant <strong id="deleteTenantName" class="text-main"></strong>? This will permanently remove their profile and login account. Tenants with active lease agreements cannot be removed.</p>
+        </div>
+        <div class="modal-footer border-0 pt-0">
+          <button type="button" class="btn-propio-secondary py-2 px-3 fs-8" data-bs-dismiss="modal">Cancel</button>
+          <form id="deleteTenantForm" method="post" th:action="@{/tenants}">
+            <button type="submit" class="btn btn-danger py-2 px-3 fs-8 rounded-3">Delete Profile</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Inline helper script for copy password & modal setup -->
+<script>
+function copyPassword() {
+  const el = document.getElementById('tempPassText');
+  if (el) {
+    navigator.clipboard.writeText(el.innerText).then(() => {
+      alert('Temporary password copied to clipboard: ' + el.innerText);
+    });
+  }
+}
+
+function openDeleteTenantModal(id, name) {
+  document.getElementById('deleteTenantName').innerText = name;
+  document.getElementById('deleteTenantForm').action = '/tenants/' + id + '/delete';
+  const modal = new bootstrap.Modal(document.getElementById('deleteTenantModal'));
+  modal.show();
+}
+</script>
+
+</body>
+</html>

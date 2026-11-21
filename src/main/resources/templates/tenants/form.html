@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      th:replace="~{layout/main :: layout(~{::#tenant-form-content})}">
+<head>
+  <title th:text="${isEdit ? 'Edit Tenant | Propio' : 'Add Tenant | Propio'}">Tenant Form | Propio</title>
+</head>
+<body>
+
+<div id="tenant-form-content">
+  <!-- Back Link & Header -->
+  <div class="mb-4 fade-in-up">
+    <a th:href="@{/tenants}" class="btn-propio-secondary py-2 px-3 fs-8 text-decoration-none d-inline-flex align-items-center gap-2 mb-3">
+      <i class="bi bi-arrow-left"></i> Back to Tenants Portfolio
+    </a>
+    <h3 class="fw-bold font-heading mb-1" th:text="${isEdit ? 'Edit Tenant Profile' : 'Add New Resident'}">Add New Resident</h3>
+    <p class="text-muted fs-8 mb-0" th:text="${isEdit ? 'Update personal details and emergency contacts.' : 'Creating a tenant automatically provisions a portal user account with a temporary password.'}">
+      Creating a tenant automatically provisions a portal user account with a temporary password.
+    </p>
+  </div>
+
+  <div class="row g-4">
+    <div class="col-lg-8">
+      <div class="card-propio p-4 fade-in-up stagger-1">
+        <form th:action="${isEdit ? '/tenants/' + tenantForm.id + '/edit' : '/tenants'}" 
+              th:object="${tenantForm}" 
+              method="post" 
+              enctype="multipart/form-data"
+              id="tenantSubmitForm">
+
+          <!-- Global Form Errors if any -->
+          <div th:if="${#fields.hasErrors('*')}" class="alert alert-danger py-2 px-3 fs-8 rounded-3 mb-4">
+            <i class="bi bi-exclamation-triangle me-1"></i> Please correct the highlighted errors below before saving.
+          </div>
+
+          <!-- Section: Personal Information -->
+          <h5 class="fw-bold font-heading fs-7 mb-3 text-primary">
+            <i class="bi bi-person-badge me-2"></i>Personal Information
+          </h5>
+
+          <div class="row g-3 mb-4">
+            <div class="col-md-6">
+              <label for="firstName" class="form-label fs-8 fw-semibold">First Name <span class="text-danger">*</span></label>
+              <input type="text" 
+                     id="firstName" 
+                     th:field="*{firstName}" 
+                     class="form-control fs-8" 
+                     th:classappend="${#fields.hasErrors('firstName')} ? 'is-invalid' : ''"
+                     style="background-color: var(--bg-card-subtle); border-color: var(--border-light); color: var(--text-main);"
+                     placeholder="e.g. Courtney" required>
+              <div class="invalid-feedback fs-9" th:if="${#fields.hasErrors('firstName')}" th:errors="*{firstName}">First name error</div>
+            </div>
+
+            <div class="col-md-6">
+              <label for="lastName" class="form-label fs-8 fw-semibold">Last Name <span class="text-danger">*</span></label>
+              <input type="text" 
+                     id="lastName" 
+                     th:field="*{lastName}" 
+                     class="form-control fs-8" 
+                     th:classappend="${#fields.hasErrors('lastName')} ? 'is-invalid' : ''"
+                     style="background-color: var(--bg-card-subtle); border-color: var(--border-light); color: var(--text-main);"
+                     placeholder="e.g. Henry" required>
+              <div class="invalid-feedback fs-9" th:if="${#fields.hasErrors('lastName')}" th:errors="*{lastName}">Last name error</div>
+            </div>
+
+            <div class="col-md-6">
+              <label for="email" class="form-label fs-8 fw-semibold">Email Address <span class="text-danger">*</span></label>
+              <input type="email" 
+                     id="email" 
+                     th:field="*{email}" 
+                     class="form-control fs-8" 
+                     th:classappend="${#fields.hasErrors('email')} ? 'is-invalid' : ''"
+                     th:readonly="${isEdit}"
+                     style="background-color: var(--bg-card-subtle); border-color: var(--border-light); color: var(--text-main);"
+                     placeholder="courtney.henry@example.com" required>
+              <div class="invalid-feedback fs-9" th:if="${#fields.hasErrors('email')}" th:errors="*{email}">Email error</div>
+              <small th:if="${isEdit}" class="text-muted fs-9">Email address cannot be changed once the login user account is created.</small>
+            </div>
+
+            <div class="col-md-6">
+              <label for="phone" class="form-label fs-8 fw-semibold">Phone Number <span class="text-danger">*</span></label>
+              <input type="text" 
+                     id="phone" 
+                     th:field="*{phone}" 
+                     class="form-control fs-8" 
+                     th:classappend="${#fields.hasErrors('phone')} ? 'is-invalid' : ''"
+                     style="background-color: var(--bg-card-subtle); border-color: var(--border-light); color: var(--text-main);"
+                     placeholder="+1 (555) 234-5678" required>
+              <div class="invalid-feedback fs-9" th:if="${#fields.hasErrors('phone')}" th:errors="*{phone}">Phone error</div>
+            </div>
+
+            <div class="col-md-6">
+              <label for="occupation" class="form-label fs-8 fw-semibold">Occupation / Employer</label>
+              <input type="text" 
+                     id="occupation" 
+                     th:field="*{occupation}" 
+                     class="form-control fs-8" 
+                     style="background-color: var(--bg-card-subtle); border-color: var(--border-light); color: var(--text-main);"
+                     placeholder="e.g. Senior Project Manager">
+            </div>
+
+            <div class="col-md-6">
+              <label for="emergencyContact" class="form-label fs-8 fw-semibold">Emergency Contact</label>
+              <input type="text" 
+                     id="emergencyContact" 
+                     th:field="*{emergencyContact}" 
+                     class="form-control fs-8" 
+                     style="background-color: var(--bg-card-subtle); border-color: var(--border-light); color: var(--text-main);"
+                     placeholder="e.g. John Henry (+1 555-891-2345)">
+            </div>
+          </div>
+
+          <!-- Section: Profile Picture -->
+          <h5 class="fw-bold font-heading fs-7 mb-3 text-primary">
+            <i class="bi bi-image me-2"></i>Profile Photo
+          </h5>
+
+          <div class="row g-3 mb-4">
+            <div class="col-md-7">
+              <label for="photoFile" class="form-label fs-8 fw-semibold">Upload Photo</label>
+              <input type="file" 
+                     id="photoFile" 
+                     name="photoFile" 
+                     class="form-control fs-8" 
+                     accept="image/jpeg,image/png,image/webp"
+                     style="background-color: var(--bg-card-subtle); border-color: var(--border-light); color: var(--text-main);"
+                     onchange="previewSelectedPhoto(this)">
+              <small class="text-muted fs-9 d-block mt-1">
+                Formats: JPG, PNG, WEBP (Max 2 MB). Optional.
+              </small>
+            </div>
+            <div class="col-md-5">
+              <label for="avatarUrl" class="form-label fs-8 fw-semibold">Or Photo URL</label>
+              <input type="url" 
+                     id="avatarUrl" 
+                     th:field="*{avatarUrl}" 
+                     class="form-control fs-8" 
+                     style="background-color: var(--bg-card-subtle); border-color: var(--border-light); color: var(--text-main);"
+                     placeholder="https://..."
+                     oninput="updateAvatarUrlPreview(this.value)">
+              <small class="text-muted fs-9 d-block mt-1">Leave blank to use initials avatar.</small>
+            </div>
+          </div>
+
+          <!-- Account Provisioning Notice -->
+          <div th:unless="${isEdit}" class="p-3 rounded-3 mb-4 d-flex align-items-center gap-3" 
+               style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.2);">
+            <i class="bi bi-shield-lock-fill text-success fs-3"></i>
+            <div>
+              <h6 class="fw-bold text-success mb-0 fs-8">Automatic Portal Account Creation</h6>
+              <p class="fs-9 text-muted mb-0">Saving will generate a secure portal account with BCrypt password hashing. The temporary password will be presented on the next screen.</p>
+            </div>
+          </div>
+
+          <!-- Actions -->
+          <div class="d-flex align-items-center justify-content-end gap-2 pt-3 border-top border-light">
+            <a th:href="@{/tenants}" class="btn-propio-secondary py-2 px-3 fs-8 text-decoration-none">Cancel</a>
+            <button type="submit" class="btn-propio-primary py-2 px-4 fs-8 ripple">
+              <i class="bi bi-check-circle me-1"></i>
+              <span th:text="${isEdit ? 'Save Changes' : 'Create Tenant'}">Create Tenant</span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Preview Card (Side Column) -->
+    <div class="col-lg-4">
+      <div class="card-propio p-4 fade-in-up stagger-2 sticky-top" style="top: 90px;">
+        <h6 class="fw-bold font-heading fs-8 text-muted text-uppercase mb-3">Live Card Preview</h6>
+        
+        <div class="p-3 rounded-4" style="background: var(--bg-card-subtle); border: 1px solid var(--border-light);">
+          <div class="d-flex align-items-center gap-3 mb-3">
+            <div class="position-relative" style="width: 56px; height: 56px; flex-shrink: 0;">
+              <img id="previewAvatarImg" 
+                   th:src="${tenantForm.avatarUrl != null and !tenantForm.avatarUrl.isBlank() ? tenantForm.avatarUrl : ''}" 
+                   class="rounded-circle object-fit-cover shadow-sm w-100 h-100" 
+                   th:style="${tenantForm.avatarUrl != null and !tenantForm.avatarUrl.isBlank()} ? 'border: 2px solid var(--propio-primary);' : 'display: none; border: 2px solid var(--propio-primary);'"
+                   alt="Preview">
+              <div id="previewAvatarInitials" 
+                   class="rounded-circle d-flex align-items-center justify-content-center fw-bold fs-7 text-white shadow-sm w-100 h-100"
+                   th:style="${tenantForm.avatarUrl != null and !tenantForm.avatarUrl.isBlank()} ? 'display: none;' : 'background: linear-gradient(135deg, #6C4CF1, #5131E5);'">
+                <span id="previewInitialsText">TA</span>
+              </div>
+            </div>
+            <div>
+              <h6 id="previewName" class="fw-bold font-heading mb-0 fs-8 text-main" 
+                  th:text="${tenantForm.firstName != null ? (tenantForm.firstName + ' ' + tenantForm.lastName).trim() : 'Tenant Name'}">Tenant Name</h6>
+              <span id="previewOccupation" class="text-muted fs-9 d-block" 
+                    th:text="${tenantForm.occupation != null and !tenantForm.occupation.isBlank() ? tenantForm.occupation : 'Resident'}">Resident</span>
+            </div>
+          </div>
+          <div class="fs-9 text-muted">
+            <div class="mb-1"><i class="bi bi-envelope text-primary me-2"></i><span id="previewEmail" th:text="${tenantForm.email != null ? tenantForm.email : 'email@example.com'}">email@example.com</span></div>
+            <div><i class="bi bi-telephone text-primary me-2"></i><span id="previewPhone" th:text="${tenantForm.phone != null ? tenantForm.phone : '+1 (555) 000-0000'}">+1 (555) 000-0000</span></div>
+          </div>
+        </div>
+
+        <div class="mt-4 fs-9 text-muted">
+          <i class="bi bi-info-circle text-primary me-1"></i> Once saved, you can immediately create a lease agreement linking this resident to any available unit.
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const GRADIENTS = [
+  'linear-gradient(135deg, #6C4CF1, #5131E5)',
+  'linear-gradient(135deg, #3B82F6, #1D4ED8)',
+  'linear-gradient(135deg, #06B6D4, #0E7490)',
+  'linear-gradient(135deg, #10B981, #047857)',
+  'linear-gradient(135deg, #F59E0B, #B45309)',
+  'linear-gradient(135deg, #FF4B93, #BE123C)',
+  'linear-gradient(135deg, #8B5CF6, #6D28D9)',
+  'linear-gradient(135deg, #0D9488, #115E59)'
+];
+
+function getGradientForName(name) {
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) {
+    hash = ((hash << 5) - hash) + name.charCodeAt(i);
+    hash |= 0;
+  }
+  return GRADIENTS[Math.abs(hash) % GRADIENTS.length];
+}
+
+let uploadedPhotoUrl = null;
+
+function previewSelectedPhoto(input) {
+  const file = input.files && input.files[0];
+  if (file) {
+    if (file.size > 2 * 1024 * 1024) {
+      alert('Avatar file exceeds 2 MB limit. Please select a smaller photo.');
+      input.value = '';
+      return;
+    }
+    uploadedPhotoUrl = URL.createObjectURL(file);
+    showImgPreview(uploadedPhotoUrl);
+  } else {
+    uploadedPhotoUrl = null;
+    checkFallback();
+  }
+}
+
+function updateAvatarUrlPreview(url) {
+  if (uploadedPhotoUrl) return;
+  if (url && (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('/'))) {
+    showImgPreview(url);
+  } else {
+    showInitialsPreview();
+  }
+}
+
+function showImgPreview(src) {
+  const img = document.getElementById('previewAvatarImg');
+  const init = document.getElementById('previewAvatarInitials');
+  if (img && init) {
+    img.src = src;
+    img.style.display = 'block';
+    init.style.display = 'none';
+  }
+}
+
+function showInitialsPreview() {
+  const img = document.getElementById('previewAvatarImg');
+  const init = document.getElementById('previewAvatarInitials');
+  if (img && init) {
+    img.style.display = 'none';
+    init.style.display = 'flex';
+  }
+  updateInitialsAndColor();
+}
+
+function checkFallback() {
+  const urlInput = document.getElementById('avatarUrl');
+  if (urlInput && urlInput.value && urlInput.value.trim().length > 0) {
+    showImgPreview(urlInput.value.trim());
+  } else {
+    showInitialsPreview();
+  }
+}
+
+function updateInitialsAndColor() {
+  const fName = document.getElementById('firstName')?.value.trim() || '';
+  const lName = document.getElementById('lastName')?.value.trim() || '';
+  const full = (fName + ' ' + lName).trim() || 'Tenant';
+  
+  const f = fName.charAt(0).toUpperCase();
+  const l = lName.charAt(0).toUpperCase();
+  const initials = (f + l) || 'T';
+
+  const initText = document.getElementById('previewInitialsText');
+  const initBox = document.getElementById('previewAvatarInitials');
+  if (initText) initText.innerText = initials;
+  if (initBox) initBox.style.background = getGradientForName(full);
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const fName = document.getElementById('firstName');
+  const lName = document.getElementById('lastName');
+  const email = document.getElementById('email');
+  const phone = document.getElementById('phone');
+  const occ = document.getElementById('occupation');
+
+  function sync() {
+    const fn = fName ? fName.value : '';
+    const ln = lName ? lName.value : '';
+    const nameEl = document.getElementById('previewName');
+    if (nameEl) nameEl.innerText = (fn + ' ' + ln).trim() || 'Tenant Name';
+
+    const em = email ? email.value : '';
+    const emailEl = document.getElementById('previewEmail');
+    if (emailEl) emailEl.innerText = em || 'email@example.com';
+
+    const ph = phone ? phone.value : '';
+    const phoneEl = document.getElementById('previewPhone');
+    if (phoneEl) phoneEl.innerText = ph || '+1 (555) 000-0000';
+
+    const oc = occ ? occ.value : '';
+    const occEl = document.getElementById('previewOccupation');
+    if (occEl) occEl.innerText = oc || 'Resident';
+
+    updateInitialsAndColor();
+  }
+
+  [fName, lName, email, phone, occ].forEach(el => {
+    if (el) el.addEventListener('input', sync);
+  });
+
+  // Initial sync
+  sync();
+  checkFallback();
+});
+</script>
+
+</body>
+</html>

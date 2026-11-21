@@ -54,4 +54,32 @@ public class User extends BaseEntity {
 
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private Tenant tenant;
+
+    public String getInitials() {
+        if (fullName == null || fullName.isBlank()) {
+            return (email != null && !email.isBlank()) ? email.substring(0, 1).toUpperCase() : "U";
+        }
+        String[] parts = fullName.trim().split("\\s+");
+        if (parts.length >= 2) {
+            return (parts[0].substring(0, 1) + parts[parts.length - 1].substring(0, 1)).toUpperCase();
+        } else {
+            return parts[0].substring(0, Math.min(2, parts[0].length())).toUpperCase();
+        }
+    }
+
+    public String getAvatarColor() {
+        String name = (fullName != null && !fullName.isBlank()) ? fullName : ((email != null) ? email : "User");
+        int hash = Math.abs(name.hashCode());
+        String[] gradients = {
+            "linear-gradient(135deg, #6C4CF1, #5131E5)",
+            "linear-gradient(135deg, #3B82F6, #1D4ED8)",
+            "linear-gradient(135deg, #06B6D4, #0E7490)",
+            "linear-gradient(135deg, #10B981, #047857)",
+            "linear-gradient(135deg, #F59E0B, #B45309)",
+            "linear-gradient(135deg, #FF4B93, #BE123C)",
+            "linear-gradient(135deg, #8B5CF6, #6D28D9)",
+            "linear-gradient(135deg, #0D9488, #115E59)"
+        };
+        return gradients[hash % gradients.length];
+    }
 }

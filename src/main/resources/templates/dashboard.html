@@ -66,8 +66,13 @@
             <div class="accent-card-time text-truncate" style="max-width: 140px;" th:text="${expiringLease != null ? expiringLease.unit.property.name + ' • ' + expiringLease.unit.unitNumber : 'Portfolio Active'}">Active Lease</div>
           </div>
           <div class="accent-card-user" th:if="${expiringLease != null}">
-            <img th:src="${expiringLease.tenant.user.avatarUrl}" th:alt="${expiringLease.tenant.user.fullName}">
-            <span class="text-truncate" style="max-width: 90px;" th:text="${expiringLease.tenant.user.fullName}">Tenant Name</span>
+            <img th:if="${expiringLease.tenant.user != null and expiringLease.tenant.user.avatarUrl != null and !expiringLease.tenant.user.avatarUrl.isBlank()}"
+                 th:src="${expiringLease.tenant.user.avatarUrl}" th:alt="${expiringLease.tenant.fullName}">
+            <div th:unless="${expiringLease.tenant.user != null and expiringLease.tenant.user.avatarUrl != null and !expiringLease.tenant.user.avatarUrl.isBlank()}"
+                 class="rounded-circle d-flex align-items-center justify-content-center text-white fw-bold fs-9 flex-shrink-0"
+                 th:style="'background: ' + ${expiringLease.tenant.avatarColor} + '; width: 28px; height: 28px;'"
+                 th:text="${expiringLease.tenant.initials}">T</div>
+            <span class="text-truncate" style="max-width: 90px;" th:text="${expiringLease.tenant.fullName}">Tenant Name</span>
           </div>
           <div class="accent-card-user" th:unless="${expiringLease != null}">
             <i class="bi bi-calendar-check fs-5"></i>
@@ -84,8 +89,13 @@
             <div class="accent-card-time text-truncate" style="max-width: 140px;" th:text="${duePayment != null ? '$' + duePayment.amount + ' • Due ' + #temporals.format(duePayment.dueDate, 'MMM dd') : 'All Bills Paid'}">Payment Due</div>
           </div>
           <div class="accent-card-user" th:if="${duePayment != null}">
-            <img th:src="${duePayment.lease.tenant.user.avatarUrl}" th:alt="${duePayment.lease.tenant.user.fullName}">
-            <span class="text-truncate" style="max-width: 90px;" th:text="${duePayment.lease.tenant.user.fullName}">Tenant Name</span>
+            <img th:if="${duePayment.lease.tenant.user != null and duePayment.lease.tenant.user.avatarUrl != null and !duePayment.lease.tenant.user.avatarUrl.isBlank()}"
+                 th:src="${duePayment.lease.tenant.user.avatarUrl}" th:alt="${duePayment.lease.tenant.fullName}">
+            <div th:unless="${duePayment.lease.tenant.user != null and duePayment.lease.tenant.user.avatarUrl != null and !duePayment.lease.tenant.user.avatarUrl.isBlank()}"
+                 class="rounded-circle d-flex align-items-center justify-content-center text-white fw-bold fs-9 flex-shrink-0"
+                 th:style="'background: ' + ${duePayment.lease.tenant.avatarColor} + '; width: 28px; height: 28px;'"
+                 th:text="${duePayment.lease.tenant.initials}">T</div>
+            <span class="text-truncate" style="max-width: 90px;" th:text="${duePayment.lease.tenant.fullName}">Tenant Name</span>
           </div>
           <div class="accent-card-user" th:unless="${duePayment != null}">
             <i class="bi bi-check-circle fs-5"></i>
@@ -102,8 +112,13 @@
             <div class="accent-card-time text-truncate" style="max-width: 140px;" th:text="${openRequest != null ? openRequest.title : 'No Open Tickets'}">Service Request</div>
           </div>
           <div class="accent-card-user" th:if="${openRequest != null}">
-            <img th:src="${openRequest.tenant.user.avatarUrl}" th:alt="${openRequest.tenant.user.fullName}">
-            <span class="text-truncate" style="max-width: 90px;" th:text="${openRequest.tenant.user.fullName}">Tenant Name</span>
+            <img th:if="${openRequest.tenant.user != null and openRequest.tenant.user.avatarUrl != null and !openRequest.tenant.user.avatarUrl.isBlank()}"
+                 th:src="${openRequest.tenant.user.avatarUrl}" th:alt="${openRequest.tenant.fullName}">
+            <div th:unless="${openRequest.tenant.user != null and openRequest.tenant.user.avatarUrl != null and !openRequest.tenant.user.avatarUrl.isBlank()}"
+                 class="rounded-circle d-flex align-items-center justify-content-center text-white fw-bold fs-9 flex-shrink-0"
+                 th:style="'background: ' + ${openRequest.tenant.avatarColor} + '; width: 28px; height: 28px;'"
+                 th:text="${openRequest.tenant.initials}">T</div>
+            <span class="text-truncate" style="max-width: 90px;" th:text="${openRequest.tenant.fullName}">Tenant Name</span>
           </div>
           <div class="accent-card-user" th:unless="${openRequest != null}">
             <i class="bi bi-tools fs-5"></i>

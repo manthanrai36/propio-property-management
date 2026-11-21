@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      th:replace="~{layout/main :: layout(~{::#lease-form-content})}">
+<head>
+  <title>New Lease Agreement | Propio</title>
+</head>
+<body>
+
+<div id="lease-form-content">
+  <!-- Back Link & Header -->
+  <div class="mb-4 fade-in-up">
+    <a th:href="@{/leasing}" class="btn-propio-secondary py-2 px-3 fs-8 text-decoration-none d-inline-flex align-items-center gap-2 mb-3">
+      <i class="bi bi-arrow-left"></i> Back to Leasing Ledger
+    </a>
+    <h3 class="fw-bold font-heading mb-1">Create Lease Agreement</h3>
+    <p class="text-muted fs-8 mb-0">Contract a resident to a property unit, enforce overlap invariants, and generate billing schedules.</p>
+  </div>
+
+  <div class="row g-4">
+    <div class="col-lg-8">
+      <div class="card-propio p-4 fade-in-up stagger-1">
+        <form th:action="@{/leasing}" th:object="${leaseForm}" method="post" id="createLeaseForm">
+
+          <!-- Global Form Errors -->
+          <div th:if="${#fields.hasErrors('*')}" class="alert alert-danger py-2 px-3 fs-8 rounded-3 mb-4">
+            <i class="bi bi-exclamation-triangle me-1"></i> Please resolve the highlighted validation errors below.
+          </div>
+
+          <!-- Section: Contracting Parties -->
+          <h5 class="fw-bold font-heading fs-7 mb-3 text-primary">
+            <i class="bi bi-people-fill me-2"></i>Contracting Parties & Premises
+          </h5>
+
+          <div class="row g-3 mb-4">
+            <!-- Select Tenant -->
+            <div class="col-md-6">
+              <label for="tenantId" class="form-label fs-8 fw-semibold">Resident / Tenant <span class="text-danger">*</span></label>
+              <select id="tenantId" 
+                      th:field="*{tenantId}" 
+                      class="form-select fs-8" 
+                      th:classappend="${#fields.hasErrors('tenantId')} ? 'is-invalid' : ''"
+                      style="background-color: var(--bg-card-subtle); border-color: var(--border-light); color: var(--text-main);"
+                      required>
+                <option value="">-- Choose Resident --</option>
+                <option th:each="t : ${allTenants}" 
+                        th:value="${t.id}" 
+                        th:text="${t.fullName + ' (' + t.email + ')'}">Leslie Alexander</option>
+              </select>
+              <div class="invalid-feedback fs-9" th:if="${#fields.hasErrors('tenantId')}" th:errors="*{tenantId}">Please select a tenant</div>
+            </div>
+
+            <!-- Select Unit -->
+            <div class="col-md-6">
+              <label for="unitId" class="form-label fs-8 fw-semibold">Vacant Property Unit <span class="text-danger">*</span></label>
+              <select id="unitId" 
+                      th:field="*{unitId}" 
+                      class="form-select fs-8" 
+                      th:classappend="${#fields.hasErrors('unitId')} ? 'is-invalid' : ''"
+                      style="background-color: var(--bg-card-subtle); border-color: var(--border-light); color: var(--text-main);"
+                      onchange="onUnitSelected(this)"
+                      required>
+                <option value="">-- Select Vacant Unit --</option>
+                <option th:each="u : ${vacantUnits}" 
+                        th:value="${u.id}" 
+                        th:data-rent="${u.rentAmount}"
+                        th:data-deposit="${u.depositAmount}"
+                        th:data-prop="${u.property.name}"
+                        th:text="${u.property.name + ' • ' + u.unitNumber + ' ($' + u.rentAmount + '/mo)'}">Ledeberg 25 • Apt 102</option>
+              </select>
+              <div class="invalid-feedback fs-9" th:if="${#fields.hasErrors('unitId')}" th:errors="*{unitId}">Please select a unit</div>
+            </div>
+          </div>
+
+          <!-- Section: Term & Financials -->
+          <h5 class="fw-bold font-heading fs-7 mb-3 text-primary">
+            <i class="bi bi-calendar-range me-2"></i>Lease Term & Financial Terms
+          </h5>
+
+          <div class="row g-3 mb-4">
+            <div class="col-md-6">
+              <label for="startDate" class="form-label fs-8 fw-semibold">Commencement Date <span class="text-danger">*</span></label>
+              <input type="date" 
+                     id="startDate" 
+                     th:field="*{startDate}" 
+                     class="form-control fs-8" 
+                     th:classappend="${#fields.hasErrors('startDate')} ? 'is-invalid' : ''"
+                     style="background-color: var(--bg-card-subtle); border-color: var(--border-light); color: var(--text-main);"
+                     required>
+              <div class="invalid-feedback fs-9" th:if="${#fields.hasErrors('startDate')}" th:errors="*{startDate}">Start date error</div>
+            </div>
+
+            <div class="col-md-6">
+              <label for="endDate" class="form-label fs-8 fw-semibold">Expiration Date <span class="text-danger">*</span></label>
+              <input type="date" 
+                     id="endDate" 
+                     th:field="*{endDate}" 
+                     class="form-control fs-8" 
+                     th:classappend="${#fields.hasErrors('endDate')} ? 'is-invalid' : ''"
+                     style="background-color: var(--bg-card-subtle); border-color: var(--border-light); color: var(--text-main);"
+                     required>
+              <div class="invalid-feedback fs-9" th:if="${#fields.hasErrors('endDate')}" th:errors="*{endDate}">End date error</div>
+            </div>
+
+            <div class="col-md-6">
+              <label for="monthlyRent" class="form-label fs-8 fw-semibold">Contracted Monthly Rent ($) <span class="text-danger">*</span></label>
+              <input type="number" 
+                     step="0.01" 
+                     id="monthlyRent" 
+                     th:field="*{monthlyRent}" 
+                     class="form-control fs-8" 
+                     th:classappend="${#fields.hasErrors('monthlyRent')} ? 'is-invalid' : ''"
+                     style="background-color: var(--bg-card-subtle); border-color: var(--border-light); color: var(--text-main);"
+                     placeholder="1450.00" required>
+              <div class="invalid-feedback fs-9" th:if="${#fields.hasErrors('monthlyRent')}" th:errors="*{monthlyRent}">Rent error</div>
+            </div>
+
+            <div class="col-md-6">
+              <label for="securityDeposit" class="form-label fs-8 fw-semibold">Security Deposit ($)</label>
+              <input type="number" 
+                     step="0.01" 
+                     id="securityDeposit" 
+                     th:field="*{securityDeposit}" 
+                     class="form-control fs-8" 
+                     style="background-color: var(--bg-card-subtle); border-color: var(--border-light); color: var(--text-main);"
+                     placeholder="1450.00">
+            </div>
+          </div>
+
+          <!-- Section: Automated Billing Preview Alert -->
+          <div class="p-3 rounded-3 mb-4 d-flex align-items-center gap-3" 
+               style="background: rgba(108, 76, 241, 0.08); border: 1px solid rgba(108, 76, 241, 0.2);">
+            <i class="bi bi-magic text-primary fs-3"></i>
+            <div>
+              <h6 class="fw-bold text-primary mb-0 fs-8">Automated Payment Schedule Generation</h6>
+              <p class="fs-9 text-muted mb-0">Upon creation, Propio will automatically generate recurring monthly invoice entries from commencement to expiration date, set the unit status to <strong>OCCUPIED</strong>, and enforce strict non-overlapping lease rules.</p>
+            </div>
+          </div>
+
+          <!-- Actions -->
+          <div class="d-flex align-items-center justify-content-end gap-2 pt-3 border-top border-light">
+            <a th:href="@{/leasing}" class="btn-propio-secondary py-2 px-3 fs-8 text-decoration-none">Cancel</a>
+            <button type="submit" class="btn-propio-primary py-2 px-4 fs-8 ripple">
+              <i class="bi bi-file-earmark-check me-1"></i> Finalize & Create Lease
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Live Contract Summary Side Panel -->
+    <div class="col-lg-4">
+      <div class="card-propio p-4 fade-in-up stagger-2 sticky-top" style="top: 90px;">
+        <h6 class="fw-bold font-heading fs-8 text-muted text-uppercase mb-3">Agreement Summary</h6>
+
+        <div class="p-3 rounded-4 mb-3" style="background: var(--bg-card-subtle); border: 1px solid var(--border-light);">
+          <div class="fs-9 text-muted mb-1">Selected Premises</div>
+          <h6 id="summaryPropUnit" class="fw-bold font-heading fs-8 text-main mb-2">No unit selected</h6>
+
+          <div class="border-top border-light pt-2 mt-2">
+            <div class="d-flex justify-content-between fs-9 mb-1">
+              <span class="text-muted">Monthly Rent:</span>
+              <strong id="summaryRent" class="text-primary">$0.00</strong>
+            </div>
+            <div class="d-flex justify-content-between fs-9 mb-1">
+              <span class="text-muted">Deposit:</span>
+              <strong id="summaryDeposit" class="text-main">$0.00</strong>
+            </div>
+          </div>
+        </div>
+
+        <div class="fs-9 text-muted">
+          <ul class="ps-3 mb-0">
+            <li class="mb-1">Units must have no active overlapping lease.</li>
+            <li class="mb-1">End date must be strictly after commencement date.</li>
+            <li>Unit will immediately reflect as Occupied across portfolio charts.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function onUnitSelected(select) {
+  const opt = select.options[select.selectedIndex];
+  if (opt && opt.value) {
+    const rent = opt.getAttribute('data-rent') || '0';
+    const deposit = opt.getAttribute('data-deposit') || rent;
+    const prop = opt.getAttribute('data-prop') || '';
+
+    const rentInput = document.getElementById('monthlyRent');
+    const depInput = document.getElementById('securityDeposit');
+
+    if (rentInput && (!rentInput.value || rentInput.value === '0')) {
+      rentInput.value = rent;
+    }
+    if (depInput && (!depInput.value || depInput.value === '0')) {
+      depInput.value = deposit;
+    }
+
+    const summaryProp = document.getElementById('summaryPropUnit');
+    if (summaryProp) summaryProp.innerText = opt.text;
+
+    const summaryRent = document.getElementById('summaryRent');
+    if (summaryRent) summaryRent.innerText = '$' + parseFloat(rent).toFixed(2);
+
+    const summaryDep = document.getElementById('summaryDeposit');
+    if (summaryDep) summaryDep.innerText = '$' + parseFloat(deposit).toFixed(2);
+  }
+}
+</script>
+
+</body>
+</html>

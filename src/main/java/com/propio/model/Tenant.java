@@ -65,6 +65,35 @@ public class Tenant extends BaseEntity {
     private List<Document> documents = new ArrayList<>();
 
     public String getFullName() {
-        return firstName + " " + lastName;
+        String f = (firstName != null) ? firstName.trim() : "";
+        String l = (lastName != null) ? lastName.trim() : "";
+        String full = (f + " " + l).trim();
+        return full.isEmpty() ? "Tenant" : full;
+    }
+
+    public String getInitials() {
+        String f = (firstName != null && !firstName.isBlank()) ? firstName.substring(0, 1).toUpperCase() : "";
+        String l = (lastName != null && !lastName.isBlank()) ? lastName.substring(0, 1).toUpperCase() : "";
+        String combined = (f + l).trim();
+        return combined.isEmpty() ? "T" : combined;
+    }
+
+    public String getAvatarColor() {
+        String name = getFullName();
+        if (name == null || name.isBlank() || "Tenant".equals(name)) {
+            name = (email != null && !email.isBlank()) ? email : "Tenant";
+        }
+        int hash = Math.abs(name.hashCode());
+        String[] gradients = {
+            "linear-gradient(135deg, #6C4CF1, #5131E5)",
+            "linear-gradient(135deg, #3B82F6, #1D4ED8)",
+            "linear-gradient(135deg, #06B6D4, #0E7490)",
+            "linear-gradient(135deg, #10B981, #047857)",
+            "linear-gradient(135deg, #F59E0B, #B45309)",
+            "linear-gradient(135deg, #FF4B93, #BE123C)",
+            "linear-gradient(135deg, #8B5CF6, #6D28D9)",
+            "linear-gradient(135deg, #0D9488, #115E59)"
+        };
+        return gradients[hash % gradients.length];
     }
 }

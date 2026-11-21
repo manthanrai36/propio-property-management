@@ -16,7 +16,7 @@ import java.util.List;
 
 /**
  * Seeds realistic property management data on initial application boot.
- * Populates Admin, Tenants, 14 Properties with diverse units, Leases, Payments, and Maintenance Requests.
+ * Populates Admin (Manthan), Tenants, 14 Properties with 56 units, Leases, Payments, and Maintenance Requests.
  */
 @Component
 @RequiredArgsConstructor
@@ -41,7 +41,7 @@ public class DataSeeder implements CommandLineRunner {
             return;
         }
 
-        log.info("Seeding realistic sample data for Propio SaaS (14 Properties with full portfolio)...");
+        log.info("Seeding realistic sample data for Propio SaaS (14 Properties, 56 Units, Tenants & Leases)...");
 
         // 1. Create Users
         User adminUser = User.builder()
@@ -77,7 +77,29 @@ public class DataSeeder implements CommandLineRunner {
                 .build();
         userRepository.save(tenantUser2);
 
-        // 2. Create Tenant Profiles
+        User tenantUser3 = User.builder()
+                .fullName("Courtney Henry")
+                .email("courtney@propio.com")
+                .password(passwordEncoder.encode("tenant123"))
+                .role(Role.ROLE_TENANT)
+                .phone("+1 (555) 671-8293")
+                .avatarUrl(null)
+                .enabled(true)
+                .build();
+        userRepository.save(tenantUser3);
+
+        User tenantUser4 = User.builder()
+                .fullName("Devon Lane")
+                .email("devon@propio.com")
+                .password(passwordEncoder.encode("tenant123"))
+                .role(Role.ROLE_TENANT)
+                .phone("+1 (555) 819-3829")
+                .avatarUrl(null)
+                .enabled(true)
+                .build();
+        userRepository.save(tenantUser4);
+
+        // 2. Create Tenant Profiles (Only demo accounts keep sample photos; others use dynamic initials avatars)
         Tenant tenantLeslie = Tenant.builder()
                 .firstName("Leslie")
                 .lastName("Alexander")
@@ -109,9 +131,55 @@ public class DataSeeder implements CommandLineRunner {
                 .phone("+1 (555) 492-8172")
                 .occupation("Financial Analyst")
                 .emergencyContact("David Murphy (+1 555-481-9283)")
-                .avatarUrl("https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=120&h=120&q=80")
+                .avatarUrl(null)
                 .build();
         tenantRepository.save(tenantKathryn);
+
+        Tenant tenantCourtney = Tenant.builder()
+                .firstName("Courtney")
+                .lastName("Henry")
+                .email("courtney@propio.com")
+                .phone("+1 (555) 671-8293")
+                .occupation("Senior Project Manager")
+                .emergencyContact("Mark Henry (+1 555-671-1209)")
+                .avatarUrl(null)
+                .user(tenantUser3)
+                .build();
+        tenantRepository.save(tenantCourtney);
+
+        Tenant tenantDevon = Tenant.builder()
+                .firstName("Devon")
+                .lastName("Lane")
+                .email("devon@propio.com")
+                .phone("+1 (555) 819-3829")
+                .occupation("Creative Director")
+                .emergencyContact("Chloe Lane (+1 555-819-9943)")
+                .avatarUrl(null)
+                .user(tenantUser4)
+                .build();
+        tenantRepository.save(tenantDevon);
+
+        Tenant tenantEleanor = Tenant.builder()
+                .firstName("Eleanor")
+                .lastName("Pena")
+                .email("eleanor.p@example.com")
+                .phone("+1 (555) 928-1738")
+                .occupation("VP of Marketing")
+                .emergencyContact("Anthony Pena (+1 555-928-8832)")
+                .avatarUrl(null)
+                .build();
+        tenantRepository.save(tenantEleanor);
+
+        Tenant tenantCameron = Tenant.builder()
+                .firstName("Cameron")
+                .lastName("Williamson")
+                .email("cameron.w@example.com")
+                .phone("+1 (555) 438-9201")
+                .occupation("Staff Data Scientist")
+                .emergencyContact("Laura Williamson (+1 555-438-2309)")
+                .avatarUrl(null)
+                .build();
+        tenantRepository.save(tenantCameron);
 
         // 3. Create 14 Properties across US & Europe
         Property p1 = createProp("Hermiston Residence", "377 NW 10th Hermiston", "Hermiston", "OR", "97838",
@@ -171,90 +239,90 @@ public class DataSeeder implements CommandLineRunner {
                 "Townhouse", "Brand new urban townhome community with attached two-car garages and private roof decks.",
                 "https://images.unsplash.com/photo-1600573472591-ee6b68d14c68?auto=format&fit=crop&w=600&h=350&q=80");
 
-        // 4. Create Units across all properties
+        // 4. Create Units across all properties (Exactly 56 units: 25 Occupied, 9 Booked, 22 Vacant)
         // P1: Hermiston (1 unit, occupied by Jacob Jones)
         Unit u1 = addUnit(p1, "Main House", 3, 2, 1950.0, "2450.00", "2450.00", UnitStatus.OCCUPIED);
 
         // P2: Ledeberg 25 (4 units)
         Unit u2_1 = addUnit(p2, "Apt 101", 2, 1, 920.0, "1450.00", "1450.00", UnitStatus.OCCUPIED); // Leslie's lease
-        Unit u2_2 = addUnit(p2, "Apt 102", 1, 1, 680.0, "1150.00", "1150.00", UnitStatus.VACANT);
+        Unit u2_2 = addUnit(p2, "Apt 102", 1, 1, 680.0, "1150.00", "1150.00", UnitStatus.VACANT);   // Kathryn's past unit
         Unit u2_3 = addUnit(p2, "Apt 201", 2, 2, 1150.0, "1650.00", "1650.00", UnitStatus.BOOKED);
         Unit u2_4 = addUnit(p2, "Apt 202", 3, 2, 1400.0, "1950.00", "1950.00", UnitStatus.OCCUPIED);
 
         // P3: Skyline Tower (6 units)
-        addUnit(p3, "Suite 8A", 1, 1, 750.0, "2100.00", "2100.00", UnitStatus.VACANT);
-        addUnit(p3, "Suite 10C", 2, 2, 1100.0, "2850.00", "2850.00", UnitStatus.OCCUPIED);
-        addUnit(p3, "Suite 12B", 2, 2, 1150.0, "2950.00", "2950.00", UnitStatus.BOOKED);
-        addUnit(p3, "Suite 14A", 2, 2, 1280.0, "3200.00", "3200.00", UnitStatus.VACANT);
-        addUnit(p3, "Suite 18B", 3, 3, 2100.0, "4800.00", "4800.00", UnitStatus.VACANT);
-        addUnit(p3, "Penthouse 25A", 4, 4, 3400.0, "7500.00", "7500.00", UnitStatus.OCCUPIED);
+        Unit u3_1 = addUnit(p3, "Suite 8A", 1, 1, 750.0, "2100.00", "2100.00", UnitStatus.VACANT);
+        Unit u3_2 = addUnit(p3, "Suite 10C", 2, 2, 1100.0, "2850.00", "2850.00", UnitStatus.OCCUPIED); // Courtney's lease
+        Unit u3_3 = addUnit(p3, "Suite 12B", 2, 2, 1150.0, "2950.00", "2950.00", UnitStatus.BOOKED);
+        Unit u3_4 = addUnit(p3, "Suite 14A", 2, 2, 1280.0, "3200.00", "3200.00", UnitStatus.VACANT);
+        Unit u3_5 = addUnit(p3, "Suite 18B", 3, 3, 2100.0, "4800.00", "4800.00", UnitStatus.VACANT);
+        Unit u3_6 = addUnit(p3, "Penthouse 25A", 4, 4, 3400.0, "7500.00", "7500.00", UnitStatus.OCCUPIED);
 
         // P4: The Austin Lofts (5 units)
-        addUnit(p4, "Loft 101", 1, 1, 850.0, "1850.00", "1850.00", UnitStatus.OCCUPIED);
-        addUnit(p4, "Loft 102", 1, 1, 890.0, "1900.00", "1900.00", UnitStatus.VACANT);
-        addUnit(p4, "Loft 201", 2, 2, 1350.0, "2650.00", "2650.00", UnitStatus.OCCUPIED);
-        addUnit(p4, "Loft 202", 2, 2, 1400.0, "2750.00", "2750.00", UnitStatus.BOOKED);
-        addUnit(p4, "Loft 301", 3, 2, 1850.0, "3600.00", "3600.00", UnitStatus.VACANT);
+        Unit u4_1 = addUnit(p4, "Loft 101", 1, 1, 850.0, "1850.00", "1850.00", UnitStatus.OCCUPIED);
+        Unit u4_2 = addUnit(p4, "Loft 102", 1, 1, 890.0, "1900.00", "1900.00", UnitStatus.VACANT);
+        Unit u4_3 = addUnit(p4, "Loft 201", 2, 2, 1350.0, "2650.00", "2650.00", UnitStatus.OCCUPIED); // Devon's lease (expiring soon)
+        Unit u4_4 = addUnit(p4, "Loft 202", 2, 2, 1400.0, "2750.00", "2750.00", UnitStatus.BOOKED);
+        Unit u4_5 = addUnit(p4, "Loft 301", 3, 2, 1850.0, "3600.00", "3600.00", UnitStatus.VACANT);
 
         // P5: Magnolia Gardens (4 units)
-        addUnit(p5, "Townhome 101", 3, 3, 2200.0, "3100.00", "3100.00", UnitStatus.OCCUPIED);
-        addUnit(p5, "Townhome 102", 3, 3, 2200.0, "3100.00", "3100.00", UnitStatus.VACANT);
-        addUnit(p5, "Townhome 201", 4, 3, 2650.0, "3750.00", "3750.00", UnitStatus.OCCUPIED);
-        addUnit(p5, "Townhome 202", 4, 3, 2650.0, "3750.00", "3750.00", UnitStatus.BOOKED);
+        Unit u5_1 = addUnit(p5, "Townhome 101", 3, 3, 2200.0, "3100.00", "3100.00", UnitStatus.OCCUPIED); // Eleanor's lease
+        Unit u5_2 = addUnit(p5, "Townhome 102", 3, 3, 2200.0, "3100.00", "3100.00", UnitStatus.VACANT);
+        Unit u5_3 = addUnit(p5, "Townhome 201", 4, 3, 2650.0, "3750.00", "3750.00", UnitStatus.OCCUPIED);
+        Unit u5_4 = addUnit(p5, "Townhome 202", 4, 3, 2650.0, "3750.00", "3750.00", UnitStatus.BOOKED);
 
         // P6: Biscayne Bay Residences (5 units)
-        addUnit(p6, "Apt 401", 2, 2, 1250.0, "3400.00", "3400.00", UnitStatus.OCCUPIED);
-        addUnit(p6, "Apt 502", 2, 2, 1300.0, "3550.00", "3550.00", UnitStatus.BOOKED);
-        addUnit(p6, "Apt 603", 1, 1, 880.0, "2600.00", "2600.00", UnitStatus.VACANT);
-        addUnit(p6, "Apt 704", 3, 3, 1950.0, "5200.00", "5200.00", UnitStatus.OCCUPIED);
-        addUnit(p6, "Apt 805", 3, 3, 2050.0, "5500.00", "5500.00", UnitStatus.VACANT);
+        Unit u6_1 = addUnit(p6, "Apt 401", 2, 2, 1250.0, "3400.00", "3400.00", UnitStatus.OCCUPIED); // Cameron's lease
+        Unit u6_2 = addUnit(p6, "Apt 502", 2, 2, 1300.0, "3550.00", "3550.00", UnitStatus.BOOKED);
+        Unit u6_3 = addUnit(p6, "Apt 603", 1, 1, 880.0, "2600.00", "2600.00", UnitStatus.VACANT);
+        Unit u6_4 = addUnit(p6, "Apt 704", 3, 3, 1950.0, "5200.00", "5200.00", UnitStatus.OCCUPIED);
+        Unit u6_5 = addUnit(p6, "Apt 805", 3, 3, 2050.0, "5500.00", "5500.00", UnitStatus.VACANT);
 
         // P7: Beacon Hill Brownstone (3 units)
-        addUnit(p7, "Unit 1", 1, 1, 720.0, "2400.00", "2400.00", UnitStatus.OCCUPIED);
-        addUnit(p7, "Unit 2", 2, 1, 1050.0, "3250.00", "3250.00", UnitStatus.VACANT);
-        addUnit(p7, "Unit 3", 2, 2, 1200.0, "3800.00", "3800.00", UnitStatus.BOOKED);
+        Unit u7_1 = addUnit(p7, "Unit 1", 1, 1, 720.0, "2400.00", "2400.00", UnitStatus.OCCUPIED);
+        Unit u7_2 = addUnit(p7, "Unit 2", 2, 1, 1050.0, "3250.00", "3250.00", UnitStatus.VACANT);
+        Unit u7_3 = addUnit(p7, "Unit 3", 2, 2, 1200.0, "3800.00", "3800.00", UnitStatus.BOOKED);
 
         // P8: Silicon Valley Tech Plaza (3 units)
-        addUnit(p8, "Suite 100", 0, 2, 3500.0, "8500.00", "8500.00", UnitStatus.OCCUPIED);
-        addUnit(p8, "Suite 200", 0, 2, 4200.0, "10500.00", "10500.00", UnitStatus.VACANT);
-        addUnit(p8, "Suite 300", 0, 4, 7800.0, "18000.00", "18000.00", UnitStatus.OCCUPIED);
+        Unit u8_1 = addUnit(p8, "Suite 100", 0, 2, 3500.0, "8500.00", "8500.00", UnitStatus.OCCUPIED);
+        Unit u8_2 = addUnit(p8, "Suite 200", 0, 2, 4200.0, "10500.00", "10500.00", UnitStatus.VACANT);
+        Unit u8_3 = addUnit(p8, "Suite 300", 0, 4, 7800.0, "18000.00", "18000.00", UnitStatus.OCCUPIED);
 
         // P9: Mile High Commons (6 units)
-        addUnit(p9, "Unit 1A", 1, 1, 650.0, "1550.00", "1550.00", UnitStatus.OCCUPIED);
-        addUnit(p9, "Unit 1B", 1, 1, 650.0, "1550.00", "1550.00", UnitStatus.VACANT);
-        addUnit(p9, "Unit 2A", 2, 1, 880.0, "1950.00", "1950.00", UnitStatus.OCCUPIED);
-        addUnit(p9, "Unit 2B", 2, 2, 950.0, "2100.00", "2100.00", UnitStatus.BOOKED);
-        addUnit(p9, "Unit 3A", 2, 2, 980.0, "2150.00", "2150.00", UnitStatus.OCCUPIED);
-        addUnit(p9, "Unit 3B", 3, 2, 1250.0, "2750.00", "2750.00", UnitStatus.VACANT);
+        Unit u9_1 = addUnit(p9, "Unit 1A", 1, 1, 650.0, "1550.00", "1550.00", UnitStatus.OCCUPIED);
+        Unit u9_2 = addUnit(p9, "Unit 1B", 1, 1, 650.0, "1550.00", "1550.00", UnitStatus.VACANT);
+        Unit u9_3 = addUnit(p9, "Unit 2A", 2, 1, 880.0, "1950.00", "1950.00", UnitStatus.OCCUPIED);
+        Unit u9_4 = addUnit(p9, "Unit 2B", 2, 2, 950.0, "2100.00", "2100.00", UnitStatus.BOOKED);
+        Unit u9_5 = addUnit(p9, "Unit 3A", 2, 2, 980.0, "2150.00", "2150.00", UnitStatus.OCCUPIED);
+        Unit u9_6 = addUnit(p9, "Unit 3B", 3, 2, 1250.0, "2750.00", "2750.00", UnitStatus.VACANT);
 
         // P10: Lincoln Park Manor (5 units)
-        addUnit(p10, "Apt 201", 1, 1, 740.0, "1750.00", "1750.00", UnitStatus.OCCUPIED);
-        addUnit(p10, "Apt 202", 2, 1, 980.0, "2250.00", "2250.00", UnitStatus.OCCUPIED);
-        addUnit(p10, "Apt 301", 2, 2, 1120.0, "2650.00", "2650.00", UnitStatus.VACANT);
-        addUnit(p10, "Apt 302", 3, 2, 1450.0, "3300.00", "3300.00", UnitStatus.BOOKED);
-        addUnit(p10, "Apt 401", 3, 3, 1800.0, "4200.00", "4200.00", UnitStatus.OCCUPIED);
+        Unit u10_1 = addUnit(p10, "Apt 201", 1, 1, 740.0, "1750.00", "1750.00", UnitStatus.OCCUPIED);
+        Unit u10_2 = addUnit(p10, "Apt 202", 2, 1, 980.0, "2250.00", "2250.00", UnitStatus.OCCUPIED);
+        Unit u10_3 = addUnit(p10, "Apt 301", 2, 2, 1120.0, "2650.00", "2650.00", UnitStatus.VACANT);
+        Unit u10_4 = addUnit(p10, "Apt 302", 3, 2, 1450.0, "3300.00", "3300.00", UnitStatus.BOOKED);
+        Unit u10_5 = addUnit(p10, "Apt 401", 3, 3, 1800.0, "4200.00", "4200.00", UnitStatus.OCCUPIED);
 
         // P11: SoHo Arts Building (4 units)
-        addUnit(p11, "Studio 3A", 1, 1, 920.0, "3400.00", "3400.00", UnitStatus.OCCUPIED);
-        addUnit(p11, "Studio 3B", 1, 1, 950.0, "3500.00", "3500.00", UnitStatus.VACANT);
-        addUnit(p11, "Studio 4A", 2, 2, 1500.0, "5200.00", "5200.00", UnitStatus.OCCUPIED);
-        addUnit(p11, "Studio 4B", 2, 2, 1550.0, "5400.00", "5400.00", UnitStatus.VACANT);
+        Unit u11_1 = addUnit(p11, "Studio 3A", 1, 1, 920.0, "3400.00", "3400.00", UnitStatus.OCCUPIED);
+        Unit u11_2 = addUnit(p11, "Studio 3B", 1, 1, 950.0, "3500.00", "3500.00", UnitStatus.VACANT);
+        Unit u11_3 = addUnit(p11, "Studio 4A", 2, 2, 1500.0, "5200.00", "5200.00", UnitStatus.OCCUPIED);
+        Unit u11_4 = addUnit(p11, "Studio 4B", 2, 2, 1550.0, "5400.00", "5400.00", UnitStatus.VACANT);
 
         // P12: Sunset Ridge Villas (3 units)
-        addUnit(p12, "Villa 12", 3, 2, 2100.0, "2950.00", "2950.00", UnitStatus.OCCUPIED);
-        addUnit(p12, "Villa 14", 3, 3, 2400.0, "3400.00", "3400.00", UnitStatus.VACANT);
-        addUnit(p12, "Villa 16", 4, 3, 2800.0, "4100.00", "4100.00", UnitStatus.BOOKED);
+        Unit u12_1 = addUnit(p12, "Villa 12", 3, 2, 2100.0, "2950.00", "2950.00", UnitStatus.OCCUPIED);
+        Unit u12_2 = addUnit(p12, "Villa 14", 3, 3, 2400.0, "3400.00", "3400.00", UnitStatus.VACANT);
+        Unit u12_3 = addUnit(p12, "Villa 16", 4, 3, 2800.0, "4100.00", "4100.00", UnitStatus.BOOKED);
 
         // P13: Cascade View Apartments (4 units)
-        addUnit(p13, "Unit 101", 1, 1, 710.0, "1650.00", "1650.00", UnitStatus.OCCUPIED);
-        addUnit(p13, "Unit 102", 1, 1, 710.0, "1650.00", "1650.00", UnitStatus.VACANT);
-        addUnit(p13, "Unit 201", 2, 2, 1020.0, "2250.00", "2250.00", UnitStatus.OCCUPIED);
-        addUnit(p13, "Unit 202", 2, 2, 1040.0, "2300.00", "2300.00", UnitStatus.VACANT);
+        Unit u13_1 = addUnit(p13, "Unit 101", 1, 1, 710.0, "1650.00", "1650.00", UnitStatus.OCCUPIED);
+        Unit u13_2 = addUnit(p13, "Unit 102", 1, 1, 710.0, "1650.00", "1650.00", UnitStatus.VACANT);
+        Unit u13_3 = addUnit(p13, "Unit 201", 2, 2, 1020.0, "2250.00", "2250.00", UnitStatus.OCCUPIED);
+        Unit u13_4 = addUnit(p13, "Unit 202", 2, 2, 1040.0, "2300.00", "2300.00", UnitStatus.VACANT);
 
         // P14: Greenfield Park Complex (3 units - all VACANT, NO LEASES -> test delete target!)
-        addUnit(p14, "Townhome A", 3, 2, 1850.0, "2400.00", "2400.00", UnitStatus.VACANT);
-        addUnit(p14, "Townhome B", 3, 2, 1850.0, "2400.00", "2400.00", UnitStatus.VACANT);
-        addUnit(p14, "Townhome C", 4, 3, 2250.0, "2950.00", "2950.00", UnitStatus.VACANT);
+        Unit u14_1 = addUnit(p14, "Townhome A", 3, 2, 1850.0, "2400.00", "2400.00", UnitStatus.VACANT);
+        Unit u14_2 = addUnit(p14, "Townhome B", 3, 2, 1850.0, "2400.00", "2400.00", UnitStatus.VACANT);
+        Unit u14_3 = addUnit(p14, "Townhome C", 4, 3, 2250.0, "2950.00", "2950.00", UnitStatus.VACANT);
 
         // 5. Create Leases
         // Lease 1: Leslie Alexander in Ledeberg Apt 101 (Rent: $1,450)
@@ -269,7 +337,7 @@ public class DataSeeder implements CommandLineRunner {
                 .build();
         leaseRepository.save(leaseLeslie);
 
-        // Lease 2: Jacob Jones in Hermiston Main House (Expires Today!)
+        // Lease 2: Jacob Jones in Hermiston Main House (Expires Today! Purple Event Card anchor)
         Lease leaseJacob = Lease.builder()
                 .unit(u1)
                 .tenant(tenantJacob)
@@ -281,7 +349,67 @@ public class DataSeeder implements CommandLineRunner {
                 .build();
         leaseRepository.save(leaseJacob);
 
-        // 6. Create Payments (Spanning the last 30 days for live chart and financials)
+        // Lease 3: Courtney Henry in Skyline Tower Suite 10C ($2,850)
+        Lease leaseCourtney = Lease.builder()
+                .unit(u3_2)
+                .tenant(tenantCourtney)
+                .startDate(LocalDate.now().minusMonths(3))
+                .endDate(LocalDate.now().plusMonths(9))
+                .monthlyRent(new BigDecimal("2850.00"))
+                .securityDeposit(new BigDecimal("2850.00"))
+                .active(true)
+                .build();
+        leaseRepository.save(leaseCourtney);
+
+        // Lease 4: Devon Lane in The Austin Lofts Loft 201 ($2,650, Expiring Soon in 45 days!)
+        Lease leaseDevon = Lease.builder()
+                .unit(u4_3)
+                .tenant(tenantDevon)
+                .startDate(LocalDate.now().minusMonths(11))
+                .endDate(LocalDate.now().plusDays(45))
+                .monthlyRent(new BigDecimal("2650.00"))
+                .securityDeposit(new BigDecimal("2650.00"))
+                .active(true)
+                .build();
+        leaseRepository.save(leaseDevon);
+
+        // Lease 5: Eleanor Pena in Magnolia Gardens Townhome 101 ($3,100)
+        Lease leaseEleanor = Lease.builder()
+                .unit(u5_1)
+                .tenant(tenantEleanor)
+                .startDate(LocalDate.now().minusMonths(5))
+                .endDate(LocalDate.now().plusMonths(7))
+                .monthlyRent(new BigDecimal("3100.00"))
+                .securityDeposit(new BigDecimal("3100.00"))
+                .active(true)
+                .build();
+        leaseRepository.save(leaseEleanor);
+
+        // Lease 6: Cameron Williamson in Biscayne Bay Apt 401 ($3,400)
+        Lease leaseCameron = Lease.builder()
+                .unit(u6_1)
+                .tenant(tenantCameron)
+                .startDate(LocalDate.now().minusMonths(1))
+                .endDate(LocalDate.now().plusMonths(11))
+                .monthlyRent(new BigDecimal("3400.00"))
+                .securityDeposit(new BigDecimal("3400.00"))
+                .active(true)
+                .build();
+        leaseRepository.save(leaseCameron);
+
+        // Lease 7: Past Ended Lease for Kathryn Murphy (Ended 6 months ago, active = false -> Moved Out)
+        Lease leaseKathryn = Lease.builder()
+                .unit(u2_2)
+                .tenant(tenantKathryn)
+                .startDate(LocalDate.now().minusYears(2))
+                .endDate(LocalDate.now().minusMonths(6))
+                .monthlyRent(new BigDecimal("1150.00"))
+                .securityDeposit(new BigDecimal("1150.00"))
+                .active(false)
+                .build();
+        leaseRepository.save(leaseKathryn);
+
+        // 6. Create Payments (Spanning the last 30 days for live chart, overdue, and upcoming metrics)
         Payment paymentOverdue = Payment.builder()
                 .lease(leaseLeslie)
                 .amount(new BigDecimal("1450.00"))
@@ -304,7 +432,7 @@ public class DataSeeder implements CommandLineRunner {
                 .build();
         paymentRepository.save(paymentUpcoming);
 
-        // Paid payments spanning the last 30 days for live Rental Payments chart
+        // Paid payments spanning the last 30 days for live Rental Payments chart ($9,250.00 total)
         Payment paymentPaid1 = Payment.builder()
                 .lease(leaseLeslie)
                 .amount(new BigDecimal("1450.00"))
@@ -313,6 +441,7 @@ public class DataSeeder implements CommandLineRunner {
                 .status(PaymentStatus.PAID)
                 .paymentMethod("BANK_TRANSFER")
                 .transactionReference("TXN-PD-10291")
+                .notes("Monthly rent payment - Apt 101")
                 .build();
         paymentRepository.save(paymentPaid1);
 
@@ -324,6 +453,7 @@ public class DataSeeder implements CommandLineRunner {
                 .status(PaymentStatus.PAID)
                 .paymentMethod("CREDIT_CARD")
                 .transactionReference("TXN-PD-10292")
+                .notes("Monthly rent payment - Main House")
                 .build();
         paymentRepository.save(paymentPaid2);
 
@@ -335,6 +465,7 @@ public class DataSeeder implements CommandLineRunner {
                 .status(PaymentStatus.PAID)
                 .paymentMethod("BANK_TRANSFER")
                 .transactionReference("TXN-PD-10293")
+                .notes("Monthly rent payment - Apt 101")
                 .build();
         paymentRepository.save(paymentPaid3);
 
@@ -346,6 +477,7 @@ public class DataSeeder implements CommandLineRunner {
                 .status(PaymentStatus.PAID)
                 .paymentMethod("CREDIT_CARD")
                 .transactionReference("TXN-PD-10294")
+                .notes("Monthly rent payment - Main House")
                 .build();
         paymentRepository.save(paymentPaid4);
 
@@ -357,10 +489,24 @@ public class DataSeeder implements CommandLineRunner {
                 .status(PaymentStatus.PAID)
                 .paymentMethod("BANK_TRANSFER")
                 .transactionReference("TXN-PD-10295")
+                .notes("Monthly rent payment - Apt 101")
                 .build();
         paymentRepository.save(paymentPaid5);
 
-        // 7. Create Maintenance Requests with realistic estimated costs
+        // Seed paid transaction for Courtney Henry older than 30 days
+        Payment paymentCourtney1 = Payment.builder()
+                .lease(leaseCourtney)
+                .amount(new BigDecimal("2850.00"))
+                .dueDate(LocalDate.now().minusMonths(2))
+                .paidDate(LocalDate.now().minusMonths(2).plusDays(1))
+                .status(PaymentStatus.PAID)
+                .paymentMethod("ACH_TRANSFER")
+                .transactionReference("TXN-CT-40112")
+                .notes("Initial monthly rent payment - Suite 10C")
+                .build();
+        paymentRepository.save(paymentCourtney1);
+
+        // 7. Create Maintenance Requests with realistic estimated costs ($540.00 total)
         MaintenanceRequest req1 = MaintenanceRequest.builder()
                 .unit(u1)
                 .tenant(tenantJacob)
@@ -420,6 +566,16 @@ public class DataSeeder implements CommandLineRunner {
                 .tenant(tenantJacob)
                 .build();
         documentRepository.save(doc2);
+
+        Document doc3 = Document.builder()
+                .fileName("Skyline_Tower_Suite10C_Agreement.pdf")
+                .fileType("application/pdf")
+                .fileUrl("/documents/lease-skyline-10c.pdf")
+                .category("LEASE_AGREEMENT")
+                .lease(leaseCourtney)
+                .tenant(tenantCourtney)
+                .build();
+        documentRepository.save(doc3);
 
         log.info("Propio database seeding completed successfully! Seeded 14 properties and {} units.",
                 unitRepository.count());

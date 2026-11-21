@@ -22,6 +22,10 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
 
     List<Payment> findByLeaseTenantId(Long tenantId);
 
+    List<Payment> findByLeaseIdOrderByDueDateAsc(Long leaseId);
+
+    List<Payment> findByLeaseIdOrderByDueDateDesc(Long leaseId);
+
     @Query("SELECT p FROM Payment p LEFT JOIN FETCH p.lease l WHERE l.tenant.id = :tenantId ORDER BY p.dueDate DESC")
     List<Payment> findByTenantIdWithDetails(@Param("tenantId") Long tenantId);
 

@@ -66,6 +66,12 @@ public class SecurityConfig {
                 // Role-restricted endpoints
                 .requestMatchers("/properties", "/properties/**").hasRole("ADMIN")
                 .requestMatchers("/admin", "/admin/**").hasRole("ADMIN")
+                .requestMatchers("/tenants/add", "/tenants/*/edit", "/tenants/*/delete").hasRole("ADMIN")
+                .requestMatchers("/tenants").hasRole("ADMIN")
+                .requestMatchers("/tenants/*").hasAnyRole("ADMIN", "TENANT")
+                .requestMatchers("/leasing/new", "/leasing/*/terminate", "/leasing/*/renew").hasRole("ADMIN")
+                .requestMatchers("/leasing", "/leasing/**").hasAnyRole("ADMIN", "TENANT")
+                .requestMatchers("/tenant/leases").hasRole("TENANT")
                 // All other requests require an active authenticated session
                 .anyRequest().authenticated()
             )

@@ -34,15 +34,36 @@ public class GlobalExceptionHandler {
         return "error/403";
     }
 
-    @ExceptionHandler(PropertyDeletionBlockedException.class)
-    public String handlePropertyDeletionBlocked(PropertyDeletionBlockedException ex, RedirectAttributes redirectAttributes, HttpServletRequest request) {
-        log.warn("Blocked property deletion: {}", ex.getMessage());
+    @ExceptionHandler(LeaseOverlapException.class)
+    public String handleLeaseOverlap(LeaseOverlapException ex, RedirectAttributes redirectAttributes, HttpServletRequest request) {
+        log.warn("Lease overlap error: {}", ex.getMessage());
         redirectAttributes.addFlashAttribute("errorMessage", ex.getMessage());
         String referer = request.getHeader("Referer");
-        if (referer != null && referer.contains("/properties")) {
-            return "redirect:/properties";
-        }
-        return "redirect:/properties";
+        return (referer != null && referer.contains("/leasing")) ? "redirect:" + referer : "redirect:/leasing";
+    }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    public String handleIllegalArgument(IllegalArgumentException ex, RedirectAttributes redirectAttributes, HttpServletRequest request) {
+        log.warn("Invalid input argument: {}", ex.getMessage());
+        redirectAttributes.addFlashAttribute("errorMessage", ex.getMessage());
+        String referer = request.getHeader("Referer");
+        return referer != null ? "redirect:" + referer : "redirect:/dashboard";
+    }
+
+    @ExceptionHandler(TenantDeletionBlockedException.class)
+    public String handleTenantDeletionBlocked(TenantDeletionBlockedException ex, RedirectAttributes redirectAttributes, HttpServletRequest request) {
+        log.warn("Blocked tenant deletion: {}", ex.getMessage());
+        redirectAttributes.addFlashAttribute("errorMessage", ex.getMessage());
+        String referer = request.getHeader("Referer");
+        return (referer != null && referer.contains("/tenants")) ? "redirect:" + referer : "redirect:/tenants";
+    }
+
+    @ExceptionHandler(PropertyDeletionBlockedException.class)
+    public String handlePropertyDeletionBlocked(PropertyDeletionBlockedException ex, RedirectAttributes redirectAttributes, HttpServletRequest request) {
+        log.warn("Blocked deletion: {}", ex.getMessage());
+        redirectAttributes.addFlashAttribute("errorMessage", ex.getMessage());
+        String referer = request.getHeader("Referer");
+        return referer != null ? "redirect:" + referer : "redirect:/properties";
     }
 
     @ExceptionHandler(MaxUploadSizeExceededException.class)
@@ -59,5 +80,15 @@ public class GlobalExceptionHandler {
         redirectAttributes.addFlashAttribute("errorMessage", ex.getMessage());
         String referer = request.getHeader("Referer");
         return referer != null ? "redirect:" + referer : "redirect:/properties";
+    }
+
+    @ExceptionHandler(Exception.class)
+    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+    public String handleGeneralException(Exception ex, Model model, HttpServletRequest request) {
+        log.error("Unhandled 500 Internal Server Error at {}: {}", request.getRequestURI(), ex.getMessage(), ex);
+        model.addAttribute("errorMessage", ex.getMessage() != null ? ex.getMessage() : "An unexpected server error occurred.");
+        model.addAttribute("requestedUri", request.getRequestURI());
+        model.addAttribute("status", 500);
+        return "error/500";
     }
 }

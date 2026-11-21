@@ -31,12 +31,21 @@ public class FileStorageService {
             "image/gif"
     );
 
+    private static final List<String> ALLOWED_AVATAR_TYPES = Arrays.asList(
+            "image/jpeg",
+            "image/jpg",
+            "image/png",
+            "image/webp"
+    );
+
     private static final long MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
+    private static final long MAX_AVATAR_SIZE = 2 * 1024 * 1024; // 2 MB
 
     public FileStorageService(@Value("${propio.upload.dir:uploads}") String uploadDir) {
         this.rootUploadPath = Paths.get(uploadDir).toAbsolutePath().normalize();
         try {
             Files.createDirectories(this.rootUploadPath.resolve("properties"));
+            Files.createDirectories(this.rootUploadPath.resolve("tenants"));
             log.info("Initialized file storage root at: {}", this.rootUploadPath);
         } catch (IOException ex) {
             throw new FileStorageException("Could not initialize upload storage location", ex);
@@ -87,6 +96,54 @@ public class FileStorageService {
             return "/uploads/properties/" + safeFileName;
         } catch (IOException ex) {
             throw new FileStorageException("Failed to store property image: " + safeFileName, ex);
+        }
+    }
+
+    /**
+     * Stores an uploaded avatar image for a tenant and returns the public web access path.
+     * Enforces max 2 MB file size and validates jpg/png/webp types.
+     */
+    public String storeTenantAvatar(MultipartFile file) {
+        if (file == null || file.isEmpty()) {
+            return null;
+        }
+
+        // Validate size (max 2 MB)
+        if (file.getSize() > MAX_AVATAR_SIZE) {
+            throw new FileStorageException("Avatar file size exceeds 2MB limit. Please upload a smaller photo.");
+        }
+
+        // Validate MIME type (jpg, png, webp)
+        String contentType = file.getContentType();
+        if (contentType == null || !ALLOWED_AVATAR_TYPES.contains(contentType.toLowerCase())) {
+            throw new FileStorageException("Invalid image format: '" + contentType + "'. Only JPG, PNG, and WEBP formats are supported.");
+        }
+
+        // Clean filename and extract extension
+        String originalFilename = StringUtils.cleanPath(file.getOriginalFilename() != null ? file.getOriginalFilename() : "avatar.jpg");
+        String extension = "";
+        int dotIndex = originalFilename.lastIndexOf('.');
+        if (dotIndex > 0) {
+            extension = originalFilename.substring(dotIndex).toLowerCase();
+        } else {
+            extension = ".jpg";
+        }
+
+        String safeFileName = UUID.randomUUID().toString() + extension;
+        Path targetDir = this.rootUploadPath.resolve("tenants");
+        Path targetPath = targetDir.resolve(safeFileName).normalize();
+
+        // Prevent path traversal
+        if (!targetPath.startsWith(this.rootUploadPath)) {
+            throw new FileStorageException("Cannot store avatar file outside designated storage directory.");
+        }
+
+        try (InputStream inputStream = file.getInputStream()) {
+            Files.copy(inputStream, targetPath, StandardCopyOption.REPLACE_EXISTING);
+            log.info("Saved tenant avatar: {}", safeFileName);
+            return "/uploads/tenants/" + safeFileName;
+        } catch (IOException ex) {
+            throw new FileStorageException("Failed to store tenant avatar: " + safeFileName, ex);
         }
     }
 

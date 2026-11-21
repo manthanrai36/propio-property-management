@@ -202,25 +202,6 @@ public class DashboardController {
         }
     }
 
-    @GetMapping("/tenants")
-    public String tenants(@AuthenticationPrincipal CustomUserDetails userDetails, Model model) {
-        model.addAttribute("activeNav", "tenants");
-        model.addAttribute("user", userDetails);
-        model.addAttribute("tenants", tenantRepository.findAll());
-        return "dashboard";
-    }
-
-    @GetMapping("/leasing")
-    public String leasing(@AuthenticationPrincipal CustomUserDetails userDetails, Model model) {
-        model.addAttribute("activeNav", "leasing");
-        model.addAttribute("user", userDetails);
-        if (userDetails != null && userDetails.isTenant() && userDetails.getTenantId() != null) {
-            model.addAttribute("leases", leaseRepository.findByTenantId(userDetails.getTenantId()));
-        } else {
-            model.addAttribute("leases", leaseRepository.findAll());
-        }
-        return "dashboard";
-    }
 
     @GetMapping("/maintenance")
     public String maintenance(@AuthenticationPrincipal CustomUserDetails userDetails, Model model) {
