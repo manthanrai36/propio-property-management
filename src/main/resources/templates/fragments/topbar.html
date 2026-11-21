@@ -61,20 +61,20 @@
               data-bs-toggle="dropdown" 
               aria-expanded="false" 
               aria-label="User profile menu">
-        <img th:src="${#authentication.principal.avatarUrl != null ? #authentication.principal.avatarUrl : 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=120&h=120&q=80'}" 
-             th:alt="${#authentication.principal.fullName}" 
+        <img th:src="${#authentication?.principal?.avatarUrl != null ? #authentication.principal.avatarUrl : 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=120&h=120&q=80'}" 
+             th:alt="${#authentication?.principal?.fullName != null ? #authentication.principal.fullName : 'User'}" 
              class="user-avatar">
         <div class="user-info">
-          <span class="user-name" th:text="${#authentication.principal.fullName}">User Name</span>
-          <span class="user-role" th:text="${#authentication.principal.displayRole}">Role</span>
+          <span class="user-name" th:text="${#authentication?.principal?.fullName != null ? #authentication.principal.fullName : 'User'}">User Name</span>
+          <span class="user-role" th:text="${#authentication?.principal?.displayRole != null ? #authentication.principal.displayRole : 'Member'}">Role</span>
         </div>
         <i class="bi bi-chevron-down text-muted fs-8 ms-1"></i>
       </button>
       <ul class="dropdown-menu dropdown-menu-end shadow-card border-0 rounded-4 mt-2" aria-labelledby="userProfileDropdown">
         <li>
           <div class="px-3 py-2 border-bottom border-light">
-            <div class="fw-bold fs-8" th:text="${#authentication.principal.fullName}">User Name</div>
-            <div class="text-muted fs-9" th:text="${#authentication.principal.username}">email@example.com</div>
+            <div class="fw-bold fs-8" th:text="${#authentication?.principal?.fullName != null ? #authentication.principal.fullName : 'User'}">User Name</div>
+            <div class="text-muted fs-9" th:text="${#authentication?.principal?.username != null ? #authentication.principal.username : ''}">email@example.com</div>
           </div>
         </li>
         <li><h6 class="dropdown-header text-uppercase fs-9 text-muted fw-bold mt-1">Account</h6></li>

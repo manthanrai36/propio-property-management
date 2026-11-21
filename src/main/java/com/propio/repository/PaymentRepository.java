@@ -22,6 +22,9 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
 
     List<Payment> findByLeaseTenantId(Long tenantId);
 
+    @Query("SELECT p FROM Payment p LEFT JOIN FETCH p.lease l WHERE l.tenant.id = :tenantId ORDER BY p.dueDate DESC")
+    List<Payment> findByTenantIdWithDetails(@Param("tenantId") Long tenantId);
+
     long countByStatus(PaymentStatus status);
 
     @Query("SELECT COALESCE(SUM(p.amount), 0) FROM Payment p WHERE p.status = :status")

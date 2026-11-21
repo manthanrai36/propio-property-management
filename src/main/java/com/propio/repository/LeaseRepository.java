@@ -21,6 +21,13 @@ public interface LeaseRepository extends JpaRepository<Lease, Long> {
 
     Optional<Lease> findByTenantIdAndActiveTrue(Long tenantId);
 
+    @Query("SELECT l FROM Lease l " +
+           "LEFT JOIN FETCH l.unit u " +
+           "LEFT JOIN FETCH u.property p " +
+           "LEFT JOIN FETCH l.tenant t " +
+           "WHERE l.tenant.id = :tenantId AND l.active = true")
+    Optional<Lease> findActiveLeaseByTenantIdWithDetails(@Param("tenantId") Long tenantId);
+
     List<Lease> findByEndDateBetweenAndActiveTrue(LocalDate start, LocalDate end);
 
     List<Lease> findByEndDateAndActiveTrue(LocalDate date);

@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security" th:replace="~{layout/main :: html}">
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security" th:replace="~{layout/main :: layout(~{::#dashboard-content})}">
 <head>
   <title>Dashboard Overview | Propio</title>
 </head>
 <body>
-<div th:fragment="content">
+<div id="dashboard-content">
 
   <!-- =========================================================================
        ADMIN VIEW: PORTFOLIO & REVENUE DASHBOARD (Matches Screenshot Reference)
@@ -368,7 +368,7 @@
     <div class="d-flex align-items-center justify-content-between mb-4 fade-in-up">
       <div>
         <h3 class="fw-bold mb-1">
-          Welcome back, <span class="text-primary" th:text="${user.fullName}">Tenant</span>! 👋
+          Welcome back, <span class="text-primary" th:text="${user?.fullName != null ? user.fullName : 'Tenant'}">Tenant</span>! 👋
         </h3>
         <p class="text-muted fs-8 mb-0">Here is your lease overview, active billing, and maintenance tickets.</p>
       </div>
@@ -390,23 +390,24 @@
               <i class="bi bi-house-door text-primary"></i>
               <span>My Leased Unit</span>
             </div>
-            <span class="badge bg-success-subtle text-success rounded-pill px-3 py-1 fs-9">Active Lease</span>
+            <span th:if="${tenantDashboard != null and tenantDashboard.hasActiveLease}" class="badge bg-success-subtle text-success rounded-pill px-3 py-1 fs-9">Active Lease</span>
+            <span th:if="${tenantDashboard == null or !tenantDashboard.hasActiveLease}" class="badge bg-secondary-subtle text-secondary rounded-pill px-3 py-1 fs-9">No Active Lease</span>
           </div>
-          <div th:if="${activeLease != null}">
-            <h5 class="fw-bold mb-1" th:text="${activeLease.unit.property.name + ' - ' + activeLease.unit.unitNumber}">Ledeberg 25 - Apt 101</h5>
-            <div class="text-muted fs-8 mb-3" th:text="${activeLease.unit.property.address}">377 NW 10th Hermiston</div>
+          <div th:if="${tenantDashboard != null and tenantDashboard.hasActiveLease}">
+            <h5 class="fw-bold mb-1" th:text="${tenantDashboard.propertyName + ' - ' + tenantDashboard.unitNumber}">Ledeberg 25 - Apt 101</h5>
+            <div class="text-muted fs-8 mb-3" th:text="${tenantDashboard.propertyAddress}">377 NW 10th Hermiston</div>
             <div class="d-flex justify-content-between pt-2 border-top border-light fs-8">
               <div>
                 <span class="text-muted">Monthly Rent:</span>
-                <span class="fw-bold ms-1" th:text="${'$' + activeLease.monthlyRent}">$1,450.00</span>
+                <span class="fw-bold ms-1" th:text="${tenantDashboard.monthlyRent != null ? '$' + tenantDashboard.monthlyRent : '$0.00'}">$1,450.00</span>
               </div>
               <div>
                 <span class="text-muted">Expires:</span>
-                <span class="fw-semibold ms-1" th:text="${#temporals.format(activeLease.endDate, 'MMM dd, yyyy')}">Nov 30, 2025</span>
+                <span class="fw-semibold ms-1" th:text="${tenantDashboard.leaseEndDate != null ? #temporals.format(tenantDashboard.leaseEndDate, 'MMM dd, yyyy') : 'N/A'}">Nov 30, 2025</span>
               </div>
             </div>
           </div>
-          <div th:if="${activeLease == null}" class="py-4 text-center text-muted fs-8">
+          <div th:if="${tenantDashboard == null or !tenantDashboard.hasActiveLease}" class="py-4 text-center text-muted fs-8">
             <i class="bi bi-info-circle fs-3 d-block mb-2 text-primary"></i>
             No active lease found. Please contact your property manager.
           </div>
@@ -421,13 +422,21 @@
               <i class="bi bi-credit-card text-danger"></i>
               <span>Rent Payment Due</span>
             </div>
-            <span class="badge bg-danger-subtle text-danger rounded-pill px-2 py-1 fs-9">Action Required</span>
+            <span th:if="${tenantDashboard?.hasOverduePayment}" class="badge bg-danger-subtle text-danger rounded-pill px-2 py-1 fs-9">Action Required</span>
+            <span th:if="${!tenantDashboard?.hasOverduePayment and tenantDashboard?.currentBalanceDue != null and tenantDashboard.currentBalanceDue > 0}" class="badge bg-warning-subtle text-warning rounded-pill px-2 py-1 fs-9">Due Soon</span>
+            <span th:if="${tenantDashboard?.currentBalanceDue == null or tenantDashboard.currentBalanceDue == 0}" class="badge bg-success-subtle text-success rounded-pill px-2 py-1 fs-9">Up to Date</span>
           </div>
           <div class="d-flex align-items-baseline gap-2 mb-2">
-            <span class="stat-display-value mb-0" data-counter="1450" data-prefix="$" data-decimals="2">$1,450.00</span>
-            <span class="text-danger fs-8 fw-semibold">Overdue</span>
+            <span class="stat-display-value mb-0" 
+                  th:attr="data-counter=${tenantDashboard?.currentBalanceDue != null ? tenantDashboard.currentBalanceDue : '0'}" 
+                  data-prefix="$" 
+                  data-decimals="2" 
+                  th:text="${'$' + (tenantDashboard?.currentBalanceDue != null ? tenantDashboard.currentBalanceDue : '0.00')}">$0.00</span>
+            <span th:if="${tenantDashboard?.hasOverduePayment}" class="text-danger fs-8 fw-semibold">Overdue</span>
+            <span th:if="${!tenantDashboard?.hasOverduePayment and tenantDashboard?.currentBalanceDue != null and tenantDashboard.currentBalanceDue > 0}" class="text-warning fs-8 fw-semibold">Pending</span>
+            <span th:if="${tenantDashboard?.currentBalanceDue == null or tenantDashboard.currentBalanceDue == 0}" class="text-success fs-8 fw-semibold">Paid</span>
           </div>
-          <p class="text-muted fs-9 mb-3">Due date was on 1st of the month. Please clear your dues.</p>
+          <p class="text-muted fs-9 mb-3">Due date is the 1st of every month. Clear balance online securely.</p>
           <button class="btn-propio-primary w-100 py-2 justify-content-center fs-8">
             <i class="bi bi-wallet2"></i>
             <span>Pay Rent Online</span>
@@ -444,14 +453,17 @@
                 <i class="bi bi-tools text-info"></i>
                 <span>Service Requests</span>
               </div>
-              <span class="badge bg-info-subtle text-info rounded-pill px-2 py-1 fs-9" th:text="${tenantRequests != null ? tenantRequests.size() + ' Tickets' : '1 Ticket'}">1 Ticket</span>
+              <span class="badge bg-info-subtle text-info rounded-pill px-2 py-1 fs-9" th:text="${tenantRequests != null ? tenantRequests.size() + ' Tickets' : '0 Tickets'}">0 Tickets</span>
             </div>
             <div th:each="req : ${tenantRequests}" class="p-2 mb-2 rounded-3 bg-light fs-8">
               <div class="d-flex justify-content-between">
-                <strong th:text="${req.title}">Water heater inspection</strong>
-                <span class="badge bg-warning text-dark fs-9" th:text="${req.status}">IN_PROGRESS</span>
+                <strong th:text="${req?.title != null ? req.title : 'Service Ticket'}">Water heater inspection</strong>
+                <span class="badge bg-warning text-dark fs-9" th:text="${req?.status != null ? req.status : 'PENDING'}">IN_PROGRESS</span>
               </div>
-              <div class="text-muted fs-9 mt-1" th:text="${req.description}">Minor temperature fluctuation reported</div>
+              <div class="text-muted fs-9 mt-1" th:text="${req?.description != null ? req.description : 'No notes'}">Minor temperature fluctuation reported</div>
+            </div>
+            <div th:if="${tenantRequests == null or tenantRequests.empty}" class="text-center py-3 text-muted fs-9">
+              No active service requests.
             </div>
           </div>
           <a th:href="@{/maintenance}" class="btn btn-propio-outline w-100 py-2 fs-8 mt-2">View Maintenance History</a>
@@ -480,15 +492,16 @@
               </thead>
               <tbody>
                 <tr th:each="p : ${tenantPayments}">
-                  <td class="fw-bold" th:text="${p.transactionReference}">TXN-OD-90214</td>
-                  <td class="fw-semibold" th:text="${'$' + p.amount}">$1,450.00</td>
-                  <td class="text-muted" th:text="${#temporals.format(p.dueDate, 'MMM dd, yyyy')}">Feb 01, 2024</td>
+                  <td class="fw-bold" th:text="${p?.transactionReference != null ? p.transactionReference : 'TXN-' + p?.id}">TXN-OD-90214</td>
+                  <td class="fw-semibold" th:text="${p?.amount != null ? '$' + p.amount : '$0.00'}">$1,450.00</td>
+                  <td class="text-muted" th:text="${p?.dueDate != null ? #temporals.format(p.dueDate, 'MMM dd, yyyy') : 'N/A'}">Feb 01, 2024</td>
                   <td>
-                    <span th:if="${p.status.name() == 'PAID'}" class="badge bg-success-subtle text-success rounded-pill px-2 py-1">PAID</span>
-                    <span th:if="${p.status.name() == 'OVERDUE'}" class="badge bg-danger-subtle text-danger rounded-pill px-2 py-1">OVERDUE</span>
-                    <span th:if="${p.status.name() == 'PENDING'}" class="badge bg-warning-subtle text-warning rounded-pill px-2 py-1">PENDING</span>
+                    <span th:if="${p?.status != null and p.status.name() == 'PAID'}" class="badge bg-success-subtle text-success rounded-pill px-2 py-1">PAID</span>
+                    <span th:if="${p?.status != null and p.status.name() == 'OVERDUE'}" class="badge bg-danger-subtle text-danger rounded-pill px-2 py-1">OVERDUE</span>
+                    <span th:if="${p?.status != null and p.status.name() == 'PENDING'}" class="badge bg-warning-subtle text-warning rounded-pill px-2 py-1">PENDING</span>
+                    <span th:if="${p?.status != null and p.status.name() == 'CANCELLED'}" class="badge bg-secondary-subtle text-secondary rounded-pill px-2 py-1">CANCELLED</span>
                   </td>
-                  <td class="text-muted" th:text="${p.paymentMethod}">Bank Transfer</td>
+                  <td class="text-muted" th:text="${p?.paymentMethod != null ? p.paymentMethod : 'Standard'}">Bank Transfer</td>
                 </tr>
                 <tr th:if="${tenantPayments == null or tenantPayments.empty}">
                   <td colspan="5" class="text-center py-3 text-muted">No payment records found.</td>
@@ -511,8 +524,8 @@
               <div class="d-flex align-items-center gap-2">
                 <i class="bi bi-file-earmark-pdf text-danger fs-5"></i>
                 <div>
-                  <div class="fw-semibold fs-8" th:text="${doc.fileName}">Lease_Agreement.pdf</div>
-                  <div class="text-muted fs-9" th:text="${doc.category}">LEASE_AGREEMENT</div>
+                  <div class="fw-semibold fs-8" th:text="${doc?.fileName != null ? doc.fileName : 'Document.pdf'}">Lease_Agreement.pdf</div>
+                  <div class="text-muted fs-9" th:text="${doc?.category != null ? doc.category : 'General'}">LEASE_AGREEMENT</div>
                 </div>
               </div>
               <button class="btn btn-sm btn-light rounded-circle p-1" style="width: 28px; height: 28px;"><i class="bi bi-download"></i></button>

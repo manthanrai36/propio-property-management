@@ -1,6 +1,7 @@
 package com.propio.controller;
 
 import com.propio.config.CustomUserDetails;
+import com.propio.dto.TenantDashboardDto;
 import com.propio.model.*;
 import com.propio.repository.*;
 import lombok.RequiredArgsConstructor;
@@ -93,12 +94,12 @@ public class DashboardController {
             Tenant tenant = tenantRepository.findById(tenantId).orElse(null);
             model.addAttribute("tenantProfile", tenant);
 
-            // Fetch tenant's active lease
-            Lease activeLease = leaseRepository.findByTenantIdAndActiveTrue(tenantId).orElse(null);
+            // Fetch tenant's active lease with eager fetch joins (unit, property, tenant)
+            Lease activeLease = leaseRepository.findActiveLeaseByTenantIdWithDetails(tenantId).orElse(null);
             model.addAttribute("activeLease", activeLease);
 
-            // Fetch tenant's payments
-            List<Payment> payments = paymentRepository.findByLeaseTenantId(tenantId);
+            // Fetch tenant's payments with eager fetch join
+            List<Payment> payments = paymentRepository.findByTenantIdWithDetails(tenantId);
             model.addAttribute("tenantPayments", payments);
 
             // Fetch tenant's maintenance requests
@@ -108,10 +109,46 @@ public class DashboardController {
             // Fetch tenant's documents
             List<Document> documents = documentRepository.findByTenantId(tenantId);
             model.addAttribute("tenantDocuments", documents);
+
+            // Construct safe, flat View DTO to prevent lazy-loading crashes in Thymeleaf
+            BigDecimal balanceDue = payments.stream()
+                    .filter(p -> p.getStatus() == PaymentStatus.OVERDUE || p.getStatus() == PaymentStatus.PENDING)
+                    .map(Payment::getAmount)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+            boolean hasOverdue = payments.stream().anyMatch(p -> p.getStatus() == PaymentStatus.OVERDUE);
+
+            TenantDashboardDto tenantDto = TenantDashboardDto.builder()
+                    .hasActiveLease(activeLease != null)
+                    .propertyName(activeLease != null && activeLease.getUnit() != null && activeLease.getUnit().getProperty() != null
+                            ? activeLease.getUnit().getProperty().getName() : "Propio Residence")
+                    .unitNumber(activeLease != null && activeLease.getUnit() != null
+                            ? activeLease.getUnit().getUnitNumber() : "Unit")
+                    .propertyAddress(activeLease != null && activeLease.getUnit() != null && activeLease.getUnit().getProperty() != null
+                            ? activeLease.getUnit().getProperty().getAddress() : "Address on file")
+                    .monthlyRent(activeLease != null && activeLease.getMonthlyRent() != null
+                            ? activeLease.getMonthlyRent() : BigDecimal.ZERO)
+                    .leaseEndDate(activeLease != null ? activeLease.getEndDate() : null)
+                    .currentBalanceDue(balanceDue)
+                    .hasOverduePayment(hasOverdue)
+                    .openTicketsCount(requests.size())
+                    .build();
+
+            model.addAttribute("tenantDashboard", tenantDto);
         } else {
             model.addAttribute("tenantPayments", Collections.emptyList());
             model.addAttribute("tenantRequests", Collections.emptyList());
             model.addAttribute("tenantDocuments", Collections.emptyList());
+            model.addAttribute("tenantDashboard", TenantDashboardDto.builder()
+                    .hasActiveLease(false)
+                    .propertyName("Propio Residence")
+                    .unitNumber("Unit")
+                    .propertyAddress("No active unit assigned")
+                    .monthlyRent(BigDecimal.ZERO)
+                    .currentBalanceDue(BigDecimal.ZERO)
+                    .hasOverduePayment(false)
+                    .openTicketsCount(0)
+                    .build());
         }
     }
 
