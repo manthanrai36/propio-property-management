@@ -83,7 +83,7 @@
         </div>
         <div class="pt-3 border-top d-flex align-items-center gap-4 text-muted fs-8 mt-3" style="border-color: var(--border-light) !important;">
           <div><i class="bi bi-calendar3 me-1 text-primary"></i> Added: <span th:text="${#temporals.format(property.createdAt, 'MMM dd, yyyy')}">Nov 20, 2026</span></div>
-          <div><i class="bi bi-shield-check me-1 text-success"></i> Lease Active Protection Enabled</div>
+          <div><i class="bi bi-file-earmark-check me-1 text-primary"></i> <span th:text="${activeLeasesCount != null ? activeLeasesCount + ' Active Lease' + (activeLeasesCount == 1 ? '' : 's') : '0 Active Leases'}">1 Active Lease</span></div>
         </div>
       </div>
     </div>

@@ -40,4 +40,7 @@ public interface LeaseRepository extends JpaRepository<Lease, Long> {
 
     @Query("SELECT l FROM Lease l JOIN FETCH l.unit JOIN FETCH l.tenant WHERE l.endDate BETWEEN :start AND :end AND l.active = true")
     List<Lease> findExpiringLeasesWithDetails(@Param("start") LocalDate start, @Param("end") LocalDate end);
+
+    @Query("SELECT l FROM Lease l JOIN FETCH l.unit u JOIN FETCH u.property p JOIN FETCH l.tenant t JOIN FETCH t.user u2 WHERE l.active = true ORDER BY l.endDate ASC")
+    List<Lease> findUpcomingExpiringLeasesWithDetails();
 }

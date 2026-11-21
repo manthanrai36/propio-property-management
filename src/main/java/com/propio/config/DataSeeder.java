@@ -45,7 +45,7 @@ public class DataSeeder implements CommandLineRunner {
 
         // 1. Create Users
         User adminUser = User.builder()
-                .fullName("Imran Hossain")
+                .fullName("Manthan")
                 .email("admin@propio.com")
                 .password(passwordEncoder.encode("admin123"))
                 .role(Role.ROLE_ADMIN)
@@ -185,7 +185,7 @@ public class DataSeeder implements CommandLineRunner {
         addUnit(p3, "Suite 8A", 1, 1, 750.0, "2100.00", "2100.00", UnitStatus.VACANT);
         addUnit(p3, "Suite 10C", 2, 2, 1100.0, "2850.00", "2850.00", UnitStatus.OCCUPIED);
         addUnit(p3, "Suite 12B", 2, 2, 1150.0, "2950.00", "2950.00", UnitStatus.BOOKED);
-        addUnit(p3, "Suite 14A", 2, 2, 1280.0, "3200.00", "3200.00", UnitStatus.MAINTENANCE);
+        addUnit(p3, "Suite 14A", 2, 2, 1280.0, "3200.00", "3200.00", UnitStatus.VACANT);
         addUnit(p3, "Suite 18B", 3, 3, 2100.0, "4800.00", "4800.00", UnitStatus.VACANT);
         addUnit(p3, "Penthouse 25A", 4, 4, 3400.0, "7500.00", "7500.00", UnitStatus.OCCUPIED);
 
@@ -281,11 +281,11 @@ public class DataSeeder implements CommandLineRunner {
                 .build();
         leaseRepository.save(leaseJacob);
 
-        // 6. Create Payments
+        // 6. Create Payments (Spanning the last 30 days for live chart and financials)
         Payment paymentOverdue = Payment.builder()
                 .lease(leaseLeslie)
                 .amount(new BigDecimal("1450.00"))
-                .dueDate(LocalDate.now().minusDays(12))
+                .dueDate(LocalDate.now().minusDays(8))
                 .status(PaymentStatus.OVERDUE)
                 .paymentMethod("BANK_TRANSFER")
                 .transactionReference("TXN-OD-90214")
@@ -296,7 +296,7 @@ public class DataSeeder implements CommandLineRunner {
         Payment paymentUpcoming = Payment.builder()
                 .lease(leaseJacob)
                 .amount(new BigDecimal("2450.00"))
-                .dueDate(LocalDate.now().plusDays(5))
+                .dueDate(LocalDate.now().plusDays(4))
                 .status(PaymentStatus.PENDING)
                 .paymentMethod("CREDIT_CARD")
                 .transactionReference("TXN-UP-88219")
@@ -304,39 +304,73 @@ public class DataSeeder implements CommandLineRunner {
                 .build();
         paymentRepository.save(paymentUpcoming);
 
+        // Paid payments spanning the last 30 days for live Rental Payments chart
         Payment paymentPaid1 = Payment.builder()
                 .lease(leaseLeslie)
                 .amount(new BigDecimal("1450.00"))
-                .dueDate(LocalDate.now().minusMonths(1))
-                .paidDate(LocalDate.now().minusMonths(1).plusDays(2))
+                .dueDate(LocalDate.now().minusDays(26))
+                .paidDate(LocalDate.now().minusDays(25))
                 .status(PaymentStatus.PAID)
                 .paymentMethod("BANK_TRANSFER")
-                .transactionReference("TXN-PD-10294")
+                .transactionReference("TXN-PD-10291")
                 .build();
         paymentRepository.save(paymentPaid1);
 
         Payment paymentPaid2 = Payment.builder()
                 .lease(leaseJacob)
                 .amount(new BigDecimal("2450.00"))
-                .dueDate(LocalDate.now().minusMonths(1))
-                .paidDate(LocalDate.now().minusMonths(1).plusDays(1))
+                .dueDate(LocalDate.now().minusDays(20))
+                .paidDate(LocalDate.now().minusDays(19))
                 .status(PaymentStatus.PAID)
                 .paymentMethod("CREDIT_CARD")
-                .transactionReference("TXN-PD-10295")
+                .transactionReference("TXN-PD-10292")
                 .build();
         paymentRepository.save(paymentPaid2);
 
-        // 7. Create Maintenance Requests
+        Payment paymentPaid3 = Payment.builder()
+                .lease(leaseLeslie)
+                .amount(new BigDecimal("1450.00"))
+                .dueDate(LocalDate.now().minusDays(15))
+                .paidDate(LocalDate.now().minusDays(14))
+                .status(PaymentStatus.PAID)
+                .paymentMethod("BANK_TRANSFER")
+                .transactionReference("TXN-PD-10293")
+                .build();
+        paymentRepository.save(paymentPaid3);
+
+        Payment paymentPaid4 = Payment.builder()
+                .lease(leaseJacob)
+                .amount(new BigDecimal("2450.00"))
+                .dueDate(LocalDate.now().minusDays(9))
+                .paidDate(LocalDate.now().minusDays(8))
+                .status(PaymentStatus.PAID)
+                .paymentMethod("CREDIT_CARD")
+                .transactionReference("TXN-PD-10294")
+                .build();
+        paymentRepository.save(paymentPaid4);
+
+        Payment paymentPaid5 = Payment.builder()
+                .lease(leaseLeslie)
+                .amount(new BigDecimal("1450.00"))
+                .dueDate(LocalDate.now().minusDays(3))
+                .paidDate(LocalDate.now().minusDays(2))
+                .status(PaymentStatus.PAID)
+                .paymentMethod("BANK_TRANSFER")
+                .transactionReference("TXN-PD-10295")
+                .build();
+        paymentRepository.save(paymentPaid5);
+
+        // 7. Create Maintenance Requests with realistic estimated costs
         MaintenanceRequest req1 = MaintenanceRequest.builder()
                 .unit(u1)
                 .tenant(tenantJacob)
-                .title("Check bill / Utility audit")
-                .description("Routine monthly utility inspection and energy sub-meter verification.")
+                .title("HVAC filter replacement & air check")
+                .description("Routine seasonal heating & AC system air filter replacement and duct inspection.")
                 .priority("MEDIUM")
                 .status(RequestStatus.PENDING)
-                .estimatedCost(new BigDecimal("120.00"))
+                .estimatedCost(new BigDecimal("180.00"))
                 .requestedDate(LocalDate.now())
-                .scheduledDate(LocalDate.now())
+                .scheduledDate(LocalDate.now().plusDays(2))
                 .build();
         maintenanceRequestRepository.save(req1);
 
@@ -347,10 +381,24 @@ public class DataSeeder implements CommandLineRunner {
                 .description("Tenant reported minor temperature fluctuation in master bath shower.")
                 .priority("LOW")
                 .status(RequestStatus.IN_PROGRESS)
-                .estimatedCost(new BigDecimal("85.00"))
+                .estimatedCost(new BigDecimal("220.00"))
                 .requestedDate(LocalDate.now().minusDays(3))
+                .scheduledDate(LocalDate.now().plusDays(1))
                 .build();
         maintenanceRequestRepository.save(req2);
+
+        MaintenanceRequest req3 = MaintenanceRequest.builder()
+                .unit(u1)
+                .tenant(tenantJacob)
+                .title("Bathroom fixture seal replacement")
+                .description("Re-caulking tub surround and faucet hardware inspection.")
+                .priority("LOW")
+                .status(RequestStatus.RESOLVED)
+                .estimatedCost(new BigDecimal("140.00"))
+                .requestedDate(LocalDate.now().minusDays(18))
+                .scheduledDate(LocalDate.now().minusDays(17))
+                .build();
+        maintenanceRequestRepository.save(req3);
 
         // 8. Create Documents
         Document doc1 = Document.builder()

@@ -157,22 +157,30 @@
       const rawOccupied = parseInt(unitsCanvas.getAttribute('data-occupied') || '0', 10);
       const rawBooked = parseInt(unitsCanvas.getAttribute('data-booked') || '0', 10);
       const rawVacant = parseInt(unitsCanvas.getAttribute('data-vacant') || '0', 10);
-      const donutValues = (rawOccupied + rawBooked + rawVacant > 0)
-        ? [rawOccupied, rawBooked, rawVacant]
-        : [210, 45, 34];
+      const rawMaintenance = parseInt(unitsCanvas.getAttribute('data-maintenance') || '0', 10);
+
+      const donutLabels = ['Occupied', 'Booked', 'Vacant'];
+      const donutValues = [rawOccupied, rawBooked, rawVacant];
+      const donutColors = [
+        '#5B43EA', // Occupied (Purple)
+        '#FF4B93', // Booked (Pink)
+        isDark() ? '#2D3748' : '#CFEBF1' // Vacant (Soft Light/Navy)
+      ];
+
+      if (rawMaintenance > 0) {
+        donutLabels.push('Maintenance');
+        donutValues.push(rawMaintenance);
+        donutColors.push('#F59E0B');
+      }
 
       const ctxUnits = unitsCanvas.getContext('2d');
       unitsChart = new Chart(ctxUnits, {
         type: 'doughnut',
         data: {
-          labels: ['Occupied', 'Booked', 'Vacant'],
+          labels: donutLabels,
           datasets: [{
             data: donutValues,
-            backgroundColor: [
-              '#5B43EA', // Occupied (Purple)
-              '#FF4B93', // Booked (Pink)
-              isDark() ? '#2D3748' : '#CFEBF1' // Vacant (Soft Light/Navy)
-            ],
+            backgroundColor: donutColors,
             borderWidth: 0,
             hoverOffset: 6
           }]
@@ -216,13 +224,31 @@
         return gradient;
       }
 
+      let chartLabels = ['Feb 7', 'Feb 8', 'Feb 9', 'Feb 10', 'Feb 11', 'Feb 12'];
+      let chartValues = [42, 38, 55, 78, 48, 62];
+
+      try {
+        const rawLabels = paymentsCanvas.getAttribute('data-labels');
+        const rawValues = paymentsCanvas.getAttribute('data-values');
+        if (rawLabels && rawValues) {
+          const parsedL = JSON.parse(rawLabels);
+          const parsedV = JSON.parse(rawValues);
+          if (Array.isArray(parsedL) && parsedL.length > 0) {
+            chartLabels = parsedL;
+            chartValues = parsedV;
+          }
+        }
+      } catch (e) {
+        console.warn('Failed parsing rental payments chart data', e);
+      }
+
       paymentsChart = new Chart(ctxPayments, {
         type: 'line',
         data: {
-          labels: ['Feb 7', 'Feb 8', 'Feb 9', 'Feb 10', 'Feb 11', 'Feb 12'],
+          labels: chartLabels,
           datasets: [{
             label: 'Rental Payments',
-            data: [42, 38, 55, 78, 48, 62],
+            data: chartValues,
             borderColor: '#38BDF8',
             borderWidth: 3,
             fill: true,
@@ -252,7 +278,7 @@
               displayColors: false,
               callbacks: {
                 label: function(context) {
-                  return `Feb 10 (${context.parsed.y} Units)`;
+                  return `${context.label}: $${Number(context.parsed.y).toLocaleString()}`;
                 }
               }
             }

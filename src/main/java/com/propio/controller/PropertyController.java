@@ -10,6 +10,7 @@ import com.propio.model.Unit;
 import com.propio.model.UnitStatus;
 import com.propio.service.PropertyService;
 import com.propio.service.UnitService;
+import com.propio.repository.LeaseRepository;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -34,6 +35,7 @@ public class PropertyController {
 
     private final PropertyService propertyService;
     private final UnitService unitService;
+    private final LeaseRepository leaseRepository;
 
     @GetMapping
     public String listProperties(@ModelAttribute("filter") PropertyFilterDto filter,
@@ -105,6 +107,7 @@ public class PropertyController {
         }
 
         double occupancyRate = totalUnits > 0 ? ((double) occupied / totalUnits) * 100 : 0.0;
+        long activeLeasesCount = leaseRepository.countActiveLeasesByPropertyId(id);
 
         model.addAttribute("activeNav", "properties");
         model.addAttribute("user", userDetails);
@@ -116,6 +119,7 @@ public class PropertyController {
         model.addAttribute("bookedCount", booked);
         model.addAttribute("totalMonthlyRent", totalRent);
         model.addAttribute("occupancyRate", Math.round(occupancyRate));
+        model.addAttribute("activeLeasesCount", activeLeasesCount);
         model.addAttribute("unitForm", UnitFormDto.builder().propertyId(id).build());
         model.addAttribute("unitStatuses", UnitStatus.values());
 

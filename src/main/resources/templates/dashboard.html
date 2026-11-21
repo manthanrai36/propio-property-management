@@ -24,17 +24,13 @@
           </div>
           <div class="d-flex align-items-baseline gap-2 mb-2">
             <span class="stat-display-value" 
-                  th:attr="data-counter=${totalOverdue != null ? totalOverdue : '1450.00'}" 
+                  th:attr="data-counter=${totalOverdue != null ? totalOverdue : '0'}" 
                   data-prefix="$" 
                   data-decimals="2" 
-                  th:text="${'$' + (totalOverdue != null ? totalOverdue : '1,450.00')}">$1,450.00</span>
-            <span class="trend-pill negative">
-              <span>15.8%</span>
-              <i class="bi bi-arrow-down-right"></i>
-            </span>
+                  th:text="${'$' + (totalOverdue != null ? totalOverdue : '0.00')}">$0.00</span>
           </div>
           <div class="stat-footnote">
-            <span class="fw-semibold text-danger" th:text="${(overdueCount != null ? overdueCount : '5') + ' Overdue'}">5 Overdue</span>
+            <span class="fw-semibold text-danger" th:text="${(overdueCount != null ? overdueCount : 0) + (overdueCount == 1 ? ' Overdue' : ' Overdue')}">0 Overdue</span>
           </div>
         </div>
       </div>
@@ -51,59 +47,67 @@
           </div>
           <div class="d-flex align-items-baseline gap-2 mb-2">
             <span class="stat-display-value" 
-                  th:attr="data-counter=${totalUpcoming != null ? totalUpcoming : '2450.00'}" 
+                  th:attr="data-counter=${totalUpcoming != null ? totalUpcoming : '0'}" 
                   data-prefix="$" 
                   data-decimals="2" 
-                  th:text="${'$' + (totalUpcoming != null ? totalUpcoming : '2,450.00')}">$2,450.00</span>
-            <span class="trend-pill positive">
-              <span>15.8%</span>
-              <i class="bi bi-arrow-up-right"></i>
-            </span>
+                  th:text="${'$' + (totalUpcoming != null ? totalUpcoming : '0.00')}">$0.00</span>
           </div>
           <div class="stat-footnote">
-            <span class="fw-semibold text-primary">2 this month</span>
+            <span class="fw-semibold text-primary" th:text="${(upcomingCount != null ? upcomingCount : 0) + (upcomingCount == 1 ? ' due soon' : ' due soon')}">0 due soon</span>
           </div>
         </div>
       </div>
 
-      <!-- Accent Card: Lease expires today! (Purple Hero) -->
+      <!-- Accent Card 1: Expiring Lease (Purple Hero) -->
       <div class="col-xl-2 col-md-4 fade-in-up stagger-3">
         <div class="card-accent-purple h-100 d-flex flex-column justify-content-between">
           <div>
-            <div class="accent-card-title">Lease expires today!</div>
-            <div class="accent-card-time">12:25 - 1:20 PM</div>
+            <div class="accent-card-title" th:text="${expiringLease != null and expiringLease.endDate != null and expiringLease.endDate.isEqual(T(java.time.LocalDate).now()) ? 'Lease expires today!' : 'Expiring Lease'}">Expiring Lease</div>
+            <div class="accent-card-time text-truncate" style="max-width: 140px;" th:text="${expiringLease != null ? expiringLease.unit.property.name + ' • ' + expiringLease.unit.unitNumber : 'Portfolio Active'}">Active Lease</div>
           </div>
-          <div class="accent-card-user">
-            <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=100&h=100&q=80" alt="Jacob Jones">
-            <span>Jacob Jones</span>
+          <div class="accent-card-user" th:if="${expiringLease != null}">
+            <img th:src="${expiringLease.tenant.user.avatarUrl}" th:alt="${expiringLease.tenant.user.fullName}">
+            <span class="text-truncate" style="max-width: 90px;" th:text="${expiringLease.tenant.user.fullName}">Tenant Name</span>
+          </div>
+          <div class="accent-card-user" th:unless="${expiringLease != null}">
+            <i class="bi bi-calendar-check fs-5"></i>
+            <span>Active Leases</span>
           </div>
         </div>
       </div>
 
-      <!-- Accent Card: Check bill (Teal Hero) -->
+      <!-- Accent Card 2: Rent Bill Due (Teal Hero) -->
       <div class="col-xl-2 col-md-4 fade-in-up stagger-4">
         <div class="card-accent-teal h-100 d-flex flex-column justify-content-between">
           <div>
-            <div class="accent-card-title">Check bill</div>
-            <div class="accent-card-time">11:05 - 12:40 PM</div>
+            <div class="accent-card-title">Rent Bill Due</div>
+            <div class="accent-card-time text-truncate" style="max-width: 140px;" th:text="${duePayment != null ? '$' + duePayment.amount + ' • Due ' + #temporals.format(duePayment.dueDate, 'MMM dd') : 'All Bills Paid'}">Payment Due</div>
           </div>
-          <div class="accent-card-user">
-            <img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=100&h=100&q=80" alt="Jacob Jones">
-            <span>Jacob Jones</span>
+          <div class="accent-card-user" th:if="${duePayment != null}">
+            <img th:src="${duePayment.lease.tenant.user.avatarUrl}" th:alt="${duePayment.lease.tenant.user.fullName}">
+            <span class="text-truncate" style="max-width: 90px;" th:text="${duePayment.lease.tenant.user.fullName}">Tenant Name</span>
+          </div>
+          <div class="accent-card-user" th:unless="${duePayment != null}">
+            <i class="bi bi-check-circle fs-5"></i>
+            <span>Settled</span>
           </div>
         </div>
       </div>
 
-      <!-- Accent Card: Insurance (Pink Hero) -->
+      <!-- Accent Card 3: Maintenance Ticket (Pink Hero) -->
       <div class="col-xl-2 col-md-4 fade-in-up stagger-4">
         <div class="card-accent-pink h-100 d-flex flex-column justify-content-between">
           <div>
-            <div class="accent-card-title">Insurance</div>
-            <div class="accent-card-time">9:25 - 10:30 AM</div>
+            <div class="accent-card-title">Service Request</div>
+            <div class="accent-card-time text-truncate" style="max-width: 140px;" th:text="${openRequest != null ? openRequest.title : 'No Open Tickets'}">Service Request</div>
           </div>
-          <div class="accent-card-user">
-            <img src="https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=100&h=100&q=80" alt="Jacob Jones">
-            <span>Jacob Jones</span>
+          <div class="accent-card-user" th:if="${openRequest != null}">
+            <img th:src="${openRequest.tenant.user.avatarUrl}" th:alt="${openRequest.tenant.user.fullName}">
+            <span class="text-truncate" style="max-width: 90px;" th:text="${openRequest.tenant.user.fullName}">Tenant Name</span>
+          </div>
+          <div class="accent-card-user" th:unless="${openRequest != null}">
+            <i class="bi bi-tools fs-5"></i>
+            <span>Zero Tickets</span>
           </div>
         </div>
       </div>
@@ -128,7 +132,8 @@
               <canvas id="unitsDonutChart" 
                       th:data-occupied="${occupiedUnits != null ? occupiedUnits : 0}" 
                       th:data-booked="${bookedUnits != null ? bookedUnits : 0}" 
-                      th:data-vacant="${vacantUnits != null ? vacantUnits : 0}"></canvas>
+                      th:data-vacant="${vacantUnits != null ? vacantUnits : 0}"
+                      th:data-maintenance="${maintenanceUnits != null ? maintenanceUnits : 0}"></canvas>
               <div class="position-absolute top-50 start-50 translate-middle text-center pointer-events-none">
                 <div class="fs-2 fw-bold font-heading lh-1" th:data-counter="${totalUnits != null ? totalUnits : 0}" th:text="${totalUnits != null ? totalUnits : '0'}">0</div>
                 <div class="text-muted fs-8 fw-semibold text-uppercase">Units</div>
@@ -148,6 +153,10 @@
               <span class="d-flex align-items-center gap-2">
                 <span class="d-inline-block rounded-circle" style="width: 8px; height: 8px; background-color: #38BDF8;"></span>
                 <span>Vacant (<span th:text="${vacantUnits != null ? vacantUnits : 0}">0</span>)</span>
+              </span>
+              <span th:if="${maintenanceUnits != null and maintenanceUnits > 0}" class="d-flex align-items-center gap-2">
+                <span class="d-inline-block rounded-circle" style="width: 8px; height: 8px; background-color: #F59E0B;"></span>
+                <span>Maintenance (<span th:text="${maintenanceUnits}">0</span>)</span>
               </span>
             </div>
           </div>
@@ -188,26 +197,31 @@
               <div class="mb-3">
                 <div class="text-muted fs-8 fw-medium">Total Income</div>
                 <div class="d-flex align-items-center gap-2 mt-1">
-                  <span class="fs-5 fw-bold" data-counter="9245.25" data-prefix="$" data-decimals="2">$9,245.25</span>
-                  <span class="trend-pill positive fs-9">15.8% ↗</span>
+                  <span class="fs-5 fw-bold" 
+                        th:attr="data-counter=${totalPaidRevenue != null ? totalPaidRevenue : '0'}" 
+                        data-prefix="$" 
+                        data-decimals="2" 
+                        th:text="${'$' + (totalPaidRevenue != null ? totalPaidRevenue : '0.00')}">$0.00</span>
                 </div>
               </div>
               <div class="mb-3">
                 <div class="text-muted fs-8 fw-medium">Total Overdue</div>
                 <div class="d-flex align-items-center gap-2 mt-1">
                   <span class="fs-5 fw-bold" 
-                        th:attr="data-counter=${totalOverdue != null ? totalOverdue : '5245.00'}" 
+                        th:attr="data-counter=${totalOverdue != null ? totalOverdue : '0'}" 
                         data-prefix="$" 
                         data-decimals="2" 
-                        th:text="${'$' + (totalOverdue != null ? totalOverdue : '5,245.00')}">$5,245.00</span>
-                  <span class="trend-pill negative fs-9">15.8% ↘</span>
+                        th:text="${'$' + (totalOverdue != null ? totalOverdue : '0.00')}">$0.00</span>
                 </div>
               </div>
               <div>
                 <div class="text-muted fs-8 fw-medium">Maintenance cost</div>
                 <div class="d-flex align-items-center gap-2 mt-1">
-                  <span class="fs-5 fw-bold" data-counter="2257.47" data-prefix="$" data-decimals="2">$2,257.47</span>
-                  <span class="trend-pill positive fs-9">15.8% ↗</span>
+                  <span class="fs-5 fw-bold" 
+                        th:attr="data-counter=${totalMaintenanceCost != null ? totalMaintenanceCost : '0'}" 
+                        data-prefix="$" 
+                        data-decimals="2" 
+                        th:text="${'$' + (totalMaintenanceCost != null ? totalMaintenanceCost : '0.00')}">$0.00</span>
                 </div>
               </div>
             </div>
@@ -215,7 +229,9 @@
             <!-- Chart Area -->
             <div class="col-md-8">
               <div style="height: 220px;">
-                <canvas id="rentalPaymentsChart"></canvas>
+                <canvas id="rentalPaymentsChart"
+                        th:data-labels="${rentalPaymentLabelsJson}"
+                        th:data-values="${rentalPaymentValuesJson}"></canvas>
               </div>
             </div>
           </div>
@@ -307,14 +323,22 @@
               <i class="bi bi-info-circle text-muted"></i>
             </div>
             <div class="d-flex justify-content-between align-items-baseline">
-              <div class="stat-display-value mb-0" data-counter="1450" data-prefix="$" data-decimals="2">$1,450.00</div>
+              <div class="stat-display-value mb-0" 
+                   th:attr="data-counter=${monthPaidRent != null ? monthPaidRent : '0'}" 
+                   data-prefix="$" 
+                   data-decimals="2" 
+                   th:text="${'$' + (monthPaidRent != null ? monthPaidRent : '0.00')}">$0.00</div>
               <div class="text-end">
-                <div class="fw-bold fs-7" data-counter="6000" data-prefix="$" data-decimals="0">$6,000</div>
+                <div class="fw-bold fs-7" 
+                     th:attr="data-counter=${monthTotalRent != null ? monthTotalRent : '0'}" 
+                     data-prefix="$" 
+                     data-decimals="0" 
+                     th:text="${'$' + (monthTotalRent != null ? monthTotalRent : '0')}">$0</div>
                 <div class="text-muted fs-9">Due this month</div>
               </div>
             </div>
             <div class="progress-propio">
-              <div class="progress-bar" style="width: 24%;" role="progressbar" aria-valuenow="24" aria-valuemin="0" aria-valuemax="100"></div>
+              <div class="progress-bar" th:style="${'width: ' + rentReceivedPercent + '%;'}" role="progressbar" th:aria-valuenow="${rentReceivedPercent}" aria-valuemin="0" aria-valuemax="100"></div>
             </div>
           </div>
         </div>
@@ -342,7 +366,11 @@
           <!-- Payment Due Card -->
           <div class="card-propio p-3">
             <div class="text-muted fs-9 fw-semibold">Payment Due</div>
-            <div class="fs-5 fw-bold mb-2" data-counter="16254" data-prefix="$" data-decimals="0">$16,254</div>
+            <div class="fs-5 fw-bold mb-2" 
+                 th:attr="data-counter=${totalOverdue != null ? totalOverdue : '0'}" 
+                 data-prefix="$" 
+                 data-decimals="0" 
+                 th:text="${'$' + (totalOverdue != null ? totalOverdue : '0')}">$0</div>
             <button class="btn btn-sm btn-propio-outline w-100 py-1 fs-9 d-flex align-items-center justify-content-center gap-1 text-primary">
               <i class="bi bi-box-arrow-in-down-left"></i> Receive
             </button>
