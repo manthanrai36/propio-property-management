@@ -36,6 +36,8 @@ public class PaymentService {
     private final PaymentRepository paymentRepository;
     private final LeaseRepository leaseRepository;
     private final EmailService emailService;
+    private final NotificationService notificationService;
+    private final SystemSettingService systemSettingService;
 
     @Value("${propio.billing.late-fee-percentage:5.0}")
     private double lateFeePercentage;
@@ -127,6 +129,28 @@ public class PaymentService {
         } catch (Exception ex) {
             log.warn("Failed to queue payment receipt email for payment #{}: {}", saved.getId(), ex.getMessage());
         }
+
+        // Generate in-app notifications
+        try {
+            if (saved.getLease() != null && saved.getLease().getTenant() != null && saved.getLease().getTenant().getUser() != null) {
+                notificationService.createNotification(
+                        saved.getLease().getTenant().getUser(),
+                        "Payment Confirmed",
+                        "Payment of $" + saved.getAmount() + " for " + saved.getTransactionReference() + " was recorded.",
+                        com.propio.model.NotificationType.PAYMENT_RECEIVED,
+                        "/payments"
+                );
+            }
+            notificationService.notifyAllAdmins(
+                    "Payment Recorded",
+                    "Payment of $" + saved.getAmount() + " recorded for " + (saved.getLease() != null && saved.getLease().getTenant() != null ? saved.getLease().getTenant().getFullName() : "Tenant"),
+                    com.propio.model.NotificationType.PAYMENT_RECEIVED,
+                    "/payments"
+            );
+        } catch (Exception ex) {
+            log.warn("Failed creating notification for payment #{}: {}", saved.getId(), ex.getMessage());
+        }
+
         return saved;
     }
 
@@ -170,6 +194,28 @@ public class PaymentService {
         } catch (Exception ex) {
             log.warn("Failed to queue online payment receipt email for payment #{}: {}", saved.getId(), ex.getMessage());
         }
+
+        // Generate in-app notifications
+        try {
+            if (saved.getLease() != null && saved.getLease().getTenant() != null && saved.getLease().getTenant().getUser() != null) {
+                notificationService.createNotification(
+                        saved.getLease().getTenant().getUser(),
+                        "Payment Successful",
+                        "Your online payment of $" + saved.getAmount() + " (" + saved.getTransactionReference() + ") was approved.",
+                        com.propio.model.NotificationType.PAYMENT_RECEIVED,
+                        "/payments"
+                );
+            }
+            notificationService.notifyAllAdmins(
+                    "Online Payment Received",
+                    "Online payment of $" + saved.getAmount() + " settled by " + (saved.getLease() != null && saved.getLease().getTenant() != null ? saved.getLease().getTenant().getFullName() : "Tenant"),
+                    com.propio.model.NotificationType.PAYMENT_RECEIVED,
+                    "/payments"
+            );
+        } catch (Exception ex) {
+            log.warn("Failed creating notification for online payment #{}: {}", saved.getId(), ex.getMessage());
+        }
+
         return saved;
     }
 
@@ -238,6 +284,9 @@ public class PaymentService {
             }
         }
 
+        // Fetch dynamic late fee percentage configured via Admin Settings
+        BigDecimal dynamicLateFeePct = systemSettingService != null ? systemSettingService.getLateFeePercentage() : BigDecimal.valueOf(lateFeePercentage);
+
         // --- 2. Mark Past-Due PENDING Invoices as OVERDUE and Assess Late Fee ---
         List<Payment> overdueCandidates = paymentRepository.findByStatusAndDueDateBefore(PaymentStatus.PENDING, LocalDate.now());
         for (Payment candidate : overdueCandidates) {
@@ -246,7 +295,7 @@ public class PaymentService {
             // Add late fee if not already assessed
             if (candidate.getLateFee() == null || candidate.getLateFee().compareTo(BigDecimal.ZERO) == 0) {
                 BigDecimal lateFee = candidate.getAmount()
-                        .multiply(BigDecimal.valueOf(lateFeePercentage))
+                        .multiply(dynamicLateFeePct)
                         .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
 
                 candidate.setLateFee(lateFee);
@@ -255,16 +304,31 @@ public class PaymentService {
                 lateFeesCount++;
 
                 String feeMemo = String.format(" [Late fee of $%s (%.1f%%) assessed on %s]",
-                        lateFee.toPlainString(), lateFeePercentage, LocalDate.now());
+                        lateFee.toPlainString(), dynamicLateFeePct.doubleValue(), LocalDate.now());
                 candidate.setNotes(candidate.getNotes() != null ? candidate.getNotes() + feeMemo : feeMemo);
             }
 
             paymentRepository.save(candidate);
             overdueCount++;
+
+            // Create in-app notification for overdue invoice
+            try {
+                if (candidate.getLease() != null && candidate.getLease().getTenant() != null && candidate.getLease().getTenant().getUser() != null) {
+                    notificationService.createNotification(
+                            candidate.getLease().getTenant().getUser(),
+                            "Rent Overdue Notice",
+                            "Your invoice (" + candidate.getTransactionReference() + ") is past due. A late fee of $" + candidate.getLateFee() + " has been applied.",
+                            com.propio.model.NotificationType.RENT_OVERDUE,
+                            "/payments"
+                    );
+                }
+            } catch (Exception ex) {
+                log.warn("Failed creating overdue notification for payment #{}: {}", candidate.getId(), ex.getMessage());
+            }
         }
 
         String summary = String.format("[Rent Engine] [%s] Completed run: Generated %d next-month PENDING invoice(s), marked %d overdue invoice(s) (with %d late fee(s) assessed at %.1f%%), %d duplicate(s) skipped.",
-                triggerSource, generatedCount, overdueCount, lateFeesCount, lateFeePercentage, skippedDuplicatesCount);
+                triggerSource, generatedCount, overdueCount, lateFeesCount, dynamicLateFeePct.doubleValue(), skippedDuplicatesCount);
         log.info(summary);
 
         return BillingCycleResult.builder()

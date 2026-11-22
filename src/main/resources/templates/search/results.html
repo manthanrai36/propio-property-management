@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      th:replace="~{layout/main :: layout(~{::#search-content})}">
+<head>
+  <title th:text="${pageTitle}">Search Results | Propio</title>
+</head>
+<body>
+<div id="search-content" class="container-fluid p-0">
+
+  <!-- Header Banner -->
+  <div class="d-flex flex-column flex-md-row align-items-start align-items-md-center justify-content-between gap-3 mb-4">
+    <div>
+      <div class="d-flex align-items-center gap-2 mb-1">
+        <span class="badge bg-primary-subtle text-primary rounded-pill px-3 py-1 fs-9 fw-bold">
+          <i class="bi bi-search me-1"></i> Global Search
+        </span>
+        <span class="text-muted fs-8">•</span>
+        <span class="text-muted fs-8" th:text="${resultsCount + ' Matches Found'}">0 Matches</span>
+      </div>
+      <h2 class="fw-bold mb-0 text-body">
+        Search Results for &ldquo;<span th:text="${query}">query</span>&rdquo;
+      </h2>
+    </div>
+
+    <!-- Search input in-page -->
+    <form th:action="@{/search}" method="get" class="d-flex align-items-center gap-2" style="max-width: 380px; width: 100%;">
+      <div class="input-group">
+        <span class="input-group-text bg-white border-end-0 rounded-start-3"><i class="bi bi-search text-muted"></i></span>
+        <input type="text" name="q" th:value="${query}" class="form-control border-start-0 rounded-end-3 fs-8" placeholder="Search again...">
+      </div>
+      <button type="submit" class="btn btn-primary btn-sm rounded-3 px-3 fw-semibold">Search</button>
+    </form>
+  </div>
+
+  <!-- Empty State -->
+  <div th:if="${results.empty}" class="card border-0 shadow-card rounded-4 p-5 text-center my-4">
+    <div class="rounded-circle d-flex align-items-center justify-content-center bg-light text-muted mx-auto mb-3" style="width: 64px; height: 64px;">
+      <i class="bi bi-search fs-3"></i>
+    </div>
+    <h5 class="fw-bold text-body mb-2">No Matching Records Found</h5>
+    <p class="text-muted fs-8 mx-auto mb-4" style="max-width: 480px;">
+      We couldn't find any properties, tenants, leases, or payments matching &ldquo;<span th:text="${query}">query</span>&rdquo; that your account is authorized to view.
+    </p>
+    <div>
+      <a th:href="@{/dashboard}" class="btn btn-primary rounded-3 px-4 fw-semibold">
+        <i class="bi bi-arrow-left me-1"></i>Return to Dashboard
+      </a>
+    </div>
+  </div>
+
+  <!-- Results List -->
+  <div th:unless="${results.empty}" class="card border-0 shadow-card rounded-4 overflow-hidden mb-4">
+    <div class="card-header bg-transparent border-0 p-4 pb-2 d-flex align-items-center justify-content-between">
+      <h5 class="fw-bold mb-0 text-body">Matching Records</h5>
+      <span class="badge bg-light text-muted border px-2 py-1 fs-9">Permission-Filtered</span>
+    </div>
+
+    <div class="list-group list-group-flush">
+      <a th:each="r : ${results}" 
+         th:href="${r.url}" 
+         class="list-group-item list-group-item-action d-flex align-items-center justify-content-between p-3 border-bottom hover-card transition-all">
+        <div class="d-flex align-items-center gap-3 min-w-0">
+          <div class="rounded-circle d-flex align-items-center justify-content-center bg-primary-subtle text-primary flex-shrink-0" style="width: 42px; height: 42px;">
+            <i class="bi fs-5" th:classappend="${r.icon != null ? r.icon : 'bi-search'}"></i>
+          </div>
+          <div class="text-truncate">
+            <div class="d-flex align-items-center gap-2 mb-1">
+              <span class="badge bg-light text-muted border fs-9 fw-semibold" th:text="${r.categoryDisplayName}">Category</span>
+              <span class="fw-bold fs-7 text-truncate text-body" th:text="${r.title}">Title</span>
+            </div>
+            <div class="text-muted fs-8 text-truncate" th:text="${r.subtitle}">Subtitle</div>
+          </div>
+        </div>
+
+        <div class="d-flex align-items-center gap-3 ms-2 flex-shrink-0">
+          <span class="badge rounded-pill px-3 py-1 fs-9" 
+                th:classappend="${r.badgeClass != null ? r.badgeClass : 'bg-secondary-subtle text-secondary'}" 
+                th:text="${r.badge}">Badge</span>
+          <i class="bi bi-chevron-right text-muted fs-8"></i>
+        </div>
+      </a>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

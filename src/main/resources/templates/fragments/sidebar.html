@@ -104,6 +104,15 @@
           <span>Email Logs</span>
         </a>
       </li>
+      <li sec:authorize="hasRole('ADMIN')">
+        <a th:href="@{/reports}" 
+           th:classappend="${activeNav == 'reports'} ? 'active' : ''" 
+           class="nav-link-propio ripple" 
+           aria-label="Reports & Analytics">
+          <i class="bi bi-bar-chart-line-fill nav-icon"></i>
+          <span>Reports</span>
+        </a>
+      </li>
     </ul>
   </div>
 
@@ -112,13 +121,19 @@
     <div class="nav-section-title">Preferences</div>
     <ul class="nav-pills-propio">
       <li>
-        <a href="#settings" class="nav-link-propio ripple" aria-label="Settings">
+        <a th:href="@{/settings}" 
+           th:classappend="${activeNav == 'settings'} ? 'active' : ''"
+           class="nav-link-propio ripple" 
+           aria-label="Settings">
           <i class="bi bi-gear nav-icon"></i>
           <span>Settings</span>
         </a>
       </li>
       <li>
-        <a href="#help" class="nav-link-propio ripple" aria-label="Help and Support">
+        <a th:href="@{/support}" 
+           th:classappend="${activeNav == 'support'} ? 'active' : ''"
+           class="nav-link-propio ripple" 
+           aria-label="Help and Support">
           <i class="bi bi-question-circle nav-icon"></i>
           <span>Help & Support</span>
         </a>

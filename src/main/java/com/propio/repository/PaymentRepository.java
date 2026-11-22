@@ -134,4 +134,17 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
             @Param("tenantId") Long tenantId,
             @Param("start") LocalDate start,
             @Param("end") LocalDate end);
+
+    @Query("SELECT p FROM Payment p " +
+           "JOIN FETCH p.lease l " +
+           "JOIN FETCH l.unit u " +
+           "JOIN FETCH u.property prop " +
+           "JOIN FETCH l.tenant t " +
+           "LEFT JOIN FETCH t.user " +
+           "WHERE (:startDate IS NULL OR p.dueDate >= :startDate) " +
+           "AND (:endDate IS NULL OR p.dueDate <= :endDate) " +
+           "ORDER BY p.dueDate DESC")
+    List<Payment> findPaymentsForReport(
+            @Param("startDate") LocalDate startDate,
+            @Param("endDate") LocalDate endDate);
 }

@@ -24,6 +24,14 @@ public interface TenantRepository extends JpaRepository<Tenant, Long> {
     @Query("SELECT DISTINCT t FROM Tenant t LEFT JOIN FETCH t.user WHERE t.id IN :ids")
     List<Tenant> findAllByIdWithUser(@Param("ids") List<Long> ids);
 
+    @Query("SELECT DISTINCT t FROM Tenant t " +
+           "LEFT JOIN FETCH t.leases l " +
+           "LEFT JOIN FETCH l.unit u " +
+           "LEFT JOIN FETCH u.property p " +
+           "LEFT JOIN FETCH t.user " +
+           "ORDER BY t.lastName ASC, t.firstName ASC")
+    List<Tenant> findAllWithLeaseDetails();
+
     @Query(value = "SELECT t FROM Tenant t " +
                    "WHERE (:keyword IS NULL OR :keyword = '' " +
                    "   OR LOWER(t.firstName) LIKE LOWER(CONCAT('%', :keyword, '%')) " +

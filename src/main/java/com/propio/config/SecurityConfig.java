@@ -64,6 +64,8 @@ public class SecurityConfig {
                     "/favicon.ico"
                 ).permitAll()
                 // Role-restricted endpoints
+                .requestMatchers("/reports", "/reports/**").hasRole("ADMIN")
+                .requestMatchers("/settings/admin").hasRole("ADMIN")
                 .requestMatchers("/properties", "/properties/**").hasRole("ADMIN")
                 .requestMatchers("/admin", "/admin/**").hasRole("ADMIN")
                 .requestMatchers("/tenants/add", "/tenants/*/edit", "/tenants/*/delete").hasRole("ADMIN")

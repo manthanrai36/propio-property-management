@@ -44,6 +44,7 @@ class MaintenanceServiceTest {
 
         FileStorageService fileStorage = new FileStorageService("uploads");
         EmailService emailService = new EmailService(null, null, null, null);
+        NotificationService notificationService = new NotificationService(null, null);
 
         maintenanceService = new MaintenanceService(
                 requestRepo,
@@ -52,7 +53,8 @@ class MaintenanceServiceTest {
                 leaseRepo,
                 unitRepo,
                 fileStorage,
-                emailService
+                emailService,
+                notificationService
         );
 
         adminUser = User.builder()
@@ -294,6 +296,7 @@ class MaintenanceServiceTest {
         @Override public Optional<Tenant> findByUserId(Long userId) { return Optional.empty(); }
         @Override public Optional<Tenant> findByIdWithUser(Long id) { return Optional.empty(); }
         @Override public List<Tenant> findAllByIdWithUser(List<Long> ids) { return Collections.emptyList(); }
+        @Override public List<Tenant> findAllWithLeaseDetails() { return Collections.emptyList(); }
         @Override public Optional<Tenant> findByEmail(String email) { return Optional.empty(); }
         @Override public org.springframework.data.domain.Page<Tenant> searchTenants(String keyword, org.springframework.data.domain.Pageable pageable) { return org.springframework.data.domain.Page.empty(); }
         @Override public void flush() {}

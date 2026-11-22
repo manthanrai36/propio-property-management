@@ -36,6 +36,7 @@ public class MaintenanceService {
     private final UnitRepository unitRepository;
     private final FileStorageService fileStorageService;
     private final EmailService emailService;
+    private final NotificationService notificationService;
 
     // =========================================================================
     // Tenant Workflow Operations
@@ -93,6 +94,18 @@ public class MaintenanceService {
                 .newStatus("OPEN")
                 .build();
         maintenanceCommentRepository.save(initialComment);
+
+        // Notify admins of new resident request
+        try {
+            notificationService.notifyAllAdmins(
+                    "New Service Request #REQ-" + request.getId(),
+                    tenant.getFullName() + " submitted: " + request.getTitle() + " (" + request.getCategory() + ")",
+                    com.propio.model.NotificationType.MAINTENANCE_UPDATE,
+                    "/maintenance"
+            );
+        } catch (Exception ex) {
+            log.warn("Failed creating notification for new ticket #{}: {}", request.getId(), ex.getMessage());
+        }
 
         log.info("Tenant #{} submitted maintenance request #{} ({})", tenantId, request.getId(), request.getTitle());
         return request;
@@ -244,6 +257,21 @@ public class MaintenanceService {
             log.warn("Failed to dispatch maintenance update email for ticket #{}: {}", request.getId(), ex.getMessage());
         }
 
+        // Phase 9: Trigger in-app notification to tenant
+        try {
+            if (request.getTenant() != null && request.getTenant().getUser() != null) {
+                notificationService.createNotification(
+                        request.getTenant().getUser(),
+                        "Maintenance Update: " + request.getTitle(),
+                        "Ticket #REQ-" + request.getId() + " is now " + newStatus.getDisplayName() + (note.isEmpty() ? "" : ". " + note),
+                        com.propio.model.NotificationType.MAINTENANCE_UPDATE,
+                        "/maintenance/" + request.getId()
+                );
+            }
+        } catch (Exception ex) {
+            log.warn("Failed creating in-app notification for ticket #{}: {}", request.getId(), ex.getMessage());
+        }
+
         log.info("Updated maintenance request #{} status to {} (User: {})",
                 request.getId(), newStatus, currentUser != null ? currentUser.getEmail() : "system");
         return request;
@@ -290,6 +318,21 @@ public class MaintenanceService {
             log.warn("Failed to dispatch technician assignment email for ticket #{}: {}", request.getId(), ex.getMessage());
         }
 
+        // Phase 9: Trigger in-app notification to tenant
+        try {
+            if (request.getTenant() != null && request.getTenant().getUser() != null) {
+                notificationService.createNotification(
+                        request.getTenant().getUser(),
+                        "Technician Assigned: " + request.getTitle(),
+                        "Technician " + dto.getTechnicianName() + " assigned to Request #REQ-" + request.getId(),
+                        com.propio.model.NotificationType.MAINTENANCE_UPDATE,
+                        "/maintenance/" + request.getId()
+                );
+            }
+        } catch (Exception ex) {
+            log.warn("Failed creating in-app notification for technician assignment on #{}: {}", request.getId(), ex.getMessage());
+        }
+
         log.info("Assigned technician '{}' to request #{}", dto.getTechnicianName(), request.getId());
         return request;
     }
@@ -325,6 +368,29 @@ public class MaintenanceService {
                 .build();
 
         comment = maintenanceCommentRepository.save(comment);
+
+        // Notify other party of new message in thread
+        try {
+            if (isTenant) {
+                notificationService.notifyAllAdmins(
+                        "New Message on #REQ-" + requestId,
+                        currentUser.getFullName() + ": " + (content.length() > 60 ? content.substring(0, 60) + "..." : content),
+                        com.propio.model.NotificationType.MAINTENANCE_UPDATE,
+                        "/maintenance/" + requestId
+                );
+            } else if (request.getTenant() != null && request.getTenant().getUser() != null) {
+                notificationService.createNotification(
+                        request.getTenant().getUser(),
+                        "Management Reply on #REQ-" + requestId,
+                        currentUser.getFullName() + ": " + (content.length() > 60 ? content.substring(0, 60) + "..." : content),
+                        com.propio.model.NotificationType.MAINTENANCE_UPDATE,
+                        "/maintenance/" + requestId
+                );
+            }
+        } catch (Exception ex) {
+            log.warn("Failed creating comment notification for ticket #{}: {}", requestId, ex.getMessage());
+        }
+
         log.info("User '{}' added comment to maintenance request #{}", currentUser.getEmail(), requestId);
         return comment;
     }

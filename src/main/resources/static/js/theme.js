@@ -448,5 +448,241 @@
         bsToast.show();
       }
     });
+
+    // -------------------------------------------------------------------------
+    // 6. Notification Bell Subsystem (Live Unread Count & Dropdown)
+    // -------------------------------------------------------------------------
+    function getCsrfHeaders() {
+      const token = document.querySelector('meta[name="_csrf"]')?.getAttribute('content');
+      const header = document.querySelector('meta[name="_csrf_header"]')?.getAttribute('content') || 'X-CSRF-TOKEN';
+      const headers = { 'Content-Type': 'application/json' };
+      if (token) {
+        headers[header] = token;
+      }
+      return headers;
+    }
+
+    function initNotificationBell() {
+      const badge = document.getElementById('notification-badge');
+      const headerCount = document.getElementById('notification-header-count');
+      const container = document.getElementById('notification-items-container');
+      const markAllBtn = document.getElementById('mark-all-read-btn');
+      const dropdownBtn = document.getElementById('notificationDropdownBtn');
+
+      if (!badge || !container) return;
+
+      function renderNotifications(data) {
+        const unreadCount = data.unreadCount || 0;
+        const items = data.notifications || [];
+
+        if (unreadCount > 0) {
+          badge.textContent = unreadCount > 99 ? '99+' : unreadCount;
+          badge.style.display = 'inline-block';
+        } else {
+          badge.style.display = 'none';
+        }
+
+        if (headerCount) {
+          headerCount.textContent = unreadCount;
+        }
+
+        if (items.length === 0) {
+          container.innerHTML = `
+            <div class="p-4 text-center text-muted fs-8">
+              <i class="bi bi-bell-slash fs-4 d-block mb-1 text-muted"></i>
+              No notifications
+            </div>`;
+          return;
+        }
+
+        let html = '<div class="list-group list-group-flush">';
+        items.forEach(item => {
+          const isUnread = !item.isRead;
+          const bgClass = isUnread ? 'bg-primary-subtle bg-opacity-25' : '';
+          const dot = isUnread ? '<span class="badge rounded-circle p-1 bg-primary me-2" style="width: 8px; height: 8px;"></span>' : '';
+          
+          html += `
+            <div class="list-group-item list-group-item-action d-flex align-items-start gap-2 p-3 border-bottom ${bgClass}" 
+                 style="cursor: pointer;" 
+                 data-id="${item.id}" 
+                 data-url="${item.linkUrl || ''}">
+              <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 ${item.bgColor || 'bg-primary-subtle'}" style="width: 34px; height: 34px;">
+                <i class="bi ${item.icon || 'bi-bell'} ${item.textColor || 'text-primary'} fs-7"></i>
+              </div>
+              <div class="flex-grow-1 min-w-0">
+                <div class="d-flex align-items-center justify-content-between mb-1">
+                  <div class="d-flex align-items-center">
+                    ${dot}
+                    <span class="fw-bold fs-8 text-truncate">${escapeHtml(item.title)}</span>
+                  </div>
+                  <small class="text-muted fs-9 ms-1">${escapeHtml(item.timeAgo)}</small>
+                </div>
+                <p class="text-muted fs-9 mb-0 text-wrap line-clamp-2">${escapeHtml(item.message)}</p>
+              </div>
+            </div>`;
+        });
+        html += '</div>';
+        container.innerHTML = html;
+
+        // Click handlers on items
+        container.querySelectorAll('.list-group-item').forEach(el => {
+          el.addEventListener('click', () => {
+            const id = el.getAttribute('data-id');
+            const targetUrl = el.getAttribute('data-url');
+
+            // Mark as read in background
+            fetch(`/api/notifications/${id}/read`, {
+              method: 'POST',
+              headers: getCsrfHeaders()
+            }).then(() => {
+              if (targetUrl && targetUrl !== '#' && targetUrl !== '') {
+                window.location.href = targetUrl;
+              } else {
+                fetchNotifications();
+              }
+            }).catch(e => {
+              if (targetUrl && targetUrl !== '#' && targetUrl !== '') {
+                window.location.href = targetUrl;
+              }
+            });
+          });
+        });
+      }
+
+      function fetchNotifications() {
+        fetch('/api/notifications')
+          .then(res => {
+            if (!res.ok) throw new Error('Unauthorized or error');
+            return res.json();
+          })
+          .then(data => renderNotifications(data))
+          .catch(() => {
+            // Quiet fail if not logged in or endpoint blocked
+          });
+      }
+
+      // Initial fetch on page load
+      fetchNotifications();
+
+      // Refresh on opening dropdown
+      if (dropdownBtn) {
+        dropdownBtn.addEventListener('show.bs.dropdown', fetchNotifications);
+      }
+
+      // Mark all read button handler
+      if (markAllBtn) {
+        markAllBtn.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          fetch('/api/notifications/read-all', {
+            method: 'POST',
+            headers: getCsrfHeaders()
+          })
+          .then(res => res.json())
+          .then(() => {
+            fetchNotifications();
+          })
+          .catch(err => console.warn('Failed marking notifications read', err));
+        });
+      }
+    }
+
+    // -------------------------------------------------------------------------
+    // 7. Global Search Live Suggestions & Shortcut
+    // -------------------------------------------------------------------------
+    function initGlobalSearch() {
+      const searchInput = document.getElementById('topbar-search-input');
+      const suggestions = document.getElementById('search-suggestions');
+      const content = document.getElementById('search-suggestions-content');
+      const searchForm = document.getElementById('topbar-search-form');
+
+      if (!searchInput || !suggestions || !content) return;
+
+      let debounceTimer = null;
+
+      function closeSuggestions() {
+        suggestions.style.display = 'none';
+      }
+
+      searchInput.addEventListener('input', () => {
+        clearTimeout(debounceTimer);
+        const query = searchInput.value.trim();
+
+        if (query.length < 2) {
+          closeSuggestions();
+          return;
+        }
+
+        debounceTimer = setTimeout(() => {
+          fetch(`/api/search?q=${encodeURIComponent(query)}`)
+            .then(res => res.json())
+            .then(results => {
+              if (!results || results.length === 0) {
+                content.innerHTML = `
+                  <div class="p-3 text-center text-muted fs-8">
+                    <i class="bi bi-search fs-5 d-block mb-1 text-muted"></i>
+                    No matches found for "${escapeHtml(query)}"
+                  </div>`;
+                suggestions.style.display = 'block';
+                return;
+              }
+
+              let html = '<div class="list-group list-group-flush">';
+              results.slice(0, 8).forEach(res => {
+                html += `
+                  <a href="${res.url}" class="list-group-item list-group-item-action d-flex align-items-center justify-content-between py-2 px-3 border-0 rounded-3 mb-1">
+                    <div class="d-flex align-items-center gap-2 min-w-0">
+                      <div class="rounded-circle d-flex align-items-center justify-content-center bg-light text-primary flex-shrink-0" style="width: 28px; height: 28px;">
+                        <i class="bi ${res.icon || 'bi-search'} fs-8"></i>
+                      </div>
+                      <div class="text-truncate">
+                        <div class="fw-semibold fs-8 text-truncate">${escapeHtml(res.title)}</div>
+                        <small class="text-muted fs-9 text-truncate">${escapeHtml(res.subtitle)}</small>
+                      </div>
+                    </div>
+                    <span class="badge ${res.badgeClass || 'bg-secondary-subtle text-secondary'} rounded-pill fs-9 ms-2 flex-shrink-0">${escapeHtml(res.badge)}</span>
+                  </a>`;
+              });
+              html += `
+                <div class="p-2 text-center border-top mt-1">
+                  <a href="/search?q=${encodeURIComponent(query)}" class="fs-9 fw-semibold text-primary text-decoration-none">
+                    View all results &rarr;
+                  </a>
+                </div>
+              </div>`;
+              content.innerHTML = html;
+              suggestions.style.display = 'block';
+            })
+            .catch(() => closeSuggestions());
+        }, 250);
+      });
+
+      // Close suggestions on outside click
+      document.addEventListener('click', (e) => {
+        if (!searchInput.contains(e.target) && !suggestions.contains(e.target)) {
+          closeSuggestions();
+        }
+      });
+
+      // Close on Escape
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+          closeSuggestions();
+        }
+      });
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    initNotificationBell();
+    initGlobalSearch();
   });
 })();

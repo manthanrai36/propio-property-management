@@ -677,6 +677,176 @@ public class PdfGenerationService {
     /**
      * Page Event helper to render page footers with page numbers on every page.
      */
+    /**
+     * 4. Generates an Executive Portfolio & Revenue Report PDF.
+     */
+    public byte[] generateReportSummaryPdf(LocalDate startDate, LocalDate endDate, com.propio.dto.ReportSummaryDto summary) {
+        try {
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            Document document = new Document(PageSize.A4, 36, 36, 40, 40);
+            PdfWriter writer = PdfWriter.getInstance(document, out);
+            writer.setPageEvent(new PropioPdfPageEvent("Executive Portfolio Report"));
+
+            document.open();
+
+            // Brand Header Banner
+            PdfPTable headerTable = new PdfPTable(2);
+            headerTable.setWidthPercentage(100);
+            headerTable.setWidths(new float[]{60, 40});
+
+            PdfPCell brandCell = new PdfPCell();
+            brandCell.setBorder(Rectangle.NO_BORDER);
+            brandCell.addElement(new Paragraph("PROPIO", FONT_BRAND));
+            brandCell.addElement(new Paragraph("EXECUTIVE PORTFOLIO & REVENUE REPORT", FONT_SECTION));
+            brandCell.addElement(new Paragraph("Generated: " + LocalDate.now().format(DATE_FORMAT), FONT_MUTED));
+            headerTable.addCell(brandCell);
+
+            PdfPCell metaCell = new PdfPCell();
+            metaCell.setBorder(Rectangle.NO_BORDER);
+            metaCell.setHorizontalAlignment(Element.ALIGN_RIGHT);
+            Paragraph periodPara = new Paragraph("Reporting Period", FONT_MUTED_BOLD);
+            periodPara.setAlignment(Element.ALIGN_RIGHT);
+            metaCell.addElement(periodPara);
+
+            String rangeStr = (startDate != null ? startDate.format(DATE_FORMAT) : "Beginning") +
+                    " - " + (endDate != null ? endDate.format(DATE_FORMAT) : "Present");
+            Paragraph rangePara = new Paragraph(rangeStr, FONT_BODY_BOLD);
+            rangePara.setAlignment(Element.ALIGN_RIGHT);
+            metaCell.addElement(rangePara);
+
+            Paragraph statusPara = new Paragraph("Status: Official Record", FONT_MUTED);
+            statusPara.setAlignment(Element.ALIGN_RIGHT);
+            metaCell.addElement(statusPara);
+
+            headerTable.addCell(metaCell);
+            document.add(headerTable);
+
+            document.add(new Paragraph(" "));
+
+            // 4-Card Executive KPI Summary
+            PdfPTable kpiTable = new PdfPTable(4);
+            kpiTable.setWidthPercentage(100);
+            kpiTable.setWidths(new float[]{25, 25, 25, 25});
+
+            addKpiCell(kpiTable, "Total Revenue Collected",
+                    summary.getTotalRevenueCollected() != null ? MONEY_FORMAT.format(summary.getTotalRevenueCollected()) : "$0.00",
+                    COLOR_SUCCESS);
+            addKpiCell(kpiTable, "Outstanding Overdue",
+                    summary.getTotalOutstandingOverdue() != null ? MONEY_FORMAT.format(summary.getTotalOutstandingOverdue()) : "$0.00",
+                    COLOR_DANGER);
+            addKpiCell(kpiTable, "Portfolio Occupancy",
+                    String.format("%.1f%%", summary.getOccupancyRate()),
+                    COLOR_PRIMARY);
+            addKpiCell(kpiTable, "Collection Rate",
+                    String.format("%.1f%%", summary.getCollectionRate()),
+                    COLOR_PRIMARY_DARK);
+
+            document.add(kpiTable);
+            document.add(new Paragraph(" "));
+
+            // Section 1: Monthly Financial Trajectory
+            Paragraph sec1 = new Paragraph("MONTHLY FINANCIAL TRAJECTORY", FONT_SECTION);
+            sec1.setSpacingBefore(8);
+            sec1.setSpacingAfter(4);
+            document.add(sec1);
+
+            PdfPTable monthTable = new PdfPTable(4);
+            monthTable.setWidthPercentage(100);
+            monthTable.setWidths(new float[]{30, 25, 25, 20});
+
+            addTableHeader(monthTable, new String[]{"Billing Month", "Revenue Collected", "Overdue Invoices", "Settled Txns"});
+
+            if (summary.getMonthlyRevenue() != null && !summary.getMonthlyRevenue().isEmpty()) {
+                boolean alt = false;
+                for (var m : summary.getMonthlyRevenue()) {
+                    Color bg = alt ? COLOR_BG_LIGHT : Color.WHITE;
+                    addTableCell(monthTable, m.getMonthLabel(), Element.ALIGN_LEFT, bg, FONT_BODY_BOLD);
+                    addTableCell(monthTable, m.getRevenue() != null ? MONEY_FORMAT.format(m.getRevenue()) : "$0.00", Element.ALIGN_RIGHT, bg, FONT_BODY);
+                    addTableCell(monthTable, m.getOverdue() != null ? MONEY_FORMAT.format(m.getOverdue()) : "$0.00", Element.ALIGN_RIGHT, bg, FONT_BODY);
+                    addTableCell(monthTable, String.valueOf(m.getTransactionCount()), Element.ALIGN_CENTER, bg, FONT_BODY);
+                    alt = !alt;
+                }
+            } else {
+                PdfPCell emptyCell = new PdfPCell(new Phrase("No financial records found in selected range", FONT_MUTED));
+                emptyCell.setColspan(4);
+                emptyCell.setPadding(8);
+                emptyCell.setHorizontalAlignment(Element.ALIGN_CENTER);
+                monthTable.addCell(emptyCell);
+            }
+            document.add(monthTable);
+
+            document.add(new Paragraph(" "));
+
+            // Section 2: Property Portfolio Breakdown
+            Paragraph sec2 = new Paragraph("PROPERTY PORTFOLIO BREAKDOWN", FONT_SECTION);
+            sec2.setSpacingBefore(8);
+            sec2.setSpacingAfter(4);
+            document.add(sec2);
+
+            PdfPTable propTable = new PdfPTable(7);
+            propTable.setWidthPercentage(100);
+            propTable.setWidths(new float[]{24, 16, 12, 12, 12, 12, 12});
+
+            addTableHeader(propTable, new String[]{"Property Name", "Location", "Units", "Occupancy", "Revenue", "Overdue", "Collect %"});
+
+            if (summary.getPropertyReports() != null && !summary.getPropertyReports().isEmpty()) {
+                boolean alt = false;
+                for (var p : summary.getPropertyReports()) {
+                    Color bg = alt ? COLOR_BG_LIGHT : Color.WHITE;
+                    addTableCell(propTable, p.getPropertyName(), Element.ALIGN_LEFT, bg, FONT_BODY_BOLD);
+                    addTableCell(propTable, p.getCity() != null ? p.getCity() : "N/A", Element.ALIGN_LEFT, bg, FONT_BODY);
+                    addTableCell(propTable, p.getOccupiedUnits() + " / " + p.getTotalUnits(), Element.ALIGN_CENTER, bg, FONT_BODY);
+                    addTableCell(propTable, String.format("%.1f%%", p.getOccupancyRate()), Element.ALIGN_RIGHT, bg, FONT_BODY);
+                    addTableCell(propTable, p.getRevenueCollected() != null ? MONEY_FORMAT.format(p.getRevenueCollected()) : "$0.00", Element.ALIGN_RIGHT, bg, FONT_BODY);
+                    addTableCell(propTable, p.getOutstandingOverdue() != null ? MONEY_FORMAT.format(p.getOutstandingOverdue()) : "$0.00", Element.ALIGN_RIGHT, bg, FONT_BODY);
+                    addTableCell(propTable, String.format("%.1f%%", p.getCollectionRate()), Element.ALIGN_RIGHT, bg, FONT_BODY_BOLD);
+                    alt = !alt;
+                }
+            } else {
+                PdfPCell emptyCell = new PdfPCell(new Phrase("No property records found", FONT_MUTED));
+                emptyCell.setColspan(7);
+                emptyCell.setPadding(8);
+                emptyCell.setHorizontalAlignment(Element.ALIGN_CENTER);
+                propTable.addCell(emptyCell);
+            }
+            document.add(propTable);
+
+            document.close();
+            log.info("Generated executive portfolio summary PDF ({} bytes)", out.size());
+            return out.toByteArray();
+        } catch (Exception ex) {
+            log.error("Failed to generate report summary PDF: {}", ex.getMessage(), ex);
+            throw new RuntimeException("Error rendering report PDF: " + ex.getMessage(), ex);
+        }
+    }
+
+    private void addTableCell(PdfPTable table, String text, int align, Color bg, Font font) {
+        PdfPCell cell = new PdfPCell(new Phrase(text != null ? text : "", font));
+        cell.setPadding(6);
+        cell.setHorizontalAlignment(align);
+        cell.setVerticalAlignment(Element.ALIGN_MIDDLE);
+        cell.setBackgroundColor(bg != null ? bg : Color.WHITE);
+        cell.setBorderColor(COLOR_BORDER);
+        table.addCell(cell);
+    }
+
+    private void addKpiCell(PdfPTable table, String label, String value, Color accentColor) {
+        PdfPCell cell = new PdfPCell();
+        cell.setBackgroundColor(COLOR_BG_LIGHT);
+        cell.setBorderColor(COLOR_BORDER);
+        cell.setPadding(8);
+
+        Paragraph labelPara = new Paragraph(label.toUpperCase(), FONT_MUTED_BOLD);
+        cell.addElement(labelPara);
+
+        Font valFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 12, accentColor);
+        Paragraph valPara = new Paragraph(value, valFont);
+        valPara.setSpacingBefore(2);
+        cell.addElement(valPara);
+
+        table.addCell(cell);
+    }
+
     private static class PropioPdfPageEvent extends PdfPageEventHelper {
         private final String documentType;
 

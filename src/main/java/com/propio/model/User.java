@@ -49,6 +49,26 @@ public class User extends BaseEntity {
     private String avatarUrl;
 
     @Builder.Default
+    @Column(name = "theme_preference", length = 20)
+    private String themePreference = "system";
+
+    @Builder.Default
+    @Column(name = "notify_rent_due", nullable = false)
+    private boolean notifyRentDue = true;
+
+    @Builder.Default
+    @Column(name = "notify_payment_received", nullable = false)
+    private boolean notifyPaymentReceived = true;
+
+    @Builder.Default
+    @Column(name = "notify_maintenance", nullable = false)
+    private boolean notifyMaintenance = true;
+
+    @Builder.Default
+    @Column(name = "notify_lease_expiry", nullable = false)
+    private boolean notifyLeaseExpiry = true;
+
+    @Builder.Default
     @Column(name = "enabled", nullable = false)
     private boolean enabled = true;
 
