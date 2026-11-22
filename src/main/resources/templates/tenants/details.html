@@ -17,17 +17,22 @@
       <p class="text-muted fs-8 mb-0" th:text="'Resident profile, lease agreement terms, and transaction ledger.'">Resident profile details.</p>
     </div>
 
-    <!-- Admin Actions -->
-    <div sec:authorize="hasRole('ADMIN')" class="d-flex align-items-center gap-2">
-      <a th:href="@{'/tenants/' + ${tenant.id} + '/edit'}" class="btn-propio-secondary py-2 px-3 fs-8 text-decoration-none ripple">
-        <i class="bi bi-pencil me-1"></i> Edit Profile
+    <!-- Actions -->
+    <div class="d-flex align-items-center gap-2">
+      <a th:href="@{'/tenants/' + ${tenant.id} + '/statement/pdf'}" target="_blank" class="btn btn-propio-primary py-2 px-3 fs-8 text-decoration-none text-white d-inline-flex align-items-center gap-1 shadow-sm" style="color: #ffffff !important;" title="Download Annual Resident Statement PDF">
+        <i class="bi bi-file-earmark-pdf text-white"></i> Yearly Statement (PDF)
       </a>
-      <button type="button" class="btn btn-outline-danger py-2 px-3 fs-8 rounded-3" 
-              th:data-id="${tenant.id}"
-              th:data-name="${tenant.fullName}"
-              onclick="openDeleteModal(this.getAttribute('data-id'), this.getAttribute('data-name'))">
-        <i class="bi bi-trash me-1"></i> Delete
-      </button>
+      <div sec:authorize="hasRole('ADMIN')" class="d-flex align-items-center gap-2">
+        <a th:href="@{'/tenants/' + ${tenant.id} + '/edit'}" class="btn-propio-secondary py-2 px-3 fs-8 text-decoration-none ripple">
+          <i class="bi bi-pencil me-1"></i> Edit Profile
+        </a>
+        <button type="button" class="btn btn-outline-danger py-2 px-3 fs-8 rounded-3" 
+                th:data-id="${tenant.id}"
+                th:data-name="${tenant.fullName}"
+                onclick="openDeleteModal(this.getAttribute('data-id'), this.getAttribute('data-name'))">
+          <i class="bi bi-trash me-1"></i> Delete
+        </button>
+      </div>
     </div>
   </div>
 
@@ -153,9 +158,14 @@
   <div class="card-propio p-4 mb-4 fade-in-up stagger-3">
     <div class="d-flex align-items-center justify-content-between mb-3">
       <h5 class="fw-bold font-heading fs-7 mb-0 text-main">
-        <i class="bi bi-credit-card-2-front text-primary me-2"></i>Payment History & Invoices
+        <i class="bi bi-credit-card-2-front text-primary me-2"></i>Payment History &amp; Invoices
       </h5>
-      <span class="fs-8 text-muted" th:text="${payments.size() + ' Total Transactions'}">Transactions</span>
+      <div class="d-flex align-items-center gap-2">
+        <a th:href="@{'/tenants/' + ${tenant.id} + '/statement/pdf'}" target="_blank" class="btn btn-sm btn-propio-secondary py-1 px-3 fs-9 rounded-pill" title="Download Yearly Statement PDF">
+          <i class="bi bi-file-earmark-pdf text-danger me-1"></i> Statement (PDF)
+        </a>
+        <span class="fs-8 text-muted" th:text="${payments.size() + ' Total Transactions'}">Transactions</span>
+      </div>
     </div>
 
     <div class="table-responsive">
@@ -259,8 +269,8 @@
                 <span class="text-muted fs-9" th:text="${d.category}">LEASE_AGREEMENT</span>
               </div>
             </div>
-            <a th:href="@{${d.fileUrl}}" target="_blank" class="btn btn-sm btn-outline-primary rounded-pill px-3 py-1 fs-9">
-              <i class="bi bi-download me-1"></i> View
+            <a th:href="@{'/documents/' + ${d.id} + '/download'}" target="_blank" class="btn btn-sm btn-outline-danger rounded-pill px-3 py-1 fs-9">
+              <i class="bi bi-file-earmark-pdf me-1"></i> Download
             </a>
           </div>
         </div>

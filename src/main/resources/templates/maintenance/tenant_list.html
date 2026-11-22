@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      th:replace="~{layout/main :: layout(~{::#maintenance-content})}">
+<head>
+  <title>My Service Requests | Propio</title>
+</head>
+<body>
+
+<div id="maintenance-content">
+  <!-- Page Header -->
+  <div class="d-flex flex-column flex-md-row align-items-start align-items-md-center justify-content-between gap-3 mb-4 fade-in-up">
+    <div>
+      <h3 class="fw-bold font-heading mb-1 text-main">My Service Requests</h3>
+      <p class="text-muted fs-8 mb-0">Track maintenance repair progress, view technician appointments, and communicate directly with property staff.</p>
+    </div>
+    <div>
+      <a th:href="@{/maintenance/new}" class="btn btn-sm btn-propio-primary d-inline-flex align-items-center gap-2 py-2 px-3 fs-8 fw-semibold shadow-sm">
+        <i class="bi bi-plus-lg"></i>
+        <span>New Request</span>
+      </a>
+    </div>
+  </div>
+
+  <!-- Flash Notifications -->
+  <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show fs-8 py-3 px-4 rounded-3 mb-4 fade-in-up border-0 shadow-sm" role="alert" style="background-color: rgba(16, 185, 129, 0.15); color: #10B981;">
+    <div class="d-flex align-items-center gap-2">
+      <i class="bi bi-check-circle-fill fs-6"></i>
+      <span th:text="${successMessage}">Operation successful!</span>
+    </div>
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+  </div>
+
+  <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show fs-8 py-3 px-4 rounded-3 mb-4 fade-in-up border-0 shadow-sm" role="alert" style="background-color: rgba(239, 68, 68, 0.15); color: #EF4444;">
+    <div class="d-flex align-items-center gap-2">
+      <i class="bi bi-exclamation-triangle-fill fs-6"></i>
+      <span th:text="${errorMessage}">An error occurred.</span>
+    </div>
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+  </div>
+
+  <!-- Metric Counters Row -->
+  <div class="row g-3 mb-4 fade-in-up stagger-1">
+    <div class="col-12 col-md-4">
+      <div class="card-propio p-3 d-flex align-items-center justify-content-between">
+        <div>
+          <span class="fs-9 text-uppercase fw-semibold text-muted">Awaiting Action</span>
+          <h4 class="fw-bold font-heading mb-0 text-main mt-1" th:text="${openCount}">0</h4>
+        </div>
+        <div class="rounded-circle p-2 bg-primary-subtle text-primary d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+          <i class="bi bi-inbox fs-5"></i>
+        </div>
+      </div>
+    </div>
+    <div class="col-12 col-md-4">
+      <div class="card-propio p-3 d-flex align-items-center justify-content-between">
+        <div>
+          <span class="fs-9 text-uppercase fw-semibold text-muted">In Progress / Scheduled</span>
+          <h4 class="fw-bold font-heading mb-0 text-warning mt-1" th:text="${inProgressCount}">0</h4>
+        </div>
+        <div class="rounded-circle p-2 bg-warning-subtle text-warning d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+          <i class="bi bi-tools fs-5"></i>
+        </div>
+      </div>
+    </div>
+    <div class="col-12 col-md-4">
+      <div class="card-propio p-3 d-flex align-items-center justify-content-between">
+        <div>
+          <span class="fs-9 text-uppercase fw-semibold text-muted">Resolved & Closed</span>
+          <h4 class="fw-bold font-heading mb-0 text-success mt-1" th:text="${resolvedCount}">0</h4>
+        </div>
+        <div class="rounded-circle p-2 bg-success-subtle text-success d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+          <i class="bi bi-check2-circle fs-5"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Requests List Container -->
+  <div class="card-propio p-0 overflow-hidden fade-in-up stagger-2">
+    <!-- Empty State -->
+    <div th:if="${#lists.isEmpty(myRequests)}" class="text-center py-5 px-3">
+      <div class="rounded-circle bg-primary-subtle text-primary d-inline-flex align-items-center justify-content-center p-3 mb-3" style="width: 64px; height: 64px;">
+        <i class="bi bi-wrench-adjustable fs-2"></i>
+      </div>
+      <h5 class="fw-bold font-heading text-main mb-1">No Maintenance Requests</h5>
+      <p class="text-muted fs-8 mb-4" style="max-width: 420px; margin: 0 auto;">
+        You currently have no open or past maintenance requests. If anything in your apartment requires repair or attention, submit a ticket below.
+      </p>
+      <a th:href="@{/maintenance/new}" class="btn btn-sm btn-propio-primary px-4 py-2">
+        <i class="bi bi-plus-lg me-1"></i> Submit First Request
+      </a>
+    </div>
+
+    <!-- Active Tickets List -->
+    <div th:unless="${#lists.isEmpty(myRequests)}" class="divide-y divide-border">
+      <div th:each="req : ${myRequests}" class="p-3.5 p-md-4 transition-colors hover-bg">
+        <div class="d-flex flex-column flex-md-row align-items-start justify-content-between gap-3 mb-3">
+          <!-- Request Header Info -->
+          <div>
+            <div class="d-flex align-items-center gap-2 flex-wrap mb-1">
+              <span class="badge font-mono" style="font-size: 0.725rem; background-color: var(--color-bg); color: var(--color-text-muted); border: 1px solid var(--color-border);" th:text="'REQ-' + ${req.id}">REQ-101</span>
+              
+              <!-- Priority Badge -->
+              <span th:if="${req.priority == 'EMERGENCY'}" class="badge bg-danger text-white px-2 py-1 rounded-pill fw-bold fs-9">
+                <i class="bi bi-exclamation-diamond-fill me-1"></i>EMERGENCY
+              </span>
+              <span th:if="${req.priority == 'HIGH'}" class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-1 rounded-pill fw-bold fs-9">
+                HIGH PRIORITY
+              </span>
+              <span th:if="${req.priority == 'MEDIUM'}" class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1 rounded-pill fw-semibold fs-9">
+                MEDIUM
+              </span>
+              <span th:if="${req.priority == 'LOW'}" class="badge bg-secondary-subtle text-secondary px-2 py-1 rounded-pill fw-normal fs-9">
+                LOW
+              </span>
+
+              <!-- Category Badge -->
+              <span class="badge bg-table-head text-muted border px-2 py-1 rounded-2 fs-9" th:text="${req.category != null ? req.category : 'General'}">Plumbing</span>
+
+              <!-- Status Badge -->
+              <span th:if="${req.status.name() == 'OPEN' || req.status.name() == 'PENDING'}" class="badge bg-primary text-white px-2.5 py-1 rounded-pill fw-semibold fs-9">
+                <i class="bi bi-hourglass-split me-1"></i>Submitted (Open)
+              </span>
+              <span th:if="${req.status.name() == 'IN_PROGRESS'}" class="badge bg-warning text-dark px-2.5 py-1 rounded-pill fw-bold fs-9">
+                <i class="bi bi-gear-fill me-1"></i>In Progress
+              </span>
+              <span th:if="${req.status.name() == 'RESOLVED'}" class="badge bg-success text-white px-2.5 py-1 rounded-pill fw-bold fs-9">
+                <i class="bi bi-check-circle-fill me-1"></i>Resolved
+              </span>
+              <span th:if="${req.status.name() == 'CLOSED'}" class="badge bg-secondary text-white px-2.5 py-1 rounded-pill fw-normal fs-9">
+                <i class="bi bi-archive-fill me-1"></i>Closed
+              </span>
+            </div>
+
+            <!-- Title -->
+            <h5 class="fw-bold font-heading mb-1 text-main">
+              <a th:href="@{/maintenance/{id}(id=${req.id})}" class="text-decoration-none text-main hover-primary" th:text="${req.title}">
+                Water leak under kitchen sink
+              </a>
+            </h5>
+
+            <p class="text-muted fs-8 mb-2 line-clamp-2" style="max-width: 680px;" th:text="${req.description}">
+              Tenant reported leak under faucet hardware.
+            </p>
+
+            <div class="d-flex align-items-center gap-3 fs-9 text-muted flex-wrap">
+              <span><i class="bi bi-geo-alt me-1"></i> <strong class="text-main" th:text="${req.unit.unitNumber + ' (' + req.unit.property.name + ')'}">Apt 101</strong></span>
+              <span><i class="bi bi-calendar3 me-1"></i> Submitted <strong th:text="${#temporals.format(req.requestedDate, 'dd MMM yyyy')}">22 Nov 2026</strong></span>
+              <span th:if="${req.assignedTechnician != null}"><i class="bi bi-person-badge me-1"></i> Technician: <strong class="text-main" th:text="${req.assignedTechnician}">Mike Peterson</strong></span>
+            </div>
+          </div>
+
+          <!-- Action Button & Thumbnail -->
+          <div class="d-flex align-items-center gap-2 self-md-center">
+            <a th:if="${req.photoUrl != null}" th:href="${req.photoUrl}" target="_blank" class="border rounded-2 overflow-hidden d-inline-block" style="width: 48px; height: 48px;" title="View Attached Photo">
+              <img th:src="${req.photoUrl}" alt="Issue photo" style="width: 100%; height: 100%; object-fit: cover;">
+            </a>
+
+            <a th:href="@{/maintenance/{id}(id=${req.id})}" class="btn btn-sm btn-propio-outline d-inline-flex align-items-center gap-1.5 px-3 py-2 fs-8 text-nowrap">
+              <span>View & Discuss</span>
+              <i class="bi bi-chat-dots"></i>
+            </a>
+          </div>
+        </div>
+
+        <!-- Status Progress Timeline (4-step visual flow) -->
+        <div class="p-3 rounded-3 mt-3" style="background-color: var(--color-bg); border: 1px dashed var(--color-border);">
+          <div class="d-flex align-items-center justify-content-between position-relative fs-9">
+            <!-- Step 1: Submitted -->
+            <div class="d-flex align-items-center gap-2">
+              <div class="rounded-circle d-flex align-items-center justify-content-center bg-primary text-white" style="width: 22px; height: 22px; font-size: 10px;">
+                <i class="bi bi-check-lg"></i>
+              </div>
+              <div>
+                <span class="fw-semibold d-block text-main">Submitted</span>
+                <span class="text-muted" th:text="${#temporals.format(req.requestedDate, 'dd MMM')}">22 Nov</span>
+              </div>
+            </div>
+
+            <!-- Arrow -->
+            <i class="bi bi-chevron-right text-muted opacity-50"></i>
+
+            <!-- Step 2: In Progress / Scheduled -->
+            <div class="d-flex align-items-center gap-2">
+              <div class="rounded-circle d-flex align-items-center justify-content-center" 
+                   th:classappend="${req.status.name() == 'IN_PROGRESS' || req.status.isClosedOrResolved()} ? 'bg-primary text-white' : 'bg-secondary-subtle text-muted'" 
+                   style="width: 22px; height: 22px; font-size: 10px;">
+                <i th:if="${req.status.name() == 'IN_PROGRESS' || req.status.isClosedOrResolved()}" class="bi bi-check-lg"></i>
+                <span th:unless="${req.status.name() == 'IN_PROGRESS' || req.status.isClosedOrResolved()}">2</span>
+              </div>
+              <div>
+                <span class="fw-semibold d-block text-main">In Progress</span>
+                <span class="text-muted" th:text="${req.scheduledDate != null ? #temporals.format(req.scheduledDate, 'dd MMM') : (req.status.name() == 'IN_PROGRESS' ? 'Under Review' : 'Pending')}">Pending</span>
+              </div>
+            </div>
+
+            <!-- Arrow -->
+            <i class="bi bi-chevron-right text-muted opacity-50"></i>
+
+            <!-- Step 3: Resolved -->
+            <div class="d-flex align-items-center gap-2">
+              <div class="rounded-circle d-flex align-items-center justify-content-center" 
+                   th:classappend="${req.status.isClosedOrResolved()} ? 'bg-success text-white' : 'bg-secondary-subtle text-muted'" 
+                   style="width: 22px; height: 22px; font-size: 10px;">
+                <i th:if="${req.status.isClosedOrResolved()}" class="bi bi-check-lg"></i>
+                <span th:unless="${req.status.isClosedOrResolved()}">3</span>
+              </div>
+              <div>
+                <span class="fw-semibold d-block text-main">Resolved</span>
+                <span class="text-muted" th:text="${req.resolvedDate != null ? #temporals.format(req.resolvedDate, 'dd MMM') : 'Pending'}">Pending</span>
+              </div>
+            </div>
+
+            <!-- Arrow -->
+            <i class="bi bi-chevron-right text-muted opacity-50"></i>
+
+            <!-- Step 4: Closed -->
+            <div class="d-flex align-items-center gap-2">
+              <div class="rounded-circle d-flex align-items-center justify-content-center" 
+                   th:classappend="${req.status.name() == 'CLOSED'} ? 'bg-secondary text-white' : 'bg-secondary-subtle text-muted'" 
+                   style="width: 22px; height: 22px; font-size: 10px;">
+                <i th:if="${req.status.name() == 'CLOSED'}" class="bi bi-check-lg"></i>
+                <span th:unless="${req.status.name() == 'CLOSED'}">4</span>
+              </div>
+              <div>
+                <span class="fw-semibold d-block text-main">Closed</span>
+                <span class="text-muted" th:text="${req.closedDate != null ? #temporals.format(req.closedDate, 'dd MMM') : 'Pending'}">Pending</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

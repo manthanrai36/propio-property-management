@@ -197,6 +197,9 @@
             <!-- Actions -->
             <td class="px-3 text-end">
               <div class="d-inline-flex align-items-center gap-1">
+                <a th:href="@{'/leases/' + ${l.id} + '/agreement/pdf'}" target="_blank" class="btn btn-sm btn-outline-danger px-2 py-1 fs-9 rounded-pill text-nowrap" title="Download Lease Agreement PDF">
+                  <i class="bi bi-file-earmark-pdf me-1"></i> Agreement
+                </a>
                 <a th:href="@{'/tenants/' + ${l.tenant.id}}" class="btn btn-sm btn-icon-topbar border-0 text-muted" title="View Resident Profile">
                   <i class="bi bi-person"></i>
                 </a>

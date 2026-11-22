@@ -46,6 +46,8 @@ public class FileStorageService {
         try {
             Files.createDirectories(this.rootUploadPath.resolve("properties"));
             Files.createDirectories(this.rootUploadPath.resolve("tenants"));
+            Files.createDirectories(this.rootUploadPath.resolve("documents"));
+            Files.createDirectories(this.rootUploadPath.resolve("maintenance"));
             log.info("Initialized file storage root at: {}", this.rootUploadPath);
         } catch (IOException ex) {
             throw new FileStorageException("Could not initialize upload storage location", ex);
@@ -144,6 +146,75 @@ public class FileStorageService {
             return "/uploads/tenants/" + safeFileName;
         } catch (IOException ex) {
             throw new FileStorageException("Failed to store tenant avatar: " + safeFileName, ex);
+        }
+    }
+
+    /**
+     * Stores generated document PDF bytes in uploads/documents/ directory.
+     * Returns the web-accessible URL /uploads/documents/...
+     */
+    public String storeDocumentBytes(byte[] content, String fileName) {
+        if (content == null || content.length == 0) {
+            throw new FileStorageException("Cannot store empty document content.");
+        }
+        String cleanName = StringUtils.cleanPath(fileName);
+        Path targetDir = this.rootUploadPath.resolve("documents");
+        Path targetPath = targetDir.resolve(cleanName).normalize();
+
+        if (!targetPath.startsWith(this.rootUploadPath)) {
+            throw new FileStorageException("Cannot store document outside designated storage directory.");
+        }
+
+        try {
+            Files.write(targetPath, content);
+            log.info("Stored document PDF: {} ({} bytes)", cleanName, content.length);
+            return "/uploads/documents/" + cleanName;
+        } catch (IOException ex) {
+            throw new FileStorageException("Failed to store document file: " + cleanName, ex);
+        }
+    }
+
+    /**
+     * Stores an uploaded photo for a maintenance request and returns the public web access path.
+     * Enforces max 5 MB file size and validates image MIME types.
+     */
+    public String storeMaintenancePhoto(MultipartFile file) {
+        if (file == null || file.isEmpty()) {
+            return null;
+        }
+
+        if (file.getSize() > MAX_FILE_SIZE) {
+            throw new FileStorageException("Maintenance photo exceeds 5MB limit. Please upload a smaller image.");
+        }
+
+        String contentType = file.getContentType();
+        if (contentType == null || !ALLOWED_IMAGE_TYPES.contains(contentType.toLowerCase())) {
+            throw new FileStorageException("Invalid image format: '" + contentType + "'. Only JPG, PNG, WEBP, and GIF formats are allowed.");
+        }
+
+        String originalFilename = StringUtils.cleanPath(file.getOriginalFilename() != null ? file.getOriginalFilename() : "maintenance.jpg");
+        String extension = "";
+        int dotIndex = originalFilename.lastIndexOf('.');
+        if (dotIndex > 0) {
+            extension = originalFilename.substring(dotIndex).toLowerCase();
+        } else {
+            extension = ".jpg";
+        }
+
+        String safeFileName = UUID.randomUUID().toString() + extension;
+        Path targetDir = this.rootUploadPath.resolve("maintenance");
+        Path targetPath = targetDir.resolve(safeFileName).normalize();
+
+        if (!targetPath.startsWith(this.rootUploadPath)) {
+            throw new FileStorageException("Cannot store maintenance file outside designated storage directory.");
+        }
+
+        try (InputStream inputStream = file.getInputStream()) {
+            Files.copy(inputStream, targetPath, StandardCopyOption.REPLACE_EXISTING);
+            log.info("Saved maintenance photo: {}", safeFileName);
+            return "/uploads/maintenance/" + safeFileName;
+        } catch (IOException ex) {
+            throw new FileStorageException("Failed to store maintenance photo: " + safeFileName, ex);
         }
     }
 

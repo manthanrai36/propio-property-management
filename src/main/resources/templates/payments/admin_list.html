@@ -299,6 +299,14 @@
                  title="View Receipt">
                 <i class="bi bi-file-earmark-check fs-9"></i> Receipt
               </a>
+              <!-- Download PDF Receipt -->
+              <a th:if="${p.status.name() == 'PAID'}" 
+                 th:href="@{'/payments/' + ${p.id} + '/receipt/pdf'}" 
+                 target="_blank"
+                 class="btn btn-sm btn-outline-danger py-1 px-2 fs-9 rounded-2 text-nowrap d-inline-flex align-items-center gap-1 ms-1"
+                 title="Download Official PDF Receipt">
+                <i class="bi bi-file-earmark-pdf fs-9"></i> PDF
+              </a>
             </td>
           </tr>
         </tbody>

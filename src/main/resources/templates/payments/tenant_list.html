@@ -236,11 +236,18 @@
               </a>
 
               <!-- Receipt if Paid -->
-              <a th:if="${p.status.name() == 'PAID'}" 
-                 th:href="@{'/payments/' + ${p.id} + '/receipt'}" 
-                 class="btn btn-sm btn-propio-secondary py-1 px-3 fs-9 rounded-pill text-decoration-none">
-                <i class="bi bi-file-earmark-check me-1"></i> Receipt
-              </a>
+              <div th:if="${p.status.name() == 'PAID'}" class="d-inline-flex align-items-center gap-1">
+                <a th:href="@{'/payments/' + ${p.id} + '/receipt'}" 
+                   class="btn btn-sm btn-propio-secondary py-1 px-3 fs-9 rounded-pill text-decoration-none">
+                  <i class="bi bi-file-earmark-check me-1"></i> Receipt
+                </a>
+                <a th:href="@{'/payments/' + ${p.id} + '/receipt/pdf'}" 
+                   target="_blank"
+                   class="btn btn-sm btn-outline-danger py-1 px-2 fs-9 rounded-pill text-decoration-none"
+                   title="Download PDF Receipt">
+                  <i class="bi bi-file-earmark-pdf me-1"></i> PDF
+                </a>
+              </div>
             </td>
           </tr>
         </tbody>

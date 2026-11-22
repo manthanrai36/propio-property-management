@@ -33,6 +33,9 @@ public class LeaseService {
     private final UnitRepository unitRepository;
     private final TenantRepository tenantRepository;
     private final PaymentRepository paymentRepository;
+    private final DocumentRepository documentRepository;
+    private final PdfGenerationService pdfGenerationService;
+    private final FileStorageService fileStorageService;
 
     @Transactional(readOnly = true)
     public Page<Lease> getLeasesPaged(String keyword, String filter, Pageable pageable) {
@@ -132,7 +135,51 @@ public class LeaseService {
         log.info("Successfully created lease ID: {} for Tenant '{}' on Unit '{}' ({} monthly payments generated)",
                 lease.getId(), tenant.getFullName(), unit.getUnitNumber(), paymentSchedule.size());
 
+        // Business Rule 5: Generate and archive official lease agreement document
+        try {
+            ensureLeaseAgreementDocument(lease);
+        } catch (Exception ex) {
+            log.warn("Could not archive lease agreement PDF during creation: {}", ex.getMessage());
+        }
+
         return lease;
+    }
+
+    /**
+     * Ensures an official Lease Agreement PDF is generated, physically archived,
+     * and recorded in the documents table for the tenant.
+     */
+    @Transactional
+    public Document ensureLeaseAgreementDocument(Lease lease) {
+        if (lease == null || lease.getId() == null) {
+            return null;
+        }
+
+        List<Document> existing = documentRepository.findByLeaseId(lease.getId());
+        for (Document d : existing) {
+            if ("LEASE_AGREEMENT".equalsIgnoreCase(d.getCategory())) {
+                return d;
+            }
+        }
+
+        byte[] pdfBytes = pdfGenerationService.generateLeaseAgreementPdf(lease);
+        String unitNum = (lease.getUnit() != null && lease.getUnit().getUnitNumber() != null)
+                ? lease.getUnit().getUnitNumber().replaceAll("[^a-zA-Z0-9.-]", "_") : "Unit";
+        String fileName = "Lease_Agreement_" + unitNum + "_LSE" + lease.getId() + ".pdf";
+        String fileUrl = fileStorageService.storeDocumentBytes(pdfBytes, fileName);
+
+        Document doc = Document.builder()
+                .fileName(fileName)
+                .fileType("application/pdf")
+                .fileUrl(fileUrl)
+                .category("LEASE_AGREEMENT")
+                .lease(lease)
+                .tenant(lease.getTenant())
+                .build();
+
+        Document saved = documentRepository.save(doc);
+        log.info("Archived official lease agreement document ID {} for Lease ID {}", saved.getId(), lease.getId());
+        return saved;
     }
 
     /**

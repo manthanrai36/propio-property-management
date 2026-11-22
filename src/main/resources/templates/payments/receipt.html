@@ -21,6 +21,9 @@
         <button type="button" class="btn btn-propio-secondary py-2 px-3 fs-8 d-inline-flex align-items-center gap-2" onclick="window.print()">
           <i class="bi bi-printer"></i> Print Receipt
         </button>
+        <a th:href="@{'/payments/' + ${payment.id} + '/receipt/pdf'}" target="_blank" class="btn btn-propio-primary py-2 px-3 fs-8 d-inline-flex align-items-center gap-2 text-white" style="color: #ffffff !important;" title="Download Official PDF Receipt">
+          <i class="bi bi-file-earmark-pdf text-white"></i> Download PDF
+        </a>
       </div>
     </div>
   </div>

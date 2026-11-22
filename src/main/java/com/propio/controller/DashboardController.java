@@ -181,7 +181,7 @@ public class DashboardController {
                     .leaseEndDate(activeLease != null ? activeLease.getEndDate() : null)
                     .currentBalanceDue(balanceDue)
                     .hasOverduePayment(hasOverdue)
-                    .openTicketsCount(requests.size())
+                    .openTicketsCount((int) requests.stream().filter(r -> r.getStatus() != null && (r.getStatus().isOpen() || r.getStatus() == RequestStatus.IN_PROGRESS)).count())
                     .build();
 
             model.addAttribute("tenantDashboard", tenantDto);
@@ -200,30 +200,5 @@ public class DashboardController {
                     .openTicketsCount(0)
                     .build());
         }
-    }
-
-
-    @GetMapping("/maintenance")
-    public String maintenance(@AuthenticationPrincipal CustomUserDetails userDetails, Model model) {
-        model.addAttribute("activeNav", "maintenance");
-        model.addAttribute("user", userDetails);
-        if (userDetails != null && userDetails.isTenant() && userDetails.getTenantId() != null) {
-            model.addAttribute("requests", maintenanceRequestRepository.findByTenantId(userDetails.getTenantId()));
-        } else {
-            model.addAttribute("requests", maintenanceRequestRepository.findAll());
-        }
-        return "dashboard";
-    }
-
-    @GetMapping("/documents")
-    public String documents(@AuthenticationPrincipal CustomUserDetails userDetails, Model model) {
-        model.addAttribute("activeNav", "documents");
-        model.addAttribute("user", userDetails);
-        if (userDetails != null && userDetails.isTenant() && userDetails.getTenantId() != null) {
-            model.addAttribute("documents", documentRepository.findByTenantId(userDetails.getTenantId()));
-        } else {
-            model.addAttribute("documents", documentRepository.findAll());
-        }
-        return "dashboard";
     }
 }

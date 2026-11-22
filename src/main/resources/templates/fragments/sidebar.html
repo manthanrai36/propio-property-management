@@ -58,14 +58,22 @@
           <span sec:authorize="hasRole('TENANT')">My Leases</span>
         </a>
       </li>
-      <li>
+      <li sec:authorize="hasRole('ADMIN')">
         <a th:href="@{/maintenance}" 
            th:classappend="${activeNav == 'maintenance'} ? 'active' : ''" 
            class="nav-link-propio ripple" 
            aria-label="Maintenance">
           <i class="bi bi-tools nav-icon"></i>
-          <span sec:authorize="hasRole('ADMIN')">Maintenance</span>
-          <span sec:authorize="hasRole('TENANT')">Service Requests</span>
+          <span>Maintenance</span>
+        </a>
+      </li>
+      <li sec:authorize="hasRole('TENANT')">
+        <a th:href="@{/maintenance/my-requests}" 
+           th:classappend="${activeNav == 'maintenance'} ? 'active' : ''" 
+           class="nav-link-propio ripple" 
+           aria-label="Service Requests">
+          <i class="bi bi-tools nav-icon"></i>
+          <span>Service Requests</span>
         </a>
       </li>
       <li>
@@ -85,6 +93,15 @@
            aria-label="Documents">
           <i class="bi bi-folder2-open nav-icon"></i>
           <span>Documents</span>
+        </a>
+      </li>
+      <li sec:authorize="hasRole('ADMIN')">
+        <a th:href="@{/emails}" 
+           th:classappend="${activeNav == 'emails'} ? 'active' : ''" 
+           class="nav-link-propio ripple" 
+           aria-label="Email Notifications">
+          <i class="bi bi-envelope-paper nav-icon"></i>
+          <span>Email Logs</span>
         </a>
       </li>
     </ul>

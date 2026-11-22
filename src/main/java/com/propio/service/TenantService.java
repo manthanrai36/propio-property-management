@@ -37,6 +37,7 @@ public class TenantService {
     private final PaymentRepository paymentRepository;
     private final PasswordEncoder passwordEncoder;
     private final FileStorageService fileStorageService;
+    private final EmailService emailService;
 
     private static final String TEMP_PASSWORD_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789!@#$";
     private static final SecureRandom RANDOM = new SecureRandom();
@@ -155,6 +156,13 @@ public class TenantService {
         tenant = tenantRepository.save(tenant);
 
         log.info("Created new tenant '{}' with login user '{}'", tenant.getFullName(), user.getEmail());
+
+        try {
+            emailService.sendWelcomeEmail(tenant, rawTempPassword);
+        } catch (Exception ex) {
+            log.warn("Failed to dispatch welcome email to {}: {}", tenant.getEmail(), ex.getMessage());
+        }
+
         return new TenantCreationResult(tenant, rawTempPassword, user.getEmail());
     }
 

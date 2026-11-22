@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      th:replace="~{layout/main :: layout(~{::#email-content})}">
+<head>
+  <title>Email Notifications & Dispatch Audit | Propio</title>
+</head>
+<body>
+
+<div id="email-content">
+  <!-- Page Header -->
+  <div class="d-flex flex-column flex-md-row align-items-start align-items-md-center justify-content-between gap-3 mb-4 fade-in-up">
+    <div>
+      <h3 class="fw-bold font-heading mb-1 text-main">Automated Email Notifications</h3>
+      <p class="text-muted fs-8 mb-0">Audit delivery history, test notification templates, inspect HTML bodies, and re-dispatch failed notices.</p>
+    </div>
+    <div class="d-flex align-items-center gap-2 flex-wrap">
+      <!-- Mode Badge -->
+      <span th:if="${mailEnabled}" class="badge bg-success-subtle text-success border border-success-subtle px-3 py-2 rounded-pill fs-9 fw-semibold d-inline-flex align-items-center gap-1">
+        <i class="bi bi-broadcast"></i> Live SMTP Mode
+      </span>
+      <span th:unless="${mailEnabled}" class="badge bg-primary-subtle text-primary border border-primary-subtle px-3 py-2 rounded-pill fs-9 fw-semibold d-inline-flex align-items-center gap-1" title="Emails are rendered and safely logged to console in local mode">
+        <i class="bi bi-shield-check"></i> Safe Mode: Log Fallback
+      </span>
+
+      <!-- Send Test Email Trigger -->
+      <button type="button" 
+              class="btn btn-sm btn-propio-primary d-inline-flex align-items-center gap-2 py-2 px-3 fs-8 fw-semibold"
+              onclick="openTestModal()">
+        <i class="bi bi-send-plus"></i>
+        <span>Send Test Email</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Flash Notifications -->
+  <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show fs-8 py-3 px-4 rounded-3 mb-4 fade-in-up border-0 shadow-sm" role="alert" style="background-color: rgba(16, 185, 129, 0.15); color: #10B981;">
+    <div class="d-flex align-items-center gap-2">
+      <i class="bi bi-check-circle-fill fs-6"></i>
+      <span th:text="${successMessage}">Operation successful!</span>
+    </div>
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+  </div>
+
+  <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show fs-8 py-3 px-4 rounded-3 mb-4 fade-in-up border-0 shadow-sm" role="alert" style="background-color: rgba(239, 68, 68, 0.15); color: #EF4444;">
+    <div class="d-flex align-items-center gap-2">
+      <i class="bi bi-exclamation-triangle-fill fs-6"></i>
+      <span th:text="${errorMessage}">An error occurred.</span>
+    </div>
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+  </div>
+
+  <!-- Metrics Cards (4 Stat Cards) -->
+  <div class="row g-3 mb-4 fade-in-up stagger-1">
+    <!-- Total Delivered / Logged -->
+    <div class="col-xl-3 col-sm-6">
+      <div class="card-propio p-3 h-100 d-flex flex-column justify-content-between">
+        <div class="d-flex align-items-center justify-content-between mb-2">
+          <span class="fs-9 text-uppercase fw-semibold text-muted">Total Dispatched</span>
+          <div class="rounded-circle p-2 bg-success-subtle text-success d-flex align-items-center justify-content-center" style="width: 36px; height: 36px;">
+            <i class="bi bi-check2-all fs-6"></i>
+          </div>
+        </div>
+        <div>
+          <h4 class="fw-bold font-heading mb-1 text-main" th:text="${totalDispatched}">0</h4>
+          <span class="fs-9 text-muted">Delivered or safely simulated</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Active / Retrying -->
+    <div class="col-xl-3 col-sm-6">
+      <div class="card-propio p-3 h-100 d-flex flex-column justify-content-between">
+        <div class="d-flex align-items-center justify-content-between mb-2">
+          <span class="fs-9 text-uppercase fw-semibold text-muted">Retrying / Queued</span>
+          <div class="rounded-circle p-2 bg-warning-subtle text-warning d-flex align-items-center justify-content-center" style="width: 36px; height: 36px;">
+            <i class="bi bi-arrow-repeat fs-6"></i>
+          </div>
+        </div>
+        <div>
+          <h4 class="fw-bold font-heading mb-1 text-main" th:text="${pendingRetrying}">0</h4>
+          <span class="fs-9 text-muted">Automatic background retries</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Failed Deliveries -->
+    <div class="col-xl-3 col-sm-6">
+      <div class="card-propio p-3 h-100 d-flex flex-column justify-content-between">
+        <div class="d-flex align-items-center justify-content-between mb-2">
+          <span class="fs-9 text-uppercase fw-semibold text-muted">Failed Delivery</span>
+          <div class="rounded-circle p-2 bg-danger-subtle text-danger d-flex align-items-center justify-content-center" style="width: 36px; height: 36px;">
+            <i class="bi bi-exclamation-octagon fs-6"></i>
+          </div>
+        </div>
+        <div>
+          <h4 class="fw-bold font-heading mb-1 text-main" th:text="${failedCount}">0</h4>
+          <span class="fs-9 text-muted">Exhausted retry threshold</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Last 24 Hours Volume -->
+    <div class="col-xl-3 col-sm-6">
+      <div class="card-propio p-3 h-100 d-flex flex-column justify-content-between">
+        <div class="d-flex align-items-center justify-content-between mb-2">
+          <span class="fs-9 text-uppercase fw-semibold text-muted">24-Hour Volume</span>
+          <div class="rounded-circle p-2 bg-primary-subtle text-primary d-flex align-items-center justify-content-center" style="width: 36px; height: 36px;">
+            <i class="bi bi-clock-history fs-6"></i>
+          </div>
+        </div>
+        <div>
+          <h4 class="fw-bold font-heading mb-1 text-main" th:text="${recent24h}">0</h4>
+          <span class="fs-9 text-muted">Dispatches logged today</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filter & Search Toolbar -->
+  <div class="card-propio p-3 mb-4 fade-in-up stagger-2">
+    <form th:action="@{/emails}" method="get" class="row g-2 align-items-end">
+      <!-- Search Input -->
+      <div class="col-12 col-md-4">
+        <label class="form-label fs-9 text-muted text-uppercase fw-semibold mb-1">Search Recipient or Subject</label>
+        <div class="input-group input-group-sm">
+          <span class="input-group-text bg-input border-input text-muted">
+            <i class="bi bi-search"></i>
+          </span>
+          <input type="text" 
+                 name="search" 
+                 class="form-control form-control-sm form-control-propio" 
+                 placeholder="e.g. tenant@propio.com or Rent Due" 
+                 th:value="${filter.search}">
+        </div>
+      </div>
+
+      <!-- Type Filter -->
+      <div class="col-6 col-md-3">
+        <label class="form-label fs-9 text-muted text-uppercase fw-semibold mb-1">Notification Type</label>
+        <select name="type" class="form-select form-select-sm form-control-propio">
+          <option value="" th:selected="${filter.type == null}">All Types</option>
+          <option th:each="t : ${emailTypes}" 
+                  th:value="${t}" 
+                  th:text="${#strings.replace(t.name(), '_', ' ')}" 
+                  th:selected="${filter.type == t}">RENT DUE SOON</option>
+        </select>
+      </div>
+
+      <!-- Status Filter -->
+      <div class="col-6 col-md-3">
+        <label class="form-label fs-9 text-muted text-uppercase fw-semibold mb-1">Delivery Status</label>
+        <select name="status" class="form-select form-select-sm form-control-propio">
+          <option value="" th:selected="${filter.status == null}">All Statuses</option>
+          <option th:each="s : ${emailStatuses}" 
+                  th:value="${s}" 
+                  th:text="${#strings.replace(s.name(), '_', ' ')}" 
+                  th:selected="${filter.status == s}">SENT</option>
+        </select>
+      </div>
+
+      <!-- Submit & Clear Buttons -->
+      <div class="col-12 col-md-2 d-flex gap-2">
+        <button type="submit" class="btn btn-sm btn-propio-primary d-inline-flex align-items-center justify-content-center gap-1 flex-grow-1 py-2">
+          <i class="bi bi-funnel"></i>
+          <span>Filter</span>
+        </button>
+        <a th:href="@{/emails}" class="btn btn-sm btn-propio-outline d-inline-flex align-items-center justify-content-center px-3 py-2" title="Reset Filters">
+          <i class="bi bi-arrow-counterclockwise"></i>
+        </a>
+      </div>
+    </form>
+  </div>
+
+  <!-- Email Audit Log Table -->
+  <div class="card-propio overflow-hidden mb-4 fade-in-up stagger-3">
+    <div class="table-responsive" style="max-height: 650px;">
+      <table class="table table-hover align-middle mb-0 font-sans" style="font-size: 0.8125rem;">
+        <thead class="bg-table-head text-muted border-bottom" style="font-size: 0.725rem; letter-spacing: 0.5px;">
+          <tr>
+            <th class="ps-3 py-3 text-uppercase fw-semibold" style="width: 140px;">Status</th>
+            <th class="py-3 text-uppercase fw-semibold" style="width: 160px;">Notification Type</th>
+            <th class="py-3 text-uppercase fw-semibold" style="min-width: 180px;">Recipient</th>
+            <th class="py-3 text-uppercase fw-semibold" style="min-width: 240px;">Subject</th>
+            <th class="py-3 text-uppercase fw-semibold" style="width: 130px;">Attachment</th>
+            <th class="py-3 text-uppercase fw-semibold text-nowrap" style="width: 140px;">Timestamp</th>
+            <th class="pe-3 py-3 text-uppercase fw-semibold text-end" style="width: 130px;">Actions</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-border">
+          <tr th:if="${logs.empty}">
+            <td colspan="7" class="text-center py-5 text-muted">
+              <i class="bi bi-inbox fs-2 d-block mb-2 text-muted opacity-50"></i>
+              No email notifications match your current filter criteria.
+            </td>
+          </tr>
+
+          <tr th:each="log : ${logs.content}" class="transition-colors">
+            <!-- Status Column -->
+            <td class="ps-3 py-2.5">
+              <span th:if="${log.status.name() == 'SENT'}" class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1 rounded-pill fw-bold" style="font-size: 0.7rem;">
+                <i class="bi bi-check-circle-fill me-1"></i>SENT
+              </span>
+              <span th:if="${log.status.name() == 'SIMULATED_SENT'}" class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1 rounded-pill fw-bold" style="font-size: 0.7rem;" title="Logged in console (Safe Fallback)">
+                <i class="bi bi-terminal me-1"></i>SIMULATED
+              </span>
+              <span th:if="${log.status.name() == 'RETRYING'}" class="badge bg-warning-subtle text-warning border border-warning-subtle px-2 py-1 rounded-pill fw-bold" style="font-size: 0.7rem;">
+                <i class="bi bi-arrow-repeat me-1"></i>RETRY (<span th:text="${log.retryCount}">1</span>)
+              </span>
+              <span th:if="${log.status.name() == 'FAILED'}" class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-1 rounded-pill fw-bold" style="font-size: 0.7rem;" th:title="${log.errorMessage}">
+                <i class="bi bi-x-circle-fill me-1"></i>FAILED
+              </span>
+            </td>
+
+            <!-- Type Column -->
+            <td class="py-2.5">
+              <span class="badge px-2 py-1 rounded-2 fw-semibold" style="font-size: 0.7rem; background-color: rgba(108,76,241,0.08); color: var(--color-primary); border: 1px solid rgba(108,76,241,0.2);"
+                    th:text="${#strings.replace(log.emailType.name(), '_', ' ')}">
+                RENT DUE SOON
+              </span>
+            </td>
+
+            <!-- Recipient Column -->
+            <td class="py-2.5 font-mono text-main fw-semibold text-truncate" style="max-width: 200px;" th:text="${log.recipient}">
+              tenant@propio.com
+            </td>
+
+            <!-- Subject Column -->
+            <td class="py-2.5 text-main text-truncate" style="max-width: 280px;" th:text="${log.subject}">
+              Upcoming Rent Reminder - Unit 101 Due Soon
+            </td>
+
+            <!-- Attachment Column -->
+            <td class="py-2.5">
+              <span th:if="${log.hasAttachment}" class="badge bg-secondary-subtle text-secondary px-2 py-1 rounded-pill fs-9 fw-normal d-inline-flex align-items-center gap-1" th:title="${log.attachmentName}">
+                <i class="bi bi-paperclip"></i>
+                <span style="max-width: 80px;" class="text-truncate" th:text="${log.attachmentName != null ? log.attachmentName : 'PDF'}">Receipt.pdf</span>
+              </span>
+              <span th:unless="${log.hasAttachment}" class="text-muted fs-9">—</span>
+            </td>
+
+            <!-- Timestamp Column -->
+            <td class="py-2.5 text-muted text-nowrap font-mono fs-9" th:text="${log.sentAt != null ? #temporals.format(log.sentAt, 'dd MMM yyyy HH:mm') : #temporals.format(log.createdAt, 'dd MMM yyyy HH:mm')}">
+              22 Nov 2026 13:30
+            </td>
+
+            <!-- Actions Column -->
+            <td class="pe-3 py-2.5 text-end text-nowrap">
+              <div class="d-inline-flex align-items-center gap-1">
+                <!-- Preview Button -->
+                <button type="button" 
+                        class="btn btn-sm btn-icon-propio" 
+                        th:attr="onclick=|openPreviewModal('${log.id}', '${#strings.escapeJavaScript(log.subject)}', '${#strings.escapeJavaScript(log.recipient)}')|"
+                        title="Preview Rendered HTML Email">
+                  <i class="bi bi-eye text-primary"></i>
+                </button>
+
+                <!-- Resend Form with CSRF -->
+                <form th:action="@{/emails/{id}/resend(id=${log.id})}" method="post" class="d-inline m-0 p-0" onsubmit="return confirm('Re-dispatch this email notification now?');">
+                  <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+                  <button type="submit" class="btn btn-sm btn-icon-propio text-secondary" title="Re-dispatch Email Now">
+                    <i class="bi bi-send text-success"></i>
+                  </button>
+                </form>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination Footer -->
+    <div th:if="${logs.totalPages > 1}" class="d-flex align-items-center justify-content-between p-3 border-top bg-table-head fs-8">
+      <span class="text-muted">
+        Showing <strong th:text="${logs.numberOfElements}">10</strong> of <strong th:text="${logs.totalElements}">50</strong> notification records
+      </span>
+      <nav aria-label="Page navigation">
+        <ul class="pagination pagination-sm mb-0">
+          <li class="page-item" th:classappend="${logs.first} ? 'disabled'">
+            <a class="page-link" th:href="@{/emails(page=${logs.number - 1}, size=${filter.size}, type=${filter.type}, status=${filter.status}, search=${filter.search})}">
+              <i class="bi bi-chevron-left"></i>
+            </a>
+          </li>
+          <li class="page-item" 
+              th:each="p : ${#numbers.sequence(0, logs.totalPages - 1)}"
+              th:if="${p >= logs.number - 2 and p <= logs.number + 2}"
+              th:classappend="${p == logs.number} ? 'active'">
+            <a class="page-link" 
+               th:href="@{/emails(page=${p}, size=${filter.size}, type=${filter.type}, status=${filter.status}, search=${filter.search})}" 
+               th:text="${p + 1}">1</a>
+          </li>
+          <li class="page-item" th:classappend="${logs.last} ? 'disabled'">
+            <a class="page-link" th:href="@{/emails(page=${logs.number + 1}, size=${filter.size}, type=${filter.type}, status=${filter.status}, search=${filter.search})}">
+              <i class="bi bi-chevron-right"></i>
+            </a>
+          </li>
+        </ul>
+      </nav>
+    </div>
+  </div>
+
+  <!-- Send Test Email Modal (INSIDE #email-content) -->
+  <div class="modal fade" id="testEmailModal" tabindex="-1" aria-labelledby="testEmailModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content card-propio p-0 overflow-hidden border-0 shadow-lg">
+        <div class="modal-header border-bottom p-3">
+          <div class="d-flex align-items-center gap-2">
+            <div class="rounded-circle p-2 bg-primary-subtle text-primary d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
+              <i class="bi bi-envelope-paper-fill fs-6"></i>
+            </div>
+            <div>
+              <h5 class="modal-title font-heading fs-6 fw-bold mb-0 text-main" id="testEmailModalLabel">Send Diagnostic Test Email</h5>
+              <span class="fs-9 text-muted">Test SMTP connectivity and email rendering</span>
+            </div>
+          </div>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+
+        <form th:action="@{/emails/test}" th:object="${testEmailDto}" method="post">
+          <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+          <div class="modal-body p-4">
+            <div class="mb-3">
+              <label for="recipientEmail" class="form-label fs-8 fw-semibold text-main">Recipient Email <span class="text-danger">*</span></label>
+              <input type="email" 
+                     id="recipientEmail" 
+                     th:field="*{recipient}" 
+                     class="form-control form-control-sm form-control-propio" 
+                     placeholder="e.g. resident@example.com" 
+                     required>
+            </div>
+
+            <div class="mb-3">
+              <label for="testSubject" class="form-label fs-8 fw-semibold text-main">Subject Line <span class="text-danger">*</span></label>
+              <input type="text" 
+                     id="testSubject" 
+                     th:field="*{subject}" 
+                     class="form-control form-control-sm form-control-propio" 
+                     placeholder="Propio System Test Dispatch" 
+                     required>
+            </div>
+
+            <div class="mb-3">
+              <label for="testMessage" class="form-label fs-8 fw-semibold text-main">Custom Test Message</label>
+              <textarea id="testMessage" 
+                        th:field="*{message}" 
+                        rows="3" 
+                        class="form-control form-control-sm form-control-propio" 
+                        placeholder="Optional note included in test dispatch..."></textarea>
+            </div>
+
+            <div class="alert alert-info py-2 px-3 fs-9 mb-0 rounded-3 border-0" style="background-color: rgba(59, 130, 246, 0.1); color: #2563EB;">
+              <i class="bi bi-info-circle-fill me-1"></i>
+              Dispatched asynchronously via <code>@Async("mailTaskExecutor")</code>. In safe fallback mode, content is formatted and written to the application log.
+            </div>
+          </div>
+
+          <div class="modal-footer border-top p-3 bg-table-head">
+            <button type="button" class="btn btn-sm btn-propio-outline px-3" data-bs-dismiss="modal">Cancel</button>
+            <button type="submit" class="btn btn-sm btn-propio-primary px-3 d-inline-flex align-items-center gap-1">
+              <i class="bi bi-send-fill"></i>
+              <span>Queue Test Dispatch</span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Email HTML Preview Modal (INSIDE #email-content) -->
+  <div class="modal fade" id="previewEmailModal" tabindex="-1" aria-labelledby="previewEmailModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg" style="max-width: 720px;">
+      <div class="modal-content card-propio p-0 overflow-hidden border-0 shadow-lg">
+        <div class="modal-header border-bottom p-3">
+          <div class="d-flex align-items-center gap-2">
+            <div class="rounded-circle p-2 bg-primary-subtle text-primary d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
+              <i class="bi bi-file-earmark-code fs-6"></i>
+            </div>
+            <div>
+              <h5 class="modal-title font-heading fs-6 fw-bold mb-0 text-main" id="previewSubject">Email Preview</h5>
+              <span class="fs-9 text-muted" id="previewRecipient">Recipient</span>
+            </div>
+          </div>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body p-0" style="background-color: #F8FAFC; height: 500px;">
+          <iframe id="previewIframe" src="about:blank" style="width: 100%; height: 100%; border: none;"></iframe>
+        </div>
+        <div class="modal-footer border-top p-2 bg-table-head d-flex justify-content-between">
+          <span class="fs-9 text-muted">Rendered via Thymeleaf template engine</span>
+          <button type="button" class="btn btn-sm btn-propio-outline px-3" data-bs-dismiss="modal">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- JavaScript Handlers (INSIDE #email-content per Standing Rule 1) -->
+  <script>
+    function openTestModal() {
+      const modalEl = document.getElementById('testEmailModal');
+      if (modalEl) {
+        const modal = new bootstrap.Modal(modalEl);
+        modal.show();
+      }
+    }
+
+    function openPreviewModal(id, subject, recipient) {
+      const subjectEl = document.getElementById('previewSubject');
+      const recipientEl = document.getElementById('previewRecipient');
+      const iframeEl = document.getElementById('previewIframe');
+      
+      if (subjectEl) subjectEl.textContent = subject || 'Email Preview';
+      if (recipientEl) recipientEl.textContent = 'To: ' + (recipient || '');
+      if (iframeEl) iframeEl.src = '/emails/' + id + '/preview';
+
+      const modalEl = document.getElementById('previewEmailModal');
+      if (modalEl) {
+        const modal = new bootstrap.Modal(modalEl);
+        modal.show();
+      }
+    }
+  </script>
+</div>
+
+</body>
+</html>

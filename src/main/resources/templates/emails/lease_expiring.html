@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <title>Lease Expiration Notice</title>
+</head>
+<body style="margin: 0; padding: 0; background-color: #F8FAFC; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #1E293B;">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color: #F8FAFC; padding: 30px 10px;">
+    <tr>
+      <td align="center">
+        <!-- Main Card Container -->
+        <table role="presentation" width="100%" style="max-width: 600px; background-color: #FFFFFF; border-radius: 12px; border: 1px solid #E2E8F0; overflow: hidden; box-shadow: 0 4px 16px rgba(0,0,0,0.04);">
+          <!-- Purple Header Bar with Amber Badge -->
+          <tr>
+            <td style="background-color: #6C4CF1; padding: 24px 30px; text-align: left;">
+              <table width="100%">
+                <tr>
+                  <td>
+                    <span style="font-size: 22px; font-weight: 800; color: #FFFFFF; letter-spacing: 0.5px;">PROPIO</span>
+                    <span style="display: block; font-size: 11px; color: rgba(255,255,255,0.85); font-weight: 500; text-transform: uppercase; margin-top: 2px;">Leasing Administration</span>
+                  </td>
+                  <td align="right">
+                    <span style="background-color: #D97706; color: #FFFFFF; font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 20px;">EXPIRING SOON</span>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Body Content -->
+          <tr>
+            <td style="padding: 30px;">
+              <h2 style="margin: 0 0 12px 0; font-size: 18px; font-weight: 700; color: #0F172A;">
+                Your Lease Expires in 60 Days
+              </h2>
+              <p style="margin: 0 0 20px 0; font-size: 14px; line-height: 1.6; color: #475569;">
+                Hello <strong th:text="${tenantName}">Resident</strong>,<br>
+                We hope you are enjoying your stay at <strong th:text="${propertyName}">Oak Ridge Apartments</strong>. 
+                This notice is to inform you that your current residential lease contract for 
+                <strong th:text="${unitNumber}">Unit Apt 101</strong> will reach its expiration on 
+                <strong style="color: #D97706;" th:text="${endDate}">Jan 22, 2027</strong>.
+              </p>
+
+              <!-- Lease Contract Summary Card -->
+              <table role="presentation" width="100%" style="background-color: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 8px; margin-bottom: 24px;">
+                <tr>
+                  <td style="padding: 16px 20px;">
+                    <table width="100%">
+                      <tr>
+                        <td style="font-size: 13px; color: #64748B; padding-bottom: 8px;">Leased Unit:</td>
+                        <td align="right" style="font-size: 13px; font-weight: 600; color: #0F172A; padding-bottom: 8px;" th:text="${unitNumber + ' (' + propertyName + ')'}">Apt 101</td>
+                      </tr>
+                      <tr>
+                        <td style="font-size: 13px; color: #64748B; padding-bottom: 8px;">Expiration Date:</td>
+                        <td align="right" style="font-size: 13px; font-weight: 600; color: #0F172A; padding-bottom: 8px;" th:text="${endDate}">Jan 22, 2027</td>
+                      </tr>
+                      <tr>
+                        <td style="font-size: 13px; color: #64748B;">Current Monthly Rent:</td>
+                        <td align="right" style="font-size: 14px; font-weight: 700; color: #6C4CF1;" th:text="${monthlyRent}">$1,450.00</td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- Renewal Instructions -->
+              <p style="margin: 0 0 20px 0; font-size: 13px; line-height: 1.6; color: #475569;">
+                We would love to have you continue residing with us! You can request a renewal directly through the resident portal or contact the leasing office to review options.
+              </p>
+
+              <!-- CTA Button -->
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+                <tr>
+                  <td align="center">
+                    <a th:href="${portalUrl}" target="_blank" style="display: inline-block; background-color: #6C4CF1; color: #FFFFFF; font-size: 14px; font-weight: 700; text-decoration: none; padding: 12px 32px; border-radius: 30px; box-shadow: 0 4px 12px rgba(108,76,241,0.3);">
+                      Review Lease &amp; Renewal Options
+                    </a>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="background-color: #F8FAFC; border-top: 1px solid #E2E8F0; padding: 20px 30px; text-align: center; font-size: 11px; color: #94A3B8; line-height: 1.5;">
+              Propio Property Management SaaS • Tenancy Contract Administration<br>
+              Contact your leasing manager directly at leases@propio.com.
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>

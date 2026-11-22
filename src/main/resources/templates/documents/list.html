@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      th:replace="~{layout/main :: layout(~{::#documents-content})}">
+<head>
+  <title>Documents & Contracts | Propio</title>
+</head>
+<body>
+
+<div id="documents-content">
+  <!-- Page Header -->
+  <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4 fade-in-up">
+    <div>
+      <h3 class="fw-bold font-heading mb-1 text-main">Documents &amp; Legal Records</h3>
+      <p class="text-muted fs-8 mb-0" th:if="${isTenant}">Access your official residential lease agreements, move-in inspections, and records.</p>
+      <p class="text-muted fs-8 mb-0" th:unless="${isTenant}">Repository of all tenant contracts, signed lease agreements, and portfolio documentation.</p>
+    </div>
+    <div sec:authorize="hasRole('ADMIN')">
+      <a th:href="@{/leasing}" class="btn-propio-secondary py-2 px-3 fs-8 text-decoration-none d-inline-flex align-items-center gap-2">
+        <i class="bi bi-file-earmark-plus"></i> View Active Leases
+      </a>
+    </div>
+  </div>
+
+  <!-- Search & Filter Bar -->
+  <div class="card-propio p-3 mb-4 fade-in-up stagger-1">
+    <form th:action="@{/documents}" method="get" class="row g-2 align-items-center" id="docFilterForm">
+      <!-- Search Input -->
+      <div class="col-lg-5 col-md-6 col-12">
+        <div class="input-group">
+          <span class="input-group-text bg-transparent border-end-0 text-muted" style="border-color: var(--border-light);">
+            <i class="bi bi-search"></i>
+          </span>
+          <input type="text" 
+                 name="search" 
+                 class="form-control border-start-0 fs-8" 
+                 style="background-color: var(--bg-card-subtle); border-color: var(--border-light); color: var(--text-main);"
+                 placeholder="Search by file name, category, or tenant..." 
+                 th:value="${search}">
+        </div>
+      </div>
+
+      <!-- Category Filter -->
+      <div class="col-lg-4 col-md-4 col-8">
+        <select name="category" 
+                class="form-select fs-8" 
+                style="background-color: var(--bg-card-subtle); border-color: var(--border-light); color: var(--text-main);"
+                onchange="document.getElementById('docFilterForm').submit()">
+          <option value="ALL" th:selected="${category == null or category == 'ALL'}">All Document Categories</option>
+          <option value="LEASE_AGREEMENT" th:selected="${category == 'LEASE_AGREEMENT'}">Lease Agreements</option>
+          <option value="INSPECTION_REPORT" th:selected="${category == 'INSPECTION_REPORT'}">Inspection Reports</option>
+          <option value="PAYMENT_RECEIPT" th:selected="${category == 'PAYMENT_RECEIPT'}">Payment Receipts</option>
+        </select>
+      </div>
+
+      <!-- Filter Buttons with High Contrast -->
+      <div class="col-lg-auto col-md-auto col-4 d-flex gap-2">
+        <button type="submit" class="btn btn-propio-primary py-2 px-3 fs-8 d-inline-flex align-items-center justify-content-center gap-1 text-white fw-semibold text-nowrap ripple" style="color: #ffffff !important;" title="Apply Filter">
+          <i class="bi bi-funnel-fill text-white"></i>
+          <span class="text-white" style="color: #ffffff !important;">Filter</span>
+        </button>
+        <a th:href="@{/documents}" class="btn btn-propio-secondary py-2 px-3 fs-8 d-inline-flex align-items-center justify-content-center" title="Reset Filters">
+          <i class="bi bi-arrow-counterclockwise"></i>
+        </a>
+      </div>
+    </form>
+  </div>
+
+  <!-- Documents Grid View -->
+  <div th:if="${documents == null or documents.empty}" class="card-propio text-center py-5 fade-in-up stagger-2">
+    <div class="rounded-circle d-inline-flex align-items-center justify-content-center p-3 mb-3" style="background: rgba(108, 76, 241, 0.1);">
+      <i class="bi bi-folder2-open text-primary fs-2"></i>
+    </div>
+    <h5 class="fw-bold font-heading mb-1 text-main">No Documents Found</h5>
+    <p class="text-muted fs-8 mb-3">No archived legal agreements or digital files match your current filter.</p>
+    <a th:href="@{/documents}" class="btn-propio-secondary py-2 px-3 fs-8 text-decoration-none">
+      <i class="bi bi-arrow-counterclockwise me-1"></i> Reset Filters
+    </a>
+  </div>
+
+  <div th:if="${documents != null and !documents.empty}" class="row g-3 fade-in-up stagger-2">
+    <div th:each="doc : ${documents}" class="col-lg-6 col-12">
+      <div class="card-propio p-4 h-100 d-flex flex-column justify-content-between position-relative overflow-hidden" 
+           style="border: 1px solid var(--border-light);">
+        
+        <!-- Document Header & Icon -->
+        <div>
+          <div class="d-flex align-items-start justify-content-between gap-3 mb-3">
+            <div class="d-flex align-items-center gap-3">
+              <div class="rounded-3 p-3 d-flex align-items-center justify-content-center flex-shrink-0" 
+                   style="background: rgba(239, 68, 68, 0.1); color: #EF4444; width: 48px; height: 48px;">
+                <i class="bi bi-file-earmark-pdf fs-3"></i>
+              </div>
+              <div class="overflow-hidden">
+                <h6 class="fw-bold font-heading mb-1 text-main text-truncate" th:text="${doc.fileName}">Lease_Agreement.pdf</h6>
+                <div class="d-flex align-items-center gap-2">
+                  <span class="badge bg-primary-subtle text-primary fs-9 fw-semibold" th:text="${doc.category}">LEASE_AGREEMENT</span>
+                  <span class="fs-9 text-muted" th:if="${doc.createdAt != null}" th:text="${#temporals.format(doc.createdAt, 'MMM dd, yyyy')}">Nov 22, 2026</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Metadata Pill Box -->
+          <div class="p-3 rounded-3 mb-3 fs-8" style="background: var(--bg-card-subtle); border: 1px solid var(--border-light);">
+            <div class="row g-2">
+              <div class="col-sm-6" th:if="${doc.tenant != null}">
+                <span class="text-muted d-block fs-9">Resident:</span>
+                <strong class="text-main" th:text="${doc.tenant.fullName}">Leslie Alexander</strong>
+              </div>
+              <div class="col-sm-6" th:if="${doc.lease != null and doc.lease.unit != null}">
+                <span class="text-muted d-block fs-9">Premises:</span>
+                <strong class="text-main" th:text="${doc.lease.unit.unitNumber + ' (' + doc.lease.unit.property.name + ')'}">Apt 101</strong>
+              </div>
+              <div class="col-sm-6" th:unless="${doc.lease != null and doc.lease.unit != null}">
+                <span class="text-muted d-block fs-9">File Type:</span>
+                <span class="text-main font-monospace fs-9" th:text="${doc.fileType != null ? doc.fileType : 'application/pdf'}">PDF Document</span>
+              </div>
+              <div class="col-sm-6">
+                <span class="text-muted d-block fs-9">Status:</span>
+                <span class="badge bg-success-subtle text-success fs-9 fw-semibold">
+                  <i class="bi bi-shield-check me-1"></i>Verified Legal Record
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Download Action Button -->
+        <div class="d-flex align-items-center justify-content-between pt-2 border-top" style="border-color: var(--border-light) !important;">
+          <span class="fs-9 text-muted font-monospace">
+            <i class="bi bi-file-binary me-1"></i>OpenPDF Generated
+          </span>
+          <a th:href="@{'/documents/' + ${doc.id} + '/download'}" 
+             target="_blank" 
+             class="btn btn-sm btn-propio-primary py-2 px-3 fs-8 d-inline-flex align-items-center gap-2 text-white shadow-sm"
+             style="color: #ffffff !important;"
+             title="Download Official PDF">
+            <i class="bi bi-download text-white"></i>
+            <span class="text-white" style="color: #ffffff !important;">Download PDF</span>
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- JavaScript Placed INSIDE layout fragment per Standing Rule 1 -->
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // Any document filter or preview event handlers
+    });
+  </script>
+</div>
+
+</body>
+</html>

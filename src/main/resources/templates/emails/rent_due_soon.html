@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <title>Upcoming Rent Reminder</title>
+</head>
+<body style="margin: 0; padding: 0; background-color: #F8FAFC; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #1E293B;">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color: #F8FAFC; padding: 30px 10px;">
+    <tr>
+      <td align="center">
+        <!-- Main Card Container -->
+        <table role="presentation" width="100%" style="max-width: 600px; background-color: #FFFFFF; border-radius: 12px; border: 1px solid #E2E8F0; overflow: hidden; box-shadow: 0 4px 16px rgba(0,0,0,0.04);">
+          <!-- Purple Header Bar -->
+          <tr>
+            <td style="background-color: #6C4CF1; padding: 24px 30px; text-align: left;">
+              <table width="100%">
+                <tr>
+                  <td>
+                    <span style="font-size: 22px; font-weight: 800; color: #FFFFFF; letter-spacing: 0.5px;">PROPIO</span>
+                    <span style="display: block; font-size: 11px; color: rgba(255,255,255,0.8); font-weight: 500; text-transform: uppercase; margin-top: 2px;">Residential Management</span>
+                  </td>
+                  <td align="right">
+                    <span style="background-color: rgba(255,255,255,0.2); color: #FFFFFF; font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 20px;">RENT DUE SOON</span>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Body Content -->
+          <tr>
+            <td style="padding: 30px;">
+              <h2 style="margin: 0 0 12px 0; font-size: 18px; font-weight: 700; color: #0F172A;">
+                Upcoming Rent Due in 3 Days
+              </h2>
+              <p style="margin: 0 0 20px 0; font-size: 14px; line-height: 1.6; color: #475569;">
+                Hello <strong th:text="${tenantName}">Resident</strong>,<br>
+                This is a friendly automated reminder that your upcoming rental invoice for 
+                <strong th:text="${unitNumber + ' at ' + propertyName}">Unit Apt 101</strong> is due on 
+                <strong style="color: #6C4CF1;" th:text="${dueDate}">Nov 25, 2026</strong>.
+              </p>
+
+              <!-- Invoice Details Card -->
+              <table role="presentation" width="100%" style="background-color: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 8px; margin-bottom: 24px;">
+                <tr>
+                  <td style="padding: 16px 20px;">
+                    <table width="100%">
+                      <tr>
+                        <td style="font-size: 13px; color: #64748B; padding-bottom: 8px;">Leased Premises:</td>
+                        <td align="right" style="font-size: 13px; font-weight: 600; color: #0F172A; padding-bottom: 8px;" th:text="${unitNumber + ' (' + propertyName + ')'}">Apt 101</td>
+                      </tr>
+                      <tr>
+                        <td style="font-size: 13px; color: #64748B; padding-bottom: 8px;">Due Date:</td>
+                        <td align="right" style="font-size: 13px; font-weight: 600; color: #0F172A; padding-bottom: 8px;" th:text="${dueDate}">Nov 25, 2026</td>
+                      </tr>
+                      <tr style="border-top: 1px solid #E2E8F0;">
+                        <td style="font-size: 14px; font-weight: 700; color: #0F172A; padding-top: 10px;">Amount Due:</td>
+                        <td align="right" style="font-size: 18px; font-weight: 800; color: #6C4CF1; padding-top: 10px;" th:text="${amount}">$1,450.00</td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- Notice Box -->
+              <p style="margin: 0 0 24px 0; font-size: 12px; line-height: 1.5; color: #64748B; background: #FFFBEB; border-left: 3px solid #F59E0B; padding: 10px 14px; border-radius: 4px;">
+                <strong>Late Fee Advisory:</strong> In accordance with your lease terms, payments settled after the due date incur an automatic 5.0% late penalty fee. Avoid delays by settling online.
+              </p>
+
+              <!-- CTA Button -->
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+                <tr>
+                  <td align="center" style="padding-bottom: 10px;">
+                    <a th:href="${portalUrl}" target="_blank" style="display: inline-block; background-color: #6C4CF1; color: #FFFFFF; font-size: 14px; font-weight: 700; text-decoration: none; padding: 12px 32px; border-radius: 30px; box-shadow: 0 4px 12px rgba(108,76,241,0.3);">
+                      Pay Rent Online
+                    </a>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="background-color: #F8FAFC; border-top: 1px solid #E2E8F0; padding: 20px 30px; text-align: center; font-size: 11px; color: #94A3B8; line-height: 1.5;">
+              Propio Property Management SaaS • Automated Billing Notification<br>
+              This is a system generated message. Please log into your resident portal to manage payment preferences.
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>

@@ -35,6 +35,7 @@ public class PaymentService {
 
     private final PaymentRepository paymentRepository;
     private final LeaseRepository leaseRepository;
+    private final EmailService emailService;
 
     @Value("${propio.billing.late-fee-percentage:5.0}")
     private double lateFeePercentage;
@@ -119,6 +120,13 @@ public class PaymentService {
         Payment saved = paymentRepository.save(payment);
         log.info("Recorded manual payment for Invoice ID {}: Amount ${}, Method {}",
                 saved.getId(), saved.getAmount(), saved.getPaymentMethod());
+        
+        // Dispatch payment receipt email asynchronously with PDF attachment
+        try {
+            emailService.sendPaymentReceivedEmail(saved);
+        } catch (Exception ex) {
+            log.warn("Failed to queue payment receipt email for payment #{}: {}", saved.getId(), ex.getMessage());
+        }
         return saved;
     }
 
@@ -155,6 +163,13 @@ public class PaymentService {
         Payment saved = paymentRepository.save(payment);
         log.info("Successfully processed online payment for Invoice ID {} ({}) for Tenant: {}",
                 saved.getId(), saved.getTransactionReference(), saved.getLease().getTenant().getFullName());
+        
+        // Dispatch payment receipt email asynchronously with PDF attachment
+        try {
+            emailService.sendPaymentReceivedEmail(saved);
+        } catch (Exception ex) {
+            log.warn("Failed to queue online payment receipt email for payment #{}: {}", saved.getId(), ex.getMessage());
+        }
         return saved;
     }
 

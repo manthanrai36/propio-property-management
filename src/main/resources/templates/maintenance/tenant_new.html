@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      th:replace="~{layout/main :: layout(~{::#maintenance-content})}">
+<head>
+  <title>Submit Maintenance Request | Propio</title>
+</head>
+<body>
+
+<div id="maintenance-content">
+  <!-- Page Header -->
+  <div class="d-flex flex-column flex-md-row align-items-start align-items-md-center justify-content-between gap-3 mb-4 fade-in-up">
+    <div>
+      <div class="d-flex align-items-center gap-2 mb-1">
+        <a th:href="@{/maintenance/my-requests}" class="btn btn-sm btn-icon-propio" title="Back to My Requests">
+          <i class="bi bi-arrow-left"></i>
+        </a>
+        <h3 class="fw-bold font-heading mb-0 text-main">New Maintenance Request</h3>
+      </div>
+      <p class="text-muted fs-8 mb-0 ps-4 ms-2">Describe the issue in your unit. Our property management team and service technicians will respond promptly.</p>
+    </div>
+    <div>
+      <a th:href="@{/maintenance/my-requests}" class="btn btn-sm btn-propio-outline d-inline-flex align-items-center gap-2 px-3 py-2">
+        <i class="bi bi-clock-history"></i>
+        <span>View My Requests</span>
+      </a>
+    </div>
+  </div>
+
+  <!-- Flash Notifications -->
+  <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show fs-8 py-3 px-4 rounded-3 mb-4 fade-in-up border-0 shadow-sm" role="alert" style="background-color: rgba(239, 68, 68, 0.15); color: #EF4444;">
+    <div class="d-flex align-items-center gap-2">
+      <i class="bi bi-exclamation-triangle-fill fs-6"></i>
+      <span th:text="${errorMessage}">An error occurred.</span>
+    </div>
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+  </div>
+
+  <!-- Main Form Card -->
+  <div class="row justify-content-center">
+    <div class="col-12 col-lg-8">
+      <div class="card-propio p-4 fade-in-up stagger-1">
+        <form th:action="@{/maintenance/new}" th:object="${requestDto}" method="post" enctype="multipart/form-data" novalidate id="maintenanceForm">
+          <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+
+          <!-- Title -->
+          <div class="mb-3">
+            <label for="ticketTitle" class="form-label fs-8 fw-semibold text-main">Issue Title <span class="text-danger">*</span></label>
+            <input type="text" 
+                   id="ticketTitle" 
+                   th:field="*{title}" 
+                   class="form-control form-control-propio" 
+                   th:classappend="${#fields.hasErrors('title')} ? 'is-invalid' : ''"
+                   placeholder="e.g. Water leak under kitchen sink, AC blowing warm air" 
+                   maxlength="150" 
+                   required>
+            <div class="invalid-feedback" th:if="${#fields.hasErrors('title')}" th:errors="*{title}">Title is required.</div>
+            <div class="form-text fs-9 text-muted">A clear, concise summary of the maintenance problem.</div>
+          </div>
+
+          <!-- Category & Priority Row -->
+          <div class="row g-3 mb-3">
+            <div class="col-12 col-md-6">
+              <label for="ticketCategory" class="form-label fs-8 fw-semibold text-main">Category <span class="text-danger">*</span></label>
+              <select id="ticketCategory" 
+                      th:field="*{category}" 
+                      class="form-select form-control-propio" 
+                      th:classappend="${#fields.hasErrors('category')} ? 'is-invalid' : ''" 
+                      required>
+                <option value="" disabled selected>Select category...</option>
+                <option th:each="cat : ${categories}" th:value="${cat}" th:text="${cat}">Plumbing</option>
+              </select>
+              <div class="invalid-feedback" th:if="${#fields.hasErrors('category')}" th:errors="*{category}">Please select a category.</div>
+            </div>
+
+            <div class="col-12 col-md-6">
+              <label for="ticketPriority" class="form-label fs-8 fw-semibold text-main">Urgency / Priority <span class="text-danger">*</span></label>
+              <select id="ticketPriority" 
+                      th:field="*{priority}" 
+                      class="form-select form-control-propio" 
+                      th:classappend="${#fields.hasErrors('priority')} ? 'is-invalid' : ''" 
+                      required>
+                <option value="LOW">Low (Routine non-urgent repair)</option>
+                <option value="MEDIUM" selected>Medium (Standard repair, normal priority)</option>
+                <option value="HIGH">High (Impacts daily living, e.g. major leak, no hot water)</option>
+                <option value="EMERGENCY">Emergency (Hazard, flooding, gas smell, electrical sparks)</option>
+              </select>
+              <div class="invalid-feedback" th:if="${#fields.hasErrors('priority')}" th:errors="*{priority}">Please select a priority.</div>
+            </div>
+          </div>
+
+          <!-- Description -->
+          <div class="mb-3">
+            <label for="ticketDescription" class="form-label fs-8 fw-semibold text-main">Detailed Description <span class="text-danger">*</span></label>
+            <textarea id="ticketDescription" 
+                      th:field="*{description}" 
+                      rows="4" 
+                      class="form-control form-control-propio" 
+                      th:classappend="${#fields.hasErrors('description')} ? 'is-invalid' : ''"
+                      placeholder="Please provide specifics: when did it start, exact location in unit, whether water is actively leaking, etc." 
+                      required></textarea>
+            <div class="invalid-feedback" th:if="${#fields.hasErrors('description')}" th:errors="*{description}">Description is required.</div>
+          </div>
+
+          <!-- Photo Upload with Validation & Preview -->
+          <div class="mb-4">
+            <label for="photoFile" class="form-label fs-8 fw-semibold text-main">
+              Attach Photo of the Issue <span class="text-muted fw-normal fs-9">(Optional, max 5MB - JPG, PNG, WEBP)</span>
+            </label>
+            <div class="input-group">
+              <input type="file" 
+                     id="photoFile" 
+                     th:field="*{photoFile}" 
+                     class="form-control form-control-propio" 
+                     accept="image/jpeg,image/png,image/webp,image/gif"
+                     onchange="previewMaintenancePhoto(this)">
+            </div>
+            <div id="photoValidationMsg" class="text-danger fs-9 mt-1" style="display: none;"></div>
+
+            <!-- Image Preview Box -->
+            <div id="photoPreviewContainer" class="mt-2 text-center p-2 rounded-3 border d-none" style="max-width: 320px; background-color: var(--color-bg);">
+              <img id="photoPreviewImg" src="#" alt="Issue Preview" class="img-fluid rounded-2" style="max-height: 200px; object-fit: cover;">
+              <div class="d-flex justify-content-between align-items-center mt-2 px-1">
+                <span id="photoPreviewName" class="fs-9 text-muted text-truncate" style="max-width: 220px;">photo.jpg</span>
+                <button type="button" class="btn btn-link text-danger p-0 fs-9 text-decoration-none" onclick="removeSelectedPhoto()">
+                  <i class="bi bi-trash"></i> Remove
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Emergency Notice Advisory -->
+          <div class="alert alert-warning py-2.5 px-3 fs-9 mb-4 rounded-3 border-0 d-flex align-items-start gap-2" style="background-color: rgba(245, 158, 11, 0.12); color: #B45309;">
+            <i class="bi bi-shield-exclamation fs-6 mt-0.5"></i>
+            <div>
+              <strong>Emergency Situations:</strong> For immediate health or safety hazards (gas leaks, active flooding, fire, loss of power in extreme cold), please also contact emergency services and our 24/7 resident hotline immediately.
+            </div>
+          </div>
+
+          <!-- Form Actions -->
+          <div class="d-flex align-items-center justify-content-end gap-2 pt-2 border-top">
+            <a th:href="@{/maintenance/my-requests}" class="btn btn-propio-outline px-4 py-2 fs-8">Cancel</a>
+            <button type="submit" class="btn btn-propio-primary px-4 py-2 fs-8 d-inline-flex align-items-center gap-2">
+              <i class="bi bi-send-fill"></i>
+              <span>Submit Request</span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- JavaScript Handlers (INSIDE #maintenance-content per Standing Rule 1) -->
+  <script>
+    function previewMaintenancePhoto(input) {
+      const container = document.getElementById('photoPreviewContainer');
+      const img = document.getElementById('photoPreviewImg');
+      const nameEl = document.getElementById('photoPreviewName');
+      const errorEl = document.getElementById('photoValidationMsg');
+
+      errorEl.style.display = 'none';
+      errorEl.textContent = '';
+
+      if (input.files && input.files[0]) {
+        const file = input.files[0];
+
+        // Max 5 MB check
+        if (file.size > 5 * 1024 * 1024) {
+          errorEl.textContent = 'File size exceeds 5MB limit. Please choose a smaller photo.';
+          errorEl.style.display = 'block';
+          input.value = '';
+          container.classList.add('d-none');
+          return;
+        }
+
+        // Allowed image MIME types
+        const allowed = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+        if (!allowed.includes(file.type.toLowerCase())) {
+          errorEl.textContent = 'Invalid file type. Only JPG, PNG, WEBP, or GIF images are accepted.';
+          errorEl.style.display = 'block';
+          input.value = '';
+          container.classList.add('d-none');
+          return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          img.src = e.target.result;
+          nameEl.textContent = file.name;
+          container.classList.remove('d-none');
+        };
+        reader.readAsDataURL(file);
+      } else {
+        container.classList.add('d-none');
+      }
+    }
+
+    function removeSelectedPhoto() {
+      const input = document.getElementById('photoFile');
+      const container = document.getElementById('photoPreviewContainer');
+      if (input) input.value = '';
+      if (container) container.classList.add('d-none');
+    }
+  </script>
+</div>
+
+</body>
+</html>

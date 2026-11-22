@@ -75,6 +75,12 @@ public class SecurityConfig {
                 .requestMatchers("/payments/record", "/payments/run-engine").hasRole("ADMIN")
                 .requestMatchers("/payments", "/payments/**").hasAnyRole("ADMIN", "TENANT")
                 .requestMatchers("/tenant/payments").hasRole("TENANT")
+                .requestMatchers("/documents", "/documents/**").hasAnyRole("ADMIN", "TENANT")
+                .requestMatchers("/emails", "/emails/**").hasRole("ADMIN")
+                .requestMatchers("/maintenance/new", "/maintenance/my-requests").hasAnyRole("TENANT", "ADMIN")
+                .requestMatchers("/maintenance/*/status", "/maintenance/*/assign").hasRole("ADMIN")
+                .requestMatchers("/maintenance").hasRole("ADMIN")
+                .requestMatchers("/maintenance/**").hasAnyRole("ADMIN", "TENANT")
                 // All other requests require an active authenticated session
                 .anyRequest().authenticated()
             )

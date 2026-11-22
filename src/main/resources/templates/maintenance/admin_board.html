@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      th:replace="~{layout/main :: layout(~{::#maintenance-content})}">
+<head>
+  <title>Maintenance Operations Board | Propio</title>
+</head>
+<body>
+
+<div id="maintenance-content">
+  <!-- Page Header -->
+  <div class="d-flex flex-column flex-md-row align-items-start align-items-md-center justify-content-between gap-3 mb-4 fade-in-up">
+    <div>
+      <h3 class="fw-bold font-heading mb-1 text-main">Maintenance & Work Orders</h3>
+      <p class="text-muted fs-8 mb-0">Track residential repairs, assign service contractors, inspect timelines, and resolve tenant work orders.</p>
+    </div>
+    <div class="d-flex align-items-center gap-2 flex-wrap">
+      <!-- View Switcher (Board vs List) -->
+      <div class="btn-group btn-group-sm p-1 rounded-3" style="background-color: var(--color-bg); border: 1px solid var(--color-border);" role="group">
+        <a th:href="@{/maintenance(viewMode='board', status=${filter.status}, priority=${filter.priority}, category=${filter.category}, propertyId=${filter.propertyId}, search=${filter.search})}" 
+           class="btn btn-sm px-3 py-1.5 fw-semibold d-inline-flex align-items-center gap-1.5 rounded-2"
+           th:classappend="${filter.viewMode != 'list'} ? 'btn-propio-primary shadow-sm' : 'text-muted border-0 bg-transparent'">
+          <i class="bi bi-kanban"></i>
+          <span>Board View</span>
+        </a>
+        <a th:href="@{/maintenance(viewMode='list', status=${filter.status}, priority=${filter.priority}, category=${filter.category}, propertyId=${filter.propertyId}, search=${filter.search})}" 
+           class="btn btn-sm px-3 py-1.5 fw-semibold d-inline-flex align-items-center gap-1.5 rounded-2"
+           th:classappend="${filter.viewMode == 'list'} ? 'btn-propio-primary shadow-sm' : 'text-muted border-0 bg-transparent'">
+          <i class="bi bi-list-ul"></i>
+          <span>List View</span>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Flash Notifications -->
+  <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show fs-8 py-3 px-4 rounded-3 mb-4 fade-in-up border-0 shadow-sm" role="alert" style="background-color: rgba(16, 185, 129, 0.15); color: #10B981;">
+    <div class="d-flex align-items-center gap-2">
+      <i class="bi bi-check-circle-fill fs-6"></i>
+      <span th:text="${successMessage}">Operation successful!</span>
+    </div>
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+  </div>
+
+  <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show fs-8 py-3 px-4 rounded-3 mb-4 fade-in-up border-0 shadow-sm" role="alert" style="background-color: rgba(239, 68, 68, 0.15); color: #EF4444;">
+    <div class="d-flex align-items-center gap-2">
+      <i class="bi bi-exclamation-triangle-fill fs-6"></i>
+      <span th:text="${errorMessage}">An error occurred.</span>
+    </div>
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+  </div>
+
+  <!-- Summary Metric Cards (4 Columns) -->
+  <div class="row g-3 mb-4 fade-in-up stagger-1">
+    <!-- Open Tickets -->
+    <div class="col-xl-3 col-sm-6">
+      <div class="card-propio p-3 h-100 d-flex flex-column justify-content-between">
+        <div class="d-flex align-items-center justify-content-between mb-2">
+          <span class="fs-9 text-uppercase fw-semibold text-muted">Awaiting Action</span>
+          <div class="rounded-circle p-2 bg-primary-subtle text-primary d-flex align-items-center justify-content-center" style="width: 36px; height: 36px;">
+            <i class="bi bi-inbox fs-6"></i>
+          </div>
+        </div>
+        <div>
+          <h4 class="fw-bold font-heading mb-1 text-main" th:text="${openCount}">0</h4>
+          <span class="fs-9 text-muted">New or pending review</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- In Progress -->
+    <div class="col-xl-3 col-sm-6">
+      <div class="card-propio p-3 h-100 d-flex flex-column justify-content-between">
+        <div class="d-flex align-items-center justify-content-between mb-2">
+          <span class="fs-9 text-uppercase fw-semibold text-muted">In Progress</span>
+          <div class="rounded-circle p-2 bg-warning-subtle text-warning d-flex align-items-center justify-content-center" style="width: 36px; height: 36px;">
+            <i class="bi bi-tools fs-6"></i>
+          </div>
+        </div>
+        <div>
+          <h4 class="fw-bold font-heading mb-1 text-warning" th:text="${inProgressCount}">0</h4>
+          <span class="fs-9 text-muted">Technicians dispatched / active</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Resolved -->
+    <div class="col-xl-3 col-sm-6">
+      <div class="card-propio p-3 h-100 d-flex flex-column justify-content-between">
+        <div class="d-flex align-items-center justify-content-between mb-2">
+          <span class="fs-9 text-uppercase fw-semibold text-muted">Resolved</span>
+          <div class="rounded-circle p-2 bg-success-subtle text-success d-flex align-items-center justify-content-center" style="width: 36px; height: 36px;">
+            <i class="bi bi-check2-circle fs-6"></i>
+          </div>
+        </div>
+        <div>
+          <h4 class="fw-bold font-heading mb-1 text-success" th:text="${resolvedCount}">0</h4>
+          <span class="fs-9 text-muted">Work completed</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Closed / Total Cost -->
+    <div class="col-xl-3 col-sm-6">
+      <div class="card-propio p-3 h-100 d-flex flex-column justify-content-between">
+        <div class="d-flex align-items-center justify-content-between mb-2">
+          <span class="fs-9 text-uppercase fw-semibold text-muted">Closed Tickets</span>
+          <div class="rounded-circle p-2 bg-secondary-subtle text-secondary d-flex align-items-center justify-content-center" style="width: 36px; height: 36px;">
+            <i class="bi bi-archive fs-6"></i>
+          </div>
+        </div>
+        <div>
+          <h4 class="fw-bold font-heading mb-1 text-main" th:text="${closedCount}">0</h4>
+          <span class="fs-9 text-muted" th:text="${totalCost != null ? '$' + #numbers.formatDecimal(totalCost, 1, 'COMMA', 2, 'POINT') + ' total estimated cost' : '$0.00 total cost'}">$0.00</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filter & Search Toolbar -->
+  <div class="card-propio p-3 mb-4 fade-in-up stagger-2">
+    <form th:action="@{/maintenance}" method="get" class="row g-2 align-items-end">
+      <input type="hidden" name="viewMode" th:value="${filter.viewMode != null ? filter.viewMode : 'board'}" />
+
+      <!-- Search Keyword -->
+      <div class="col-12 col-md-3">
+        <label class="form-label fs-9 text-muted text-uppercase fw-semibold mb-1">Search Requests</label>
+        <div class="input-group input-group-sm">
+          <span class="input-group-text bg-input border-input text-muted">
+            <i class="bi bi-search"></i>
+          </span>
+          <input type="text" 
+                 name="search" 
+                 class="form-control form-control-sm form-control-propio" 
+                 placeholder="Title, tenant, technician, unit..." 
+                 th:value="${filter.search}">
+        </div>
+      </div>
+
+      <!-- Priority Filter -->
+      <div class="col-6 col-md-2">
+        <label class="form-label fs-9 text-muted text-uppercase fw-semibold mb-1">Priority</label>
+        <select name="priority" class="form-select form-select-sm form-control-propio">
+          <option value="" th:selected="${filter.priority == null || filter.priority.empty}">All Priorities</option>
+          <option th:each="pri : ${priorities}" th:value="${pri}" th:text="${pri}" th:selected="${filter.priority == pri}">HIGH</option>
+        </select>
+      </div>
+
+      <!-- Category Filter -->
+      <div class="col-6 col-md-2">
+        <label class="form-label fs-9 text-muted text-uppercase fw-semibold mb-1">Category</label>
+        <select name="category" class="form-select form-select-sm form-control-propio">
+          <option value="" th:selected="${filter.category == null || filter.category.empty}">All Categories</option>
+          <option th:each="cat : ${categories}" th:value="${cat}" th:text="${cat}" th:selected="${filter.category == cat}">Plumbing</option>
+        </select>
+      </div>
+
+      <!-- Property Filter -->
+      <div class="col-6 col-md-3">
+        <label class="form-label fs-9 text-muted text-uppercase fw-semibold mb-1">Property</label>
+        <select name="propertyId" class="form-select form-select-sm form-control-propio">
+          <option value="" th:selected="${filter.propertyId == null}">All Properties</option>
+          <option th:each="p : ${properties}" th:value="${p.id}" th:text="${p.name}" th:selected="${filter.propertyId == p.id}">Oak Ridge</option>
+        </select>
+      </div>
+
+      <!-- Actions -->
+      <div class="col-6 col-md-2 d-flex gap-2">
+        <button type="submit" class="btn btn-sm btn-propio-primary d-inline-flex align-items-center justify-content-center gap-1 flex-grow-1 py-2">
+          <i class="bi bi-funnel"></i>
+          <span>Filter</span>
+        </button>
+        <a th:href="@{/maintenance(viewMode=${filter.viewMode != null ? filter.viewMode : 'board'})}" class="btn btn-sm btn-propio-outline d-inline-flex align-items-center justify-content-center px-3 py-2" title="Reset Filters">
+          <i class="bi bi-arrow-counterclockwise"></i>
+        </a>
+      </div>
+    </form>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- 1. KANBAN BOARD VIEW -->
+  <!-- ========================================================================= -->
+  <div th:if="${filter.viewMode != 'list'}" class="row g-3 fade-in-up stagger-3">
+    <!-- COLUMN 1: OPEN (PENDING / OPEN) -->
+    <div class="col-12 col-md-6 col-xl-3">
+      <div class="p-2.5 rounded-3 h-100" style="background-color: var(--color-bg); border: 1px solid var(--color-border);">
+        <div class="d-flex align-items-center justify-content-between p-2 mb-2 border-bottom">
+          <div class="d-flex align-items-center gap-2">
+            <span class="rounded-circle d-inline-block" style="width: 10px; height: 10px; background-color: #6C4CF1;"></span>
+            <span class="fw-bold font-heading fs-8 text-main">Open</span>
+          </div>
+          <span class="badge bg-primary-subtle text-primary rounded-pill fs-9" th:text="${openList.size()}">0</span>
+        </div>
+
+        <div class="d-flex flex-column gap-2" style="min-height: 450px;">
+          <div th:if="${#lists.isEmpty(openList)}" class="text-center py-5 text-muted fs-9">
+            <i class="bi bi-inbox d-block fs-3 mb-1 opacity-50"></i>
+            No open tickets.
+          </div>
+
+          <!-- Card -->
+          <div th:each="ticket : ${openList}" class="card-propio p-3 shadow-xs hover-shadow border transition-all">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+              <span class="badge font-mono" style="font-size: 0.7rem; background-color: var(--color-bg); border: 1px solid var(--color-border); color: var(--color-text-muted);" th:text="'REQ-' + ${ticket.id}">REQ-101</span>
+              
+              <!-- Priority Badge -->
+              <span th:if="${ticket.priority == 'EMERGENCY'}" class="badge bg-danger text-white rounded-pill fs-9 fw-bold">EMERGENCY</span>
+              <span th:if="${ticket.priority == 'HIGH'}" class="badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill fs-9 fw-bold">HIGH</span>
+              <span th:if="${ticket.priority == 'MEDIUM'}" class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill fs-9 fw-semibold">MEDIUM</span>
+              <span th:if="${ticket.priority == 'LOW'}" class="badge bg-secondary-subtle text-secondary rounded-pill fs-9 fw-normal">LOW</span>
+            </div>
+
+            <h6 class="fw-bold font-heading mb-1 text-main fs-8">
+              <a th:href="@{/maintenance/{id}(id=${ticket.id})}" class="text-decoration-none text-main hover-primary" th:text="${ticket.title}">
+                HVAC Air check
+              </a>
+            </h6>
+
+            <p class="text-muted fs-9 mb-2 line-clamp-2" th:text="${ticket.description}">Description</p>
+
+            <div class="d-flex align-items-center gap-1 fs-9 text-muted mb-2">
+              <i class="bi bi-building"></i>
+              <span class="text-truncate" style="max-width: 170px;" th:text="${ticket.unit.unitNumber + ' (' + ticket.unit.property.name + ')'}">Apt 101</span>
+            </div>
+
+            <div class="d-flex align-items-center justify-content-between pt-2 border-top fs-9">
+              <div class="d-flex align-items-center gap-1.5">
+                <div class="rounded-circle d-flex align-items-center justify-content-center text-white fw-bold" style="width: 22px; height: 22px; font-size: 9px;" th:styleappend="'background: ' + ${ticket.tenant.avatarColor}" th:text="${ticket.tenant.initials}">JA</div>
+                <span class="text-truncate text-muted" style="max-width: 90px;" th:text="${ticket.tenant.fullName}">Jacob</span>
+              </div>
+              <span class="text-muted font-mono" th:text="${#temporals.format(ticket.requestedDate, 'dd MMM')}">22 Nov</span>
+            </div>
+
+            <!-- Card Action Footer -->
+            <div class="d-flex align-items-center justify-content-end gap-1 mt-2.5 pt-2 border-top">
+              <button type="button" class="btn btn-xs btn-propio-outline fs-9 py-1 px-2" 
+                      th:attr="onclick=|openAssignModal('${ticket.id}', '${ticket.assignedTechnician != null ? ticket.assignedTechnician : ''}')|" 
+                      title="Assign Technician">
+                <i class="bi bi-person-plus text-primary"></i> Assign
+              </button>
+              <button type="button" class="btn btn-xs btn-propio-primary fs-9 py-1 px-2" 
+                      th:attr="onclick=|openStatusModal('${ticket.id}', '${ticket.status.name()}', '${ticket.assignedTechnician != null ? ticket.assignedTechnician : ''}')|" 
+                      title="Update Status">
+                <i class="bi bi-arrow-right-circle"></i> Move
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- COLUMN 2: IN PROGRESS -->
+    <div class="col-12 col-md-6 col-xl-3">
+      <div class="p-2.5 rounded-3 h-100" style="background-color: var(--color-bg); border: 1px solid var(--color-border);">
+        <div class="d-flex align-items-center justify-content-between p-2 mb-2 border-bottom">
+          <div class="d-flex align-items-center gap-2">
+            <span class="rounded-circle d-inline-block" style="width: 10px; height: 10px; background-color: #F59E0B;"></span>
+            <span class="fw-bold font-heading fs-8 text-main">In Progress</span>
+          </div>
+          <span class="badge bg-warning-subtle text-warning rounded-pill fs-9" th:text="${inProgressList.size()}">0</span>
+        </div>
+
+        <div class="d-flex flex-column gap-2" style="min-height: 450px;">
+          <div th:if="${#lists.isEmpty(inProgressList)}" class="text-center py-5 text-muted fs-9">
+            <i class="bi bi-tools d-block fs-3 mb-1 opacity-50"></i>
+            No active work orders.
+          </div>
+
+          <!-- Card -->
+          <div th:each="ticket : ${inProgressList}" class="card-propio p-3 shadow-xs hover-shadow border transition-all">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+              <span class="badge font-mono" style="font-size: 0.7rem; background-color: var(--color-bg); border: 1px solid var(--color-border); color: var(--color-text-muted);" th:text="'REQ-' + ${ticket.id}">REQ-102</span>
+              
+              <span th:if="${ticket.priority == 'EMERGENCY'}" class="badge bg-danger text-white rounded-pill fs-9 fw-bold">EMERGENCY</span>
+              <span th:if="${ticket.priority == 'HIGH'}" class="badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill fs-9 fw-bold">HIGH</span>
+              <span th:if="${ticket.priority == 'MEDIUM'}" class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill fs-9 fw-semibold">MEDIUM</span>
+              <span th:if="${ticket.priority == 'LOW'}" class="badge bg-secondary-subtle text-secondary rounded-pill fs-9 fw-normal">LOW</span>
+            </div>
+
+            <h6 class="fw-bold font-heading mb-1 text-main fs-8">
+              <a th:href="@{/maintenance/{id}(id=${ticket.id})}" class="text-decoration-none text-main hover-primary" th:text="${ticket.title}">
+                Water heater thermostat check
+              </a>
+            </h6>
+
+            <p class="text-muted fs-9 mb-2 line-clamp-2" th:text="${ticket.description}">Description</p>
+
+            <div class="d-flex align-items-center gap-1 fs-9 text-muted mb-1">
+              <i class="bi bi-building"></i>
+              <span class="text-truncate" style="max-width: 170px;" th:text="${ticket.unit.unitNumber + ' (' + ticket.unit.property.name + ')'}">Apt 101</span>
+            </div>
+
+            <div class="d-flex align-items-center gap-1 fs-9 text-warning mb-2" th:if="${ticket.assignedTechnician != null}">
+              <i class="bi bi-person-badge"></i>
+              <span class="text-truncate" th:text="${ticket.assignedTechnician}">Mike Peterson</span>
+            </div>
+
+            <div class="d-flex align-items-center justify-content-between pt-2 border-top fs-9">
+              <div class="d-flex align-items-center gap-1.5">
+                <div class="rounded-circle d-flex align-items-center justify-content-center text-white fw-bold" style="width: 22px; height: 22px; font-size: 9px;" th:styleappend="'background: ' + ${ticket.tenant.avatarColor}" th:text="${ticket.tenant.initials}">LA</div>
+                <span class="text-truncate text-muted" style="max-width: 90px;" th:text="${ticket.tenant.fullName}">Leslie</span>
+              </div>
+              <span class="text-muted font-mono" th:text="${ticket.scheduledDate != null ? 'Sched: ' + #temporals.format(ticket.scheduledDate, 'dd MMM') : #temporals.format(ticket.requestedDate, 'dd MMM')}">22 Nov</span>
+            </div>
+
+            <!-- Action Footer -->
+            <div class="d-flex align-items-center justify-content-end gap-1 mt-2.5 pt-2 border-top">
+              <button type="button" class="btn btn-xs btn-propio-outline fs-9 py-1 px-2" 
+                      th:attr="onclick=|openAssignModal('${ticket.id}', '${ticket.assignedTechnician != null ? ticket.assignedTechnician : ''}')|" 
+                      title="Reassign Tech">
+                <i class="bi bi-person-gear"></i> Tech
+              </button>
+              <button type="button" class="btn btn-xs btn-success fs-9 py-1 px-2 text-white" 
+                      th:attr="onclick=|openStatusModal('${ticket.id}', 'RESOLVED', '${ticket.assignedTechnician != null ? ticket.assignedTechnician : ''}')|" 
+                      title="Mark Resolved">
+                <i class="bi bi-check2-circle"></i> Resolve
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- COLUMN 3: RESOLVED -->
+    <div class="col-12 col-md-6 col-xl-3">
+      <div class="p-2.5 rounded-3 h-100" style="background-color: var(--color-bg); border: 1px solid var(--color-border);">
+        <div class="d-flex align-items-center justify-content-between p-2 mb-2 border-bottom">
+          <div class="d-flex align-items-center gap-2">
+            <span class="rounded-circle d-inline-block" style="width: 10px; height: 10px; background-color: #10B981;"></span>
+            <span class="fw-bold font-heading fs-8 text-main">Resolved</span>
+          </div>
+          <span class="badge bg-success-subtle text-success rounded-pill fs-9" th:text="${resolvedList.size()}">0</span>
+        </div>
+
+        <div class="d-flex flex-column gap-2" style="min-height: 450px;">
+          <div th:if="${#lists.isEmpty(resolvedList)}" class="text-center py-5 text-muted fs-9">
+            <i class="bi bi-check2-circle d-block fs-3 mb-1 opacity-50"></i>
+            No resolved tickets.
+          </div>
+
+          <!-- Card -->
+          <div th:each="ticket : ${resolvedList}" class="card-propio p-3 shadow-xs hover-shadow border transition-all">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+              <span class="badge font-mono" style="font-size: 0.7rem; background-color: var(--color-bg); border: 1px solid var(--color-border); color: var(--color-text-muted);" th:text="'REQ-' + ${ticket.id}">REQ-103</span>
+              <span class="badge bg-success text-white rounded-pill fs-9">RESOLVED</span>
+            </div>
+
+            <h6 class="fw-bold font-heading mb-1 text-main fs-8">
+              <a th:href="@{/maintenance/{id}(id=${ticket.id})}" class="text-decoration-none text-main hover-primary" th:text="${ticket.title}">
+                Bathroom fixture seal replacement
+              </a>
+            </h6>
+
+            <p class="text-muted fs-9 mb-2 line-clamp-2" th:text="${ticket.description}">Description</p>
+
+            <div class="d-flex align-items-center gap-1 fs-9 text-muted mb-2">
+              <i class="bi bi-calendar-check text-success"></i>
+              <span th:text="${ticket.resolvedDate != null ? 'Resolved: ' + #temporals.format(ticket.resolvedDate, 'dd MMM yyyy') : 'Recently Resolved'}">22 Nov</span>
+            </div>
+
+            <div class="d-flex align-items-center justify-content-between pt-2 border-top fs-9">
+              <div class="d-flex align-items-center gap-1.5">
+                <div class="rounded-circle d-flex align-items-center justify-content-center text-white fw-bold" style="width: 22px; height: 22px; font-size: 9px;" th:styleappend="'background: ' + ${ticket.tenant.avatarColor}" th:text="${ticket.tenant.initials}">JA</div>
+                <span class="text-truncate text-muted" style="max-width: 90px;" th:text="${ticket.tenant.fullName}">Jacob</span>
+              </div>
+              <span class="text-muted font-mono" th:text="${ticket.actualCost != null ? '$' + ticket.actualCost : (ticket.estimatedCost != null ? '$' + ticket.estimatedCost : '')}">$140.00</span>
+            </div>
+
+            <!-- Action Footer -->
+            <div class="d-flex align-items-center justify-content-end gap-1 mt-2.5 pt-2 border-top">
+              <button type="button" class="btn btn-xs btn-propio-outline fs-9 py-1 px-2" 
+                      th:attr="onclick=|openStatusModal('${ticket.id}', 'CLOSED', '${ticket.assignedTechnician != null ? ticket.assignedTechnician : ''}')|" 
+                      title="Close Ticket">
+                <i class="bi bi-archive text-secondary"></i> Close
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- COLUMN 4: CLOSED -->
+    <div class="col-12 col-md-6 col-xl-3">
+      <div class="p-2.5 rounded-3 h-100" style="background-color: var(--color-bg); border: 1px solid var(--color-border);">
+        <div class="d-flex align-items-center justify-content-between p-2 mb-2 border-bottom">
+          <div class="d-flex align-items-center gap-2">
+            <span class="rounded-circle d-inline-block" style="width: 10px; height: 10px; background-color: #64748B;"></span>
+            <span class="fw-bold font-heading fs-8 text-main">Closed</span>
+          </div>
+          <span class="badge bg-secondary-subtle text-secondary rounded-pill fs-9" th:text="${closedList.size()}">0</span>
+        </div>
+
+        <div class="d-flex flex-column gap-2" style="min-height: 450px;">
+          <div th:if="${#lists.isEmpty(closedList)}" class="text-center py-5 text-muted fs-9">
+            <i class="bi bi-archive d-block fs-3 mb-1 opacity-50"></i>
+            No archived tickets.
+          </div>
+
+          <!-- Card -->
+          <div th:each="ticket : ${closedList}" class="card-propio p-3 shadow-xs hover-shadow border transition-all opacity-75">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+              <span class="badge font-mono" style="font-size: 0.7rem; background-color: var(--color-bg); border: 1px solid var(--color-border); color: var(--color-text-muted);" th:text="'REQ-' + ${ticket.id}">REQ-104</span>
+              <span class="badge bg-secondary text-white rounded-pill fs-9">CLOSED</span>
+            </div>
+
+            <h6 class="fw-bold font-heading mb-1 text-main fs-8">
+              <a th:href="@{/maintenance/{id}(id=${ticket.id})}" class="text-decoration-none text-main hover-primary" th:text="${ticket.title}">
+                Title
+              </a>
+            </h6>
+
+            <p class="text-muted fs-9 mb-2 line-clamp-2" th:text="${ticket.description}">Description</p>
+
+            <div class="d-flex align-items-center justify-content-between pt-2 border-top fs-9">
+              <span class="text-muted" th:text="${ticket.closedDate != null ? 'Closed: ' + #temporals.format(ticket.closedDate, 'dd MMM') : 'Closed'}">Closed</span>
+              
+              <!-- Reopen Button with mandatory note warning -->
+              <button type="button" class="btn btn-xs btn-propio-outline fs-9 py-1 px-2" 
+                      th:attr="onclick=|openStatusModal('${ticket.id}', 'OPEN', '${ticket.assignedTechnician != null ? ticket.assignedTechnician : ''}', true)|" 
+                      title="Reopen Closed Ticket">
+                <i class="bi bi-arrow-counterclockwise"></i> Reopen
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- 2. TABLE / LIST VIEW -->
+  <!-- ========================================================================= -->
+  <div th:if="${filter.viewMode == 'list'}" class="card-propio overflow-hidden mb-4 fade-in-up stagger-3">
+    <div class="table-responsive" style="max-height: 650px;">
+      <table class="table table-hover align-middle mb-0 font-sans" style="font-size: 0.8125rem;">
+        <thead class="bg-table-head text-muted border-bottom" style="font-size: 0.725rem; letter-spacing: 0.5px;">
+          <tr>
+            <th class="ps-3 py-3 text-uppercase fw-semibold" style="width: 100px;">Ticket ID</th>
+            <th class="py-3 text-uppercase fw-semibold" style="width: 120px;">Status</th>
+            <th class="py-3 text-uppercase fw-semibold" style="width: 110px;">Priority</th>
+            <th class="py-3 text-uppercase fw-semibold" style="min-width: 200px;">Issue & Category</th>
+            <th class="py-3 text-uppercase fw-semibold" style="min-width: 150px;">Unit & Property</th>
+            <th class="py-3 text-uppercase fw-semibold" style="min-width: 140px;">Tenant</th>
+            <th class="py-3 text-uppercase fw-semibold" style="min-width: 140px;">Technician</th>
+            <th class="py-3 text-uppercase fw-semibold text-nowrap" style="width: 110px;">Requested</th>
+            <th class="pe-3 py-3 text-uppercase fw-semibold text-end" style="width: 120px;">Actions</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-border">
+          <tr th:if="${pagedRequests.empty}">
+            <td colspan="9" class="text-center py-5 text-muted">
+              <i class="bi bi-inbox fs-2 d-block mb-2 text-muted opacity-50"></i>
+              No maintenance requests match your current filter criteria.
+            </td>
+          </tr>
+
+          <tr th:each="req : ${pagedRequests.content}" class="transition-colors">
+            <td class="ps-3 py-2.5 font-mono text-muted" th:text="'REQ-' + ${req.id}">REQ-101</td>
+            
+            <td class="py-2.5">
+              <span th:if="${req.status.name() == 'OPEN' || req.status.name() == 'PENDING'}" class="badge bg-primary text-white px-2 py-1 rounded-pill fw-semibold fs-9">OPEN</span>
+              <span th:if="${req.status.name() == 'IN_PROGRESS'}" class="badge bg-warning text-dark px-2 py-1 rounded-pill fw-bold fs-9">IN PROGRESS</span>
+              <span th:if="${req.status.name() == 'RESOLVED'}" class="badge bg-success text-white px-2 py-1 rounded-pill fw-bold fs-9">RESOLVED</span>
+              <span th:if="${req.status.name() == 'CLOSED'}" class="badge bg-secondary text-white px-2 py-1 rounded-pill fw-normal fs-9">CLOSED</span>
+            </td>
+
+            <td class="py-2.5">
+              <span th:if="${req.priority == 'EMERGENCY'}" class="badge bg-danger text-white rounded-pill fs-9 fw-bold">EMERGENCY</span>
+              <span th:if="${req.priority == 'HIGH'}" class="badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill fs-9 fw-bold">HIGH</span>
+              <span th:if="${req.priority == 'MEDIUM'}" class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill fs-9 fw-semibold">MEDIUM</span>
+              <span th:if="${req.priority == 'LOW'}" class="badge bg-secondary-subtle text-secondary rounded-pill fs-9 fw-normal">LOW</span>
+            </td>
+
+            <td class="py-2.5">
+              <a th:href="@{/maintenance/{id}(id=${req.id})}" class="fw-semibold text-main hover-primary text-decoration-none d-block text-truncate" style="max-width: 220px;" th:text="${req.title}">Title</a>
+              <span class="fs-9 text-muted" th:text="${req.category != null ? req.category : 'General'}">Category</span>
+            </td>
+
+            <td class="py-2.5 text-main fs-8">
+              <span class="d-block fw-semibold" th:text="${req.unit.unitNumber}">Apt 101</span>
+              <span class="fs-9 text-muted text-truncate d-block" style="max-width: 150px;" th:text="${req.unit.property.name}">Oak Ridge</span>
+            </td>
+
+            <td class="py-2.5 fs-8 text-main" th:text="${req.tenant.fullName}">Leslie Alexander</td>
+
+            <td class="py-2.5 fs-8" th:text="${req.assignedTechnician != null ? req.assignedTechnician : '—'}">Unassigned</td>
+
+            <td class="py-2.5 text-muted font-mono fs-9 text-nowrap" th:text="${#temporals.format(req.requestedDate, 'dd MMM yyyy')}">22 Nov 2026</td>
+
+            <td class="pe-3 py-2.5 text-end text-nowrap">
+              <div class="d-inline-flex align-items-center gap-1">
+                <a th:href="@{/maintenance/{id}(id=${req.id})}" class="btn btn-sm btn-icon-propio" title="View Details & Comments">
+                  <i class="bi bi-eye text-primary"></i>
+                </a>
+                <button type="button" class="btn btn-sm btn-icon-propio" 
+                        th:attr="onclick=|openAssignModal('${req.id}', '${req.assignedTechnician != null ? req.assignedTechnician : ''}')|" 
+                        title="Assign Technician">
+                  <i class="bi bi-person-gear text-secondary"></i>
+                </button>
+                <button type="button" class="btn btn-sm btn-icon-propio" 
+                        th:attr="onclick=|openStatusModal('${req.id}', '${req.status.name()}', '${req.assignedTechnician != null ? req.assignedTechnician : ''}', ${req.status.name() == 'CLOSED'})|" 
+                        title="Update Status">
+                  <i class="bi bi-arrow-right-circle text-success"></i>
+                </button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination for List View -->
+    <div th:if="${pagedRequests != null and pagedRequests.totalPages > 1}" class="d-flex align-items-center justify-content-between p-3 border-top bg-table-head fs-8">
+      <span class="text-muted">Showing <strong th:text="${pagedRequests.numberOfElements}">15</strong> of <strong th:text="${pagedRequests.totalElements}">30</strong> work orders</span>
+      <nav>
+        <ul class="pagination pagination-sm mb-0">
+          <li class="page-item" th:classappend="${pagedRequests.first} ? 'disabled'">
+            <a class="page-link" th:href="@{/maintenance(viewMode='list', page=${pagedRequests.number - 1}, priority=${filter.priority}, category=${filter.category}, propertyId=${filter.propertyId}, search=${filter.search})}">
+              <i class="bi bi-chevron-left"></i>
+            </a>
+          </li>
+          <li class="page-item" th:each="p : ${#numbers.sequence(0, pagedRequests.totalPages - 1)}" th:classappend="${p == pagedRequests.number} ? 'active'">
+            <a class="page-link" th:href="@{/maintenance(viewMode='list', page=${p}, priority=${filter.priority}, category=${filter.category}, propertyId=${filter.propertyId}, search=${filter.search})}" th:text="${p + 1}">1</a>
+          </li>
+          <li class="page-item" th:classappend="${pagedRequests.last} ? 'disabled'">
+            <a class="page-link" th:href="@{/maintenance(viewMode='list', page=${pagedRequests.number + 1}, priority=${filter.priority}, category=${filter.category}, propertyId=${filter.propertyId}, search=${filter.search})}">
+              <i class="bi bi-chevron-right"></i>
+            </a>
+          </li>
+        </ul>
+      </nav>
+    </div>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- MODALS (INSIDE #maintenance-content per Standing Rule 1) -->
+  <!-- ========================================================================= -->
+
+  <!-- 1. Update Status Modal -->
+  <div class="modal fade" id="statusModal" tabindex="-1" aria-labelledby="statusModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content card-propio p-0 overflow-hidden border-0 shadow-lg">
+        <div class="modal-header border-bottom p-3">
+          <div class="d-flex align-items-center gap-2">
+            <div class="rounded-circle p-2 bg-primary-subtle text-primary d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
+              <i class="bi bi-arrow-left-right fs-6"></i>
+            </div>
+            <div>
+              <h5 class="modal-title font-heading fs-6 fw-bold mb-0 text-main" id="statusModalLabel">Update Ticket Status</h5>
+              <span class="fs-9 text-muted" id="statusModalSubtitle">Ticket #</span>
+            </div>
+          </div>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+
+        <form id="statusForm" method="post">
+          <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+          <div class="modal-body p-4">
+            <!-- Reopen Warning Alert -->
+            <div id="reopenWarning" class="alert alert-warning py-2.5 px-3 fs-9 mb-3 rounded-3 border-0 d-none" style="background-color: rgba(245, 158, 11, 0.12); color: #B45309;">
+              <i class="bi bi-exclamation-triangle-fill me-1"></i>
+              <strong>Mandatory Note Required:</strong> Reopening a CLOSED ticket requires providing an explanatory note.
+            </div>
+
+            <!-- New Status Dropdown -->
+            <div class="mb-3">
+              <label for="modalNewStatus" class="form-label fs-8 fw-semibold text-main">New Status <span class="text-danger">*</span></label>
+              <select id="modalNewStatus" name="status" class="form-select form-control-propio" required onchange="handleStatusChangeInModal(this.value)">
+                <option value="OPEN">Open (Awaiting action)</option>
+                <option value="IN_PROGRESS">In Progress (Active repair / technician)</option>
+                <option value="RESOLVED">Resolved (Repair completed)</option>
+                <option value="CLOSED">Closed (Archived)</option>
+              </select>
+            </div>
+
+            <!-- Status Note / Comment -->
+            <div class="mb-3">
+              <label for="modalStatusNotes" class="form-label fs-8 fw-semibold text-main">
+                Status Note / Instructions <span id="noteRequiredStar" class="text-danger d-none">*</span>
+              </label>
+              <textarea id="modalStatusNotes" 
+                        name="statusNotes" 
+                        rows="3" 
+                        class="form-control form-control-propio" 
+                        placeholder="Provide details or technician updates regarding this change..."></textarea>
+              <div class="form-text fs-9 text-muted">This note is recorded in the timeline and emailed to the tenant.</div>
+            </div>
+
+            <!-- Scheduled Date (Optional) -->
+            <div class="row g-2 mb-3">
+              <div class="col-6">
+                <label for="modalScheduledDate" class="form-label fs-8 fw-semibold text-main">Scheduled Date</label>
+                <input type="date" id="modalScheduledDate" name="scheduledDate" class="form-control form-control-sm form-control-propio">
+              </div>
+              <div class="col-6">
+                <label for="modalEstimatedCost" class="form-label fs-8 fw-semibold text-main">Estimated Cost ($)</label>
+                <input type="number" step="0.01" min="0" id="modalEstimatedCost" name="estimatedCost" class="form-control form-control-sm form-control-propio" placeholder="0.00">
+              </div>
+            </div>
+          </div>
+
+          <div class="modal-footer border-top p-3 bg-table-head">
+            <button type="button" class="btn btn-sm btn-propio-outline px-3" data-bs-dismiss="modal">Cancel</button>
+            <button type="submit" class="btn btn-sm btn-propio-primary px-3 d-inline-flex align-items-center gap-1">
+              <i class="bi bi-check2"></i>
+              <span>Apply Status Change</span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. Assign Technician Modal -->
+  <div class="modal fade" id="assignModal" tabindex="-1" aria-labelledby="assignModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content card-propio p-0 overflow-hidden border-0 shadow-lg">
+        <div class="modal-header border-bottom p-3">
+          <div class="d-flex align-items-center gap-2">
+            <div class="rounded-circle p-2 bg-primary-subtle text-primary d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
+              <i class="bi bi-person-gear fs-6"></i>
+            </div>
+            <div>
+              <h5 class="modal-title font-heading fs-6 fw-bold mb-0 text-main" id="assignModalLabel">Assign Service Technician</h5>
+              <span class="fs-9 text-muted" id="assignModalSubtitle">Ticket #</span>
+            </div>
+          </div>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+
+        <form id="assignForm" method="post">
+          <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+          <div class="modal-body p-4">
+            <!-- Technician Name Input / Select -->
+            <div class="mb-3">
+              <label for="assignTechName" class="form-label fs-8 fw-semibold text-main">Technician / Contractor Name <span class="text-danger">*</span></label>
+              <input type="text" 
+                     id="assignTechName" 
+                     name="technicianName" 
+                     list="techSuggestions" 
+                     class="form-control form-control-propio" 
+                     placeholder="Select or enter technician name..." 
+                     required>
+              <datalist id="techSuggestions">
+                <option th:each="tech : ${technicians}" th:value="${tech}"></option>
+              </datalist>
+            </div>
+
+            <!-- Scheduled Appointment Date -->
+            <div class="mb-3">
+              <label for="assignDate" class="form-label fs-8 fw-semibold text-main">Appointment / Service Date</label>
+              <input type="date" id="assignDate" name="scheduledDate" class="form-control form-control-propio">
+            </div>
+
+            <!-- Notes -->
+            <div class="mb-2">
+              <label for="assignNotes" class="form-label fs-8 fw-semibold text-main">Work Instructions / Arrival Window</label>
+              <textarea id="assignNotes" name="notes" rows="2" class="form-control form-control-propio" placeholder="e.g. Arrival between 2:00 PM and 4:00 PM. Call tenant before entry."></textarea>
+            </div>
+          </div>
+
+          <div class="modal-footer border-top p-3 bg-table-head">
+            <button type="button" class="btn btn-sm btn-propio-outline px-3" data-bs-dismiss="modal">Cancel</button>
+            <button type="submit" class="btn btn-sm btn-propio-primary px-3 d-inline-flex align-items-center gap-1">
+              <i class="bi bi-person-check-fill"></i>
+              <span>Confirm Assignment</span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- JavaScript Handlers (INSIDE #maintenance-content per Standing Rule 1) -->
+  <script>
+    let isCurrentlyClosed = false;
+
+    function openStatusModal(id, currentStatus, currentTech, wasClosed = false) {
+      isCurrentlyClosed = wasClosed || (currentStatus === 'CLOSED');
+      const form = document.getElementById('statusForm');
+      const subtitle = document.getElementById('statusModalSubtitle');
+      const select = document.getElementById('modalNewStatus');
+      const reopenWarning = document.getElementById('reopenWarning');
+      const noteStar = document.getElementById('noteRequiredStar');
+      const notesInput = document.getElementById('modalStatusNotes');
+
+      form.action = '/maintenance/' + id + '/status';
+      subtitle.textContent = 'Updating Ticket #REQ-' + id;
+      select.value = currentStatus || 'OPEN';
+
+      if (isCurrentlyClosed) {
+        reopenWarning.classList.remove('d-none');
+        noteStar.classList.remove('d-none');
+        notesInput.required = true;
+      } else {
+        reopenWarning.classList.add('d-none');
+        noteStar.classList.add('d-none');
+        notesInput.required = false;
+      }
+
+      const modalEl = document.getElementById('statusModal');
+      if (modalEl) {
+        const modal = new bootstrap.Modal(modalEl);
+        modal.show();
+      }
+    }
+
+    function handleStatusChangeInModal(newStatus) {
+      const reopenWarning = document.getElementById('reopenWarning');
+      const noteStar = document.getElementById('noteRequiredStar');
+      const notesInput = document.getElementById('modalStatusNotes');
+
+      if (isCurrentlyClosed && newStatus !== 'CLOSED') {
+        reopenWarning.classList.remove('d-none');
+        noteStar.classList.remove('d-none');
+        notesInput.required = true;
+      } else {
+        reopenWarning.classList.add('d-none');
+        noteStar.classList.add('d-none');
+        notesInput.required = false;
+      }
+    }
+
+    function openAssignModal(id, currentTech) {
+      const form = document.getElementById('assignForm');
+      const subtitle = document.getElementById('assignModalSubtitle');
+      const techInput = document.getElementById('assignTechName');
+
+      form.action = '/maintenance/' + id + '/assign';
+      subtitle.textContent = 'Assigning Technician for Ticket #REQ-' + id;
+      techInput.value = currentTech || '';
+
+      const modalEl = document.getElementById('assignModal');
+      if (modalEl) {
+        const modal = new bootstrap.Modal(modalEl);
+        modal.show();
+      }
+    }
+  </script>
+</div>
+
+</body>
+</html>

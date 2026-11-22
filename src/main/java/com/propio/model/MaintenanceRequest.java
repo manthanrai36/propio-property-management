@@ -7,6 +7,8 @@ import lombok.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Maintenance ticket submitted by tenant or property manager for a unit.
@@ -42,6 +44,10 @@ public class MaintenanceRequest extends BaseEntity {
     private String description;
 
     @Builder.Default
+    @Column(name = "category", length = 50)
+    private String category = "General";
+
+    @Builder.Default
     @Column(name = "priority", length = 30)
     private String priority = "MEDIUM";
 
@@ -50,8 +56,17 @@ public class MaintenanceRequest extends BaseEntity {
     @Column(name = "status", nullable = false, length = 20)
     private RequestStatus status;
 
+    @Column(name = "assigned_technician", length = 120)
+    private String assignedTechnician;
+
+    @Column(name = "photo_url", length = 255)
+    private String photoUrl;
+
     @Column(name = "estimated_cost", precision = 12, scale = 2)
     private BigDecimal estimatedCost;
+
+    @Column(name = "actual_cost", precision = 12, scale = 2)
+    private BigDecimal actualCost;
 
     @Column(name = "requested_date", nullable = false)
     private LocalDate requestedDate;
@@ -61,4 +76,20 @@ public class MaintenanceRequest extends BaseEntity {
 
     @Column(name = "resolved_date")
     private LocalDate resolvedDate;
+
+    @Column(name = "closed_date")
+    private LocalDate closedDate;
+
+    @Column(name = "status_notes", columnDefinition = "TEXT")
+    private String statusNotes;
+
+    @Builder.Default
+    @OneToMany(mappedBy = "request", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OrderBy("createdAt ASC")
+    private List<MaintenanceComment> comments = new ArrayList<>();
+
+    public void addComment(MaintenanceComment comment) {
+        comments.add(comment);
+        comment.setRequest(this);
+    }
 }

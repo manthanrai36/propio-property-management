@@ -40,3 +40,8 @@ uploads/
 
 run_app.ps1
 build.ps1
+
+# Helper scripts
+*.ps1
+*.sh
+*.bat
