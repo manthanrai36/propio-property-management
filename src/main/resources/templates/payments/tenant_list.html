@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      th:replace="~{layout/main :: layout(~{::#tenant-payments-content})}">
+<head>
+  <title>My Payments & Invoices | Propio</title>
+</head>
+<body>
+
+<div id="tenant-payments-content">
+  <!-- Page Header -->
+  <div class="d-flex flex-column flex-md-row align-items-start align-items-md-center justify-content-between gap-3 mb-4 fade-in-up">
+    <div>
+      <h3 class="fw-bold font-heading mb-1 text-main">My Payments & Invoices</h3>
+      <p class="text-muted fs-8 mb-0">Review your lease billing history, upcoming dues, and settle your rent online securely.</p>
+    </div>
+    <div th:if="${nextPayment != null}">
+      <a th:href="@{'/payments/' + ${nextPayment.id} + '/checkout'}" class="btn-propio-primary py-2 px-3 fs-8 text-decoration-none d-inline-flex align-items-center gap-2 shadow-sm">
+        <i class="bi bi-credit-card-2-front"></i>
+        <span>Pay Rent Online</span>
+      </a>
+    </div>
+  </div>
+
+  <!-- Flash Notifications -->
+  <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show fs-8 py-3 px-4 rounded-3 mb-4 fade-in-up border-0 shadow-sm" role="alert" style="background-color: rgba(16, 185, 129, 0.15); color: #10B981;">
+    <div class="d-flex align-items-center gap-2">
+      <i class="bi bi-check-circle-fill fs-6"></i>
+      <span th:text="${successMessage}">Payment successful!</span>
+    </div>
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+  </div>
+
+  <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show fs-8 py-3 px-4 rounded-3 mb-4 fade-in-up border-0 shadow-sm" role="alert" style="background-color: rgba(239, 68, 68, 0.15); color: #EF4444;">
+    <div class="d-flex align-items-center gap-2">
+      <i class="bi bi-exclamation-triangle-fill fs-6"></i>
+      <span th:text="${errorMessage}">Payment error.</span>
+    </div>
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+  </div>
+
+  <!-- Status Callout / Overdue Alert -->
+  <div th:if="${hasOverdue}" class="alert alert-danger border-0 p-4 rounded-4 mb-4 fade-in-up stagger-1 d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3 shadow-sm" style="background: rgba(239, 68, 68, 0.12); border-left: 4px solid #EF4444 !important;">
+    <div class="d-flex align-items-center gap-3">
+      <div class="rounded-circle p-3 d-flex align-items-center justify-content-center text-white" style="background-color: #EF4444; width: 48px; height: 48px;">
+        <i class="bi bi-exclamation-triangle fs-5"></i>
+      </div>
+      <div>
+        <h6 class="fw-bold font-heading mb-1 text-danger">Outstanding Rent Due</h6>
+        <p class="fs-8 mb-0" style="color: var(--text-main);">You have an overdue rent balance. Please settle your invoice online immediately to avoid late fees.</p>
+      </div>
+    </div>
+    <div th:if="${nextPayment != null}">
+      <a th:href="@{'/payments/' + ${nextPayment.id} + '/checkout'}" class="btn btn-danger py-2 px-4 fs-8 fw-semibold rounded-pill text-decoration-none shadow-sm">
+        Pay Balance Now ($<span th:text="${#numbers.formatDecimal(balanceDue, 1, 'COMMA', 2, 'POINT')}">1,450.00</span>)
+      </a>
+    </div>
+  </div>
+
+  <!-- Summary Metric Cards (3 Cards) -->
+  <div class="row g-3 mb-4 fade-in-up stagger-1">
+    <!-- Current Outstanding Balance -->
+    <div class="col-md-4">
+      <div class="card-propio p-4 h-100 d-flex flex-column justify-content-between">
+        <div class="d-flex align-items-center justify-content-between mb-3">
+          <span class="fs-9 text-uppercase fw-semibold text-muted">Current Balance Due</span>
+          <div class="rounded-circle p-2 bg-warning-subtle text-warning d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+            <i class="bi bi-wallet2 fs-5"></i>
+          </div>
+        </div>
+        <div>
+          <h3 class="fw-bold font-heading mb-1" th:classappend="${balanceDue > 0 ? 'text-danger' : 'text-success'}"
+              th:text="${balanceDue != null ? '$' + #numbers.formatDecimal(balanceDue, 1, 'COMMA', 2, 'POINT') : '$0.00'}">$0.00</h3>
+          <span class="fs-9 text-muted" th:text="${balanceDue > 0 ? 'Payment required' : 'Account is fully up to date'}">Status</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Total Paid to Date -->
+    <div class="col-md-4">
+      <div class="card-propio p-4 h-100 d-flex flex-column justify-content-between">
+        <div class="d-flex align-items-center justify-content-between mb-3">
+          <span class="fs-9 text-uppercase fw-semibold text-muted">Total Paid to Date</span>
+          <div class="rounded-circle p-2 bg-success-subtle text-success d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+            <i class="bi bi-check-circle fs-5"></i>
+          </div>
+        </div>
+        <div>
+          <h3 class="fw-bold font-heading mb-1 text-main" th:text="${totalPaid != null ? '$' + #numbers.formatDecimal(totalPaid, 1, 'COMMA', 2, 'POINT') : '$0.00'}">$0.00</h3>
+          <span class="fs-9 text-muted">Cumulative rent paid</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Next Upcoming Invoice -->
+    <div class="col-md-4">
+      <div class="card-propio p-4 h-100 d-flex flex-column justify-content-between">
+        <div class="d-flex align-items-center justify-content-between mb-3">
+          <span class="fs-9 text-uppercase fw-semibold text-muted">Next Scheduled Due</span>
+          <div class="rounded-circle p-2 bg-primary-subtle text-primary d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+            <i class="bi bi-calendar-check fs-5"></i>
+          </div>
+        </div>
+        <div>
+          <h3 class="fw-bold font-heading mb-1 text-main" th:text="${nextPayment != null ? '$' + #numbers.formatDecimal(nextPayment.amount, 1, 'COMMA', 2, 'POINT') : 'None'}">$0.00</h3>
+          <span class="fs-9 text-muted" th:text="${nextPayment != null ? 'Due on ' + #temporals.format(nextPayment.dueDate, 'MMM dd, yyyy') : 'No upcoming payments'}">Date</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Unpaid Invoices Cards (Action items) -->
+  <div th:if="${unpaidInvoices != null and !unpaidInvoices.empty}" class="mb-4 fade-in-up stagger-2">
+    <h5 class="fw-bold font-heading fs-7 mb-3 text-main">
+      <i class="bi bi-credit-card text-primary me-2"></i>Pay Online (Action Required)
+    </h5>
+    <div class="row g-3">
+      <div th:each="inv : ${unpaidInvoices}" class="col-lg-6">
+        <div class="card-propio p-3 p-md-4 position-relative overflow-hidden" style="border-left: 4px solid var(--propio-primary) !important;">
+          <div class="d-flex align-items-start justify-content-between mb-2">
+            <div>
+              <span class="fw-bold font-monospace fs-8 text-primary" th:text="${inv.transactionReference}">TXN-0000</span>
+              <h5 class="fw-bold font-heading mb-0 text-main" th:text="${inv.notes}">Monthly Rent</h5>
+            </div>
+            <span th:if="${inv.status.name() == 'OVERDUE'}" class="badge-status badge-status-overdue">OVERDUE</span>
+            <span th:if="${inv.status.name() == 'PENDING'}" class="badge-status badge-status-pending">PENDING</span>
+          </div>
+
+          <div class="p-3 rounded-3 my-3" style="background: var(--bg-card-subtle); border: 1px solid var(--border-light);">
+            <div class="row g-2 fs-8">
+              <div class="col-6">
+                <span class="text-muted d-block fs-9">Premises:</span>
+                <strong class="text-main" th:text="${inv.lease.unit.unitNumber + ' (' + inv.lease.unit.property.name + ')'}">Apt 101</strong>
+              </div>
+              <div class="col-6">
+                <span class="text-muted d-block fs-9">Due Date:</span>
+                <strong class="text-main" th:text="${#temporals.format(inv.dueDate, 'MMM dd, yyyy')}">Nov 13, 2026</strong>
+              </div>
+              <div class="col-6">
+                <span class="text-muted d-block fs-9">Base Monthly Rent:</span>
+                <span class="text-main" th:text="${'$' + #numbers.formatDecimal(inv.baseAmount, 1, 'COMMA', 2, 'POINT')}">$1,450.00</span>
+              </div>
+              <div class="col-6" th:if="${inv.lateFee != null and inv.lateFee > 0}">
+                <span class="text-muted d-block fs-9">Late Penalty Fee:</span>
+                <span class="text-danger fw-semibold" th:text="${'+ $' + #numbers.formatDecimal(inv.lateFee, 1, 'COMMA', 2, 'POINT')}">+$72.50</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="d-flex align-items-center justify-content-between pt-2">
+            <div>
+              <span class="fs-9 text-muted d-block">Total to Pay:</span>
+              <span class="fw-bold font-heading fs-5 text-main" th:text="${'$' + #numbers.formatDecimal(inv.amount, 1, 'COMMA', 2, 'POINT')}">$1,450.00</span>
+            </div>
+            <a th:href="@{'/payments/' + ${inv.id} + '/checkout'}" class="btn-propio-primary py-2 px-4 fs-8 text-decoration-none d-inline-flex align-items-center gap-2 shadow-sm">
+              <i class="bi bi-shield-lock-fill"></i> Pay Rent Online
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Complete Invoice Ledger & History Card -->
+  <div class="card-propio p-0 overflow-hidden mb-4 fade-in-up stagger-3">
+    <div class="p-3 border-bottom d-flex align-items-center justify-content-between" style="border-color: var(--border-light) !important;">
+      <h5 class="fw-bold font-heading fs-7 mb-0 text-main">
+        <i class="bi bi-clock-history text-primary me-2"></i>Invoices & Billing History
+      </h5>
+      <span class="fs-9 text-muted" th:if="${payments != null}" th:text="${payments.size() + ' Total Billing Records'}">Records</span>
+    </div>
+
+    <!-- Empty State -->
+    <div th:if="${payments == null or payments.empty}" class="text-center py-5">
+      <div class="rounded-circle d-inline-flex align-items-center justify-content-center p-3 mb-2" style="background: rgba(108, 76, 241, 0.1);">
+        <i class="bi bi-receipt text-primary fs-2"></i>
+      </div>
+      <h6 class="fw-bold font-heading mb-1 text-main">No Invoices Found</h6>
+      <p class="text-muted fs-8 mb-0">You have no payment records registered on your account.</p>
+    </div>
+
+    <!-- Table -->
+    <div th:if="${payments != null and !payments.empty}" class="table-responsive">
+      <table class="table table-hover align-middle mb-0 fs-8 table-propio" style="color: var(--text-main);">
+        <thead class="table-light fs-9 text-uppercase text-muted" style="background-color: var(--bg-card-subtle);">
+          <tr>
+            <th class="py-3 px-3">Invoice Ref</th>
+            <th class="py-3 px-3">Description</th>
+            <th class="py-3 px-3">Due Date</th>
+            <th class="py-3 px-3">Paid Date</th>
+            <th class="py-3 px-3">Amount</th>
+            <th class="py-3 px-3">Payment Method</th>
+            <th class="py-3 px-3">Status</th>
+            <th class="py-3 px-3 text-end">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr th:each="p : ${payments}">
+            <!-- Transaction Reference -->
+            <td class="px-3 fw-bold font-monospace text-primary" th:text="${p.transactionReference}">TXN-20261122-8F92A</td>
+
+            <!-- Description / Unit -->
+            <td class="px-3">
+              <span class="text-main fw-semibold d-block text-truncate" style="max-width: 220px;" th:text="${p.notes}">Monthly rent</span>
+              <span class="text-muted fs-9" th:text="${p.lease.unit.unitNumber + ' (' + p.lease.unit.property.name + ')'}">Unit 101</span>
+            </td>
+
+            <!-- Due Date -->
+            <td class="px-3 text-main" th:text="${#temporals.format(p.dueDate, 'MMM dd, yyyy')}">Nov 13, 2026</td>
+
+            <!-- Paid Date -->
+            <td class="px-3 text-muted" th:text="${p.paidDate != null ? #temporals.format(p.paidDate, 'MMM dd, yyyy') : '—'}">—</td>
+
+            <!-- Amount -->
+            <td class="px-3 fw-bold text-main" th:text="${'$' + #numbers.formatDecimal(p.amount, 1, 'COMMA', 2, 'POINT')}">$1,450.00</td>
+
+            <!-- Method -->
+            <td class="px-3">
+              <span th:if="${p.paymentMethod != null and p.paymentMethod != 'UNPAID'}" class="badge bg-secondary-subtle text-main border border-light px-2 py-1 fs-9 fw-semibold font-monospace" th:text="${p.paymentMethod}">CARD</span>
+              <span th:unless="${p.paymentMethod != null and p.paymentMethod != 'UNPAID'}" class="text-muted fs-9">—</span>
+            </td>
+
+            <!-- Status Badge -->
+            <td class="px-3">
+              <span th:if="${p.status.name() == 'PAID'}" class="badge-status badge-status-paid">PAID</span>
+              <span th:if="${p.status.name() == 'PENDING'}" class="badge-status badge-status-pending">PENDING</span>
+              <span th:if="${p.status.name() == 'OVERDUE'}" class="badge-status badge-status-overdue">OVERDUE</span>
+            </td>
+
+            <!-- Action -->
+            <td class="px-3 text-end">
+              <!-- Pay Online if Unpaid -->
+              <a th:if="${p.status.name() != 'PAID'}" 
+                 th:href="@{'/payments/' + ${p.id} + '/checkout'}" 
+                 class="btn btn-sm btn-propio-primary py-1 px-3 fs-9 rounded-pill text-decoration-none">
+                <i class="bi bi-credit-card me-1"></i> Pay Now
+              </a>
+
+              <!-- Receipt if Paid -->
+              <a th:if="${p.status.name() == 'PAID'}" 
+                 th:href="@{'/payments/' + ${p.id} + '/receipt'}" 
+                 class="btn btn-sm btn-propio-secondary py-1 px-3 fs-9 rounded-pill text-decoration-none">
+                <i class="bi bi-file-earmark-check me-1"></i> Receipt
+              </a>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

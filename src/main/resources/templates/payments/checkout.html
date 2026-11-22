@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      th:replace="~{layout/main :: layout(~{::#checkout-content})}">
+<head>
+  <title>Pay Rent Online | Propio Checkout</title>
+</head>
+<body>
+
+<div id="checkout-content">
+  <!-- Back Link & Header -->
+  <div class="mb-4 fade-in-up">
+    <a th:href="@{/payments}" class="btn-propio-secondary py-2 px-3 fs-8 text-decoration-none d-inline-flex align-items-center gap-2 mb-3">
+      <i class="bi bi-arrow-left"></i> Back to Payments
+    </a>
+    <h3 class="fw-bold font-heading mb-1 text-main">Secure Rent Payment Checkout</h3>
+    <p class="text-muted fs-8 mb-0">Authorize your rental payment online with instant settlement and automated digital receipts.</p>
+  </div>
+
+  <!-- Gateway Failure / Error Notice -->
+  <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show fs-8 py-3 px-4 rounded-3 mb-4 fade-in-up border-0 shadow-sm" role="alert" style="background-color: rgba(239, 68, 68, 0.15); color: #EF4444;">
+    <div class="d-flex align-items-center gap-2">
+      <i class="bi bi-x-octagon-fill fs-5"></i>
+      <span th:text="${errorMessage}">Transaction declined by card gateway.</span>
+    </div>
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+  </div>
+
+  <div class="row g-4">
+    <!-- Left Column: Simulated Payment Form -->
+    <div class="col-lg-7">
+      <div class="card-propio p-4 fade-in-up stagger-1">
+        <div class="d-flex align-items-center justify-content-between mb-4 pb-3 border-bottom" style="border-color: var(--border-light) !important;">
+          <h5 class="fw-bold font-heading fs-7 mb-0 text-main">
+            <i class="bi bi-credit-card-2-front text-primary me-2"></i>Payment Details
+          </h5>
+          <div class="d-flex align-items-center gap-2 text-muted fs-8">
+            <i class="bi bi-shield-lock-fill text-success"></i> 256-bit Encrypted
+          </div>
+        </div>
+
+        <form th:action="@{'/payments/' + ${payment.id} + '/checkout'}" th:object="${checkoutForm}" method="post" id="checkoutForm">
+
+          <!-- Cardholder Name -->
+          <div class="mb-3">
+            <label for="cardholderName" class="form-label fs-8 fw-semibold text-main">Cardholder Name <span class="text-danger">*</span></label>
+            <div class="input-group">
+              <span class="input-group-text bg-transparent border-end-0 text-muted" style="border-color: var(--border-light);">
+                <i class="bi bi-person"></i>
+              </span>
+              <input type="text" 
+                     id="cardholderName" 
+                     th:field="*{cardholderName}" 
+                     class="form-control border-start-0 fs-8" 
+                     style="background-color: var(--bg-card-subtle); border-color: var(--border-light); color: var(--text-main);"
+                     placeholder="Name as it appears on card" 
+                     required>
+            </div>
+          </div>
+
+          <!-- Card Number -->
+          <div class="mb-3">
+            <label for="cardNumberMasked" class="form-label fs-8 fw-semibold text-main">Card Number (Simulated) <span class="text-danger">*</span></label>
+            <div class="input-group">
+              <span class="input-group-text bg-transparent border-end-0 text-muted" style="border-color: var(--border-light);">
+                <i class="bi bi-credit-card"></i>
+              </span>
+              <input type="text" 
+                     id="cardNumberMasked" 
+                     th:field="*{cardNumberMasked}" 
+                     class="form-control border-start-0 fs-8 font-monospace" 
+                     style="background-color: var(--bg-card-subtle); border-color: var(--border-light); color: var(--text-main);"
+                     placeholder="4532 •••• •••• 8899" 
+                     required>
+              <span class="input-group-text bg-transparent border-start-0 text-primary" style="border-color: var(--border-light);">
+                <i class="bi bi-check-circle-fill text-success"></i>
+              </span>
+            </div>
+          </div>
+
+          <!-- Expiry & CVV Row -->
+          <div class="row g-3 mb-4">
+            <div class="col-6">
+              <label for="expiry" class="form-label fs-8 fw-semibold text-main">Expiration Date <span class="text-danger">*</span></label>
+              <input type="text" 
+                     id="expiry" 
+                     th:field="*{expiry}" 
+                     class="form-control fs-8 font-monospace" 
+                     style="background-color: var(--bg-card-subtle); border-color: var(--border-light); color: var(--text-main);"
+                     placeholder="MM/YY" 
+                     maxlength="5" 
+                     required>
+            </div>
+            <div class="col-6">
+              <label for="cvv" class="form-label fs-8 fw-semibold text-main">Security Code (CVV) <span class="text-danger">*</span></label>
+              <input type="password" 
+                     id="cvv" 
+                     th:field="*{cvv}" 
+                     class="form-control fs-8 font-monospace" 
+                     style="background-color: var(--bg-card-subtle); border-color: var(--border-light); color: var(--text-main);"
+                     placeholder="•••" 
+                     maxlength="4" 
+                     required>
+            </div>
+          </div>
+
+          <!-- Simulated Gateway Outcome Selector (Viva & Testing Requirement) -->
+          <div class="p-3 rounded-3 mb-4" style="background: var(--bg-card-subtle); border: 1px dashed var(--border-light);">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+              <span class="fs-8 fw-bold text-main">
+                <i class="bi bi-sliders2 text-primary me-1"></i>Simulated Payment Gateway Outcome
+              </span>
+              <span class="badge bg-primary-subtle text-primary fs-9 fw-semibold">Sandbox Test Mode</span>
+            </div>
+            <p class="fs-9 text-muted mb-3">Select the gateway outcome to test success authorization vs decline error handling (no actual banking data is stored or transmitted):</p>
+
+            <div class="d-flex flex-column gap-2">
+              <div class="form-check p-2 rounded-2" style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.25);">
+                <input class="form-check-input ms-1" type="radio" name="simulationOutcome" id="outcomeSuccess" value="SUCCESS" checked>
+                <label class="form-check-label fs-8 fw-semibold text-success ms-2" for="outcomeSuccess">
+                  <i class="bi bi-check-circle-fill me-1"></i> Simulate Approved Payment (Success - Code 200)
+                  <span class="d-block fs-9 text-muted fw-normal">Authorizes charge, marks invoice PAID, updates dashboard metrics, and issues receipt.</span>
+                </label>
+              </div>
+
+              <div class="form-check p-2 rounded-2" style="background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.25);">
+                <input class="form-check-input ms-1" type="radio" name="simulationOutcome" id="outcomeFailure" value="FAILURE">
+                <label class="form-check-label fs-8 fw-semibold text-danger ms-2" for="outcomeFailure">
+                  <i class="bi bi-x-circle-fill me-1"></i> Simulate Declined Transaction (Gateway Failure - Code 204)
+                  <span class="d-block fs-9 text-muted fw-normal">Simulates insufficient funds / bank rejection. Invoice remains unpaid and error is surfaced.</span>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <!-- Submit Button -->
+          <div class="d-flex align-items-center justify-content-between pt-2">
+            <a th:href="@{/payments}" class="btn btn-propio-secondary py-2 px-3 fs-8 text-decoration-none">
+              Cancel
+            </a>
+            <button type="submit" class="btn btn-propio-primary py-2 px-4 fs-8 shadow-sm d-inline-flex align-items-center gap-2">
+              <i class="bi bi-lock-fill"></i>
+              <span>Authorize & Pay $<span th:text="${#numbers.formatDecimal(payment.amount, 1, 'COMMA', 2, 'POINT')}">1,450.00</span></span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Right Column: Invoice Breakdown Summary -->
+    <div class="col-lg-5">
+      <div class="card-propio p-4 fade-in-up stagger-2">
+        <h5 class="fw-bold font-heading fs-7 mb-3 text-main">
+          <i class="bi bi-receipt text-primary me-2"></i>Invoice Summary
+        </h5>
+
+        <!-- Property Unit Cover Header -->
+        <div class="p-3 rounded-3 mb-3 d-flex align-items-center gap-3" style="background: var(--bg-card-subtle); border: 1px solid var(--border-light);">
+          <div class="rounded-3 p-3 bg-primary-subtle text-primary d-flex align-items-center justify-content-center">
+            <i class="bi bi-building fs-3"></i>
+          </div>
+          <div>
+            <span class="fs-9 text-muted text-uppercase fw-semibold" th:text="${payment.lease.unit.property.name}">Oak Ridge Apartments</span>
+            <h5 class="fw-bold font-heading mb-0 text-main" th:text="${payment.lease.unit.unitNumber}">Apt 101</h5>
+            <span class="fs-9 text-muted" th:text="${payment.lease.unit.property.address + ', ' + payment.lease.unit.property.city}">Address</span>
+          </div>
+        </div>
+
+        <!-- Line Item Breakdown -->
+        <div class="d-flex flex-column gap-2 mb-3 fs-8">
+          <div class="d-flex align-items-center justify-content-between">
+            <span class="text-muted">Invoice Reference:</span>
+            <span class="fw-bold font-monospace text-primary" th:text="${payment.transactionReference}">TXN-0000</span>
+          </div>
+
+          <div class="d-flex align-items-center justify-content-between">
+            <span class="text-muted">Resident:</span>
+            <span class="fw-semibold text-main" th:text="${payment.lease.tenant.fullName}">Leslie Alexander</span>
+          </div>
+
+          <div class="d-flex align-items-center justify-content-between">
+            <span class="text-muted">Due Date:</span>
+            <span class="fw-semibold text-main" th:text="${#temporals.format(payment.dueDate, 'MMM dd, yyyy')}">Nov 13, 2026</span>
+          </div>
+
+          <div class="d-flex align-items-center justify-content-between">
+            <span class="text-muted">Payment Status:</span>
+            <span th:if="${payment.status.name() == 'OVERDUE'}" class="badge-status badge-status-overdue">OVERDUE</span>
+            <span th:if="${payment.status.name() == 'PENDING'}" class="badge-status badge-status-pending">PENDING</span>
+          </div>
+
+          <hr class="my-2" style="border-color: var(--border-light);">
+
+          <div class="d-flex align-items-center justify-content-between">
+            <span class="text-muted">Base Monthly Rent:</span>
+            <span class="fw-semibold text-main" th:text="${'$' + #numbers.formatDecimal(payment.baseAmount, 1, 'COMMA', 2, 'POINT')}">$1,450.00</span>
+          </div>
+
+          <div th:if="${payment.lateFee != null and payment.lateFee > 0}" class="d-flex align-items-center justify-content-between">
+            <span class="text-danger">Late Penalty Fee:</span>
+            <span class="fw-bold text-danger" th:text="${'+ $' + #numbers.formatDecimal(payment.lateFee, 1, 'COMMA', 2, 'POINT')}">+$72.50</span>
+          </div>
+
+          <hr class="my-2" style="border-color: var(--border-light);">
+
+          <div class="d-flex align-items-center justify-content-between pt-1">
+            <span class="fw-bold font-heading fs-7 text-main">Total to Pay:</span>
+            <span class="fw-bold font-heading fs-5 text-primary" th:text="${'$' + #numbers.formatDecimal(payment.amount, 1, 'COMMA', 2, 'POINT')}">$1,450.00</span>
+          </div>
+        </div>
+
+        <!-- Trust Badges -->
+        <div class="p-3 rounded-3 text-center" style="background: var(--bg-card-subtle); border: 1px solid var(--border-light);">
+          <div class="d-flex align-items-center justify-content-center gap-3 text-muted fs-8 mb-1">
+            <span><i class="bi bi-shield-check text-success me-1"></i>SSL Secured</span>
+            <span><i class="bi bi-check-all text-primary me-1"></i>Instant Receipt</span>
+          </div>
+          <span class="fs-9 text-muted d-block">Powered by Propio Automated Rent Engine</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

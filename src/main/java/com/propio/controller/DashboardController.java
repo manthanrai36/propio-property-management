@@ -215,18 +215,6 @@ public class DashboardController {
         return "dashboard";
     }
 
-    @GetMapping("/payments")
-    public String payments(@AuthenticationPrincipal CustomUserDetails userDetails, Model model) {
-        model.addAttribute("activeNav", "payments");
-        model.addAttribute("user", userDetails);
-        if (userDetails != null && userDetails.isTenant() && userDetails.getTenantId() != null) {
-            model.addAttribute("payments", paymentRepository.findByLeaseTenantId(userDetails.getTenantId()));
-        } else {
-            model.addAttribute("payments", paymentRepository.findAll());
-        }
-        return "dashboard";
-    }
-
     @GetMapping("/documents")
     public String documents(@AuthenticationPrincipal CustomUserDetails userDetails, Model model) {
         model.addAttribute("activeNav", "documents");

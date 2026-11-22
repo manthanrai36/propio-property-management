@@ -34,6 +34,13 @@ public class GlobalExceptionHandler {
         return "error/403";
     }
 
+    @ExceptionHandler(PaymentFailedException.class)
+    public String handlePaymentFailed(PaymentFailedException ex, RedirectAttributes redirectAttributes) {
+        log.warn("Payment checkout failed: {}", ex.getMessage());
+        redirectAttributes.addFlashAttribute("errorMessage", ex.getMessage());
+        return "redirect:/payments/" + ex.getPaymentId() + "/checkout";
+    }
+
     @ExceptionHandler(LeaseOverlapException.class)
     public String handleLeaseOverlap(LeaseOverlapException ex, RedirectAttributes redirectAttributes, HttpServletRequest request) {
         log.warn("Lease overlap error: {}", ex.getMessage());

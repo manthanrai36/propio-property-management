@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      th:replace="~{layout/main :: layout(~{::#payment-content})}">
+<head>
+  <title>Payment Ledger | Propio</title>
+</head>
+<body>
+
+<div id="payment-content">
+  <!-- Page Header -->
+  <div class="d-flex flex-column flex-md-row align-items-start align-items-md-center justify-content-between gap-3 mb-4 fade-in-up">
+    <div>
+      <h3 class="fw-bold font-heading mb-1 text-main">Rental Payments & Invoices</h3>
+      <p class="text-muted fs-8 mb-0">Track cash flow, reconcile settled transactions, automate billing schedules, and record receipts.</p>
+    </div>
+    <div class="d-flex align-items-center gap-2">
+      <!-- Run Rent Engine Trigger Button Styled as Proper Secondary Button with Icon -->
+      <button type="button" 
+              id="btnRunRentEngine"
+              class="btn btn-sm btn-propio-secondary d-inline-flex align-items-center gap-2 py-2 px-3 fs-8 fw-semibold"
+              onclick="openRunEngineModal()"
+              title="Trigger automated billing run for active leases and overdue penalties">
+        <i class="bi bi-gear-wide-connected text-primary"></i>
+        <span>Run Rent Engine</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Flash Notifications -->
+  <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show fs-8 py-3 px-4 rounded-3 mb-4 fade-in-up border-0 shadow-sm" role="alert" style="background-color: rgba(16, 185, 129, 0.15); color: #10B981;">
+    <div class="d-flex align-items-center gap-2">
+      <i class="bi bi-check-circle-fill fs-6"></i>
+      <span th:text="${successMessage}">Operation successful!</span>
+    </div>
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+  </div>
+
+  <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show fs-8 py-3 px-4 rounded-3 mb-4 fade-in-up border-0 shadow-sm" role="alert" style="background-color: rgba(239, 68, 68, 0.15); color: #EF4444;">
+    <div class="d-flex align-items-center gap-2">
+      <i class="bi bi-exclamation-triangle-fill fs-6"></i>
+      <span th:text="${errorMessage}">An error occurred.</span>
+    </div>
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+  </div>
+
+  <!-- Totals Summary Row (4 Metric Cards) -->
+  <div class="row g-3 mb-4 fade-in-up stagger-1">
+    <!-- Total Invoiced -->
+    <div class="col-xl-3 col-sm-6">
+      <div class="card-propio p-3 h-100 d-flex flex-column justify-content-between">
+        <div class="d-flex align-items-center justify-content-between mb-2">
+          <span class="fs-9 text-uppercase fw-semibold text-muted">Total Invoiced</span>
+          <div class="rounded-circle p-2 bg-primary-subtle text-primary d-flex align-items-center justify-content-center" style="width: 36px; height: 36px;">
+            <i class="bi bi-receipt fs-6"></i>
+          </div>
+        </div>
+        <div>
+          <h4 class="fw-bold font-heading mb-1 text-main" th:text="${totals != null ? '$' + #numbers.formatDecimal(totals.totalInvoiced, 1, 'COMMA', 2, 'POINT') : '$0.00'}">$0.00</h4>
+          <span class="fs-9 text-muted" th:text="${(totals != null ? totals.countTotal : 0) + ' Total Invoices'}">0 Total Invoices</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Total Collected (PAID) -->
+    <div class="col-xl-3 col-sm-6">
+      <div class="card-propio p-3 h-100 d-flex flex-column justify-content-between">
+        <div class="d-flex align-items-center justify-content-between mb-2">
+          <span class="fs-9 text-uppercase fw-semibold text-success">Total Collected</span>
+          <div class="rounded-circle p-2 bg-success-subtle text-success d-flex align-items-center justify-content-center" style="width: 36px; height: 36px;">
+            <i class="bi bi-check2-circle fs-6"></i>
+          </div>
+        </div>
+        <div>
+          <h4 class="fw-bold font-heading mb-1 text-main" th:text="${totals != null ? '$' + #numbers.formatDecimal(totals.totalCollected, 1, 'COMMA', 2, 'POINT') : '$0.00'}">$0.00</h4>
+          <span class="fs-9 text-muted" th:text="${(totals != null ? totals.countPaid : 0) + ' Invoices Settled'}">0 Settled</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Total Pending -->
+    <div class="col-xl-3 col-sm-6">
+      <div class="card-propio p-3 h-100 d-flex flex-column justify-content-between">
+        <div class="d-flex align-items-center justify-content-between mb-2">
+          <span class="fs-9 text-uppercase fw-semibold text-warning">Pending Dues</span>
+          <div class="rounded-circle p-2 bg-warning-subtle text-warning d-flex align-items-center justify-content-center" style="width: 36px; height: 36px;">
+            <i class="bi bi-hourglass-split fs-6"></i>
+          </div>
+        </div>
+        <div>
+          <h4 class="fw-bold font-heading mb-1 text-main" th:text="${totals != null ? '$' + #numbers.formatDecimal(totals.totalPending, 1, 'COMMA', 2, 'POINT') : '$0.00'}">$0.00</h4>
+          <span class="fs-9 text-muted" th:text="${(totals != null ? totals.countPending : 0) + ' Awaiting Payment'}">0 Awaiting</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Total Overdue -->
+    <div class="col-xl-3 col-sm-6">
+      <div class="card-propio p-3 h-100 d-flex flex-column justify-content-between">
+        <div class="d-flex align-items-center justify-content-between mb-2">
+          <span class="fs-9 text-uppercase fw-semibold text-danger">Overdue Rent</span>
+          <div class="rounded-circle p-2 bg-danger-subtle text-danger d-flex align-items-center justify-content-center" style="width: 36px; height: 36px;">
+            <i class="bi bi-exclamation-octagon fs-6"></i>
+          </div>
+        </div>
+        <div>
+          <h4 class="fw-bold font-heading mb-1 text-main" th:text="${totals != null ? '$' + #numbers.formatDecimal(totals.totalOverdue, 1, 'COMMA', 2, 'POINT') : '$0.00'}">$0.00</h4>
+          <span class="fs-9 text-muted" th:text="${(totals != null ? totals.countOverdue : 0) + ' Delinquent Bills'}">0 Delinquent</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Search & Filter Controls Card (with small From and To labels) -->
+  <div class="card-propio p-3 mb-4 fade-in-up stagger-2">
+    <form th:action="@{/payments}" method="get" class="row g-2 align-items-end" id="paymentFilterForm">
+      <!-- Search Keyword Input -->
+      <div class="col-lg-4 col-md-6">
+        <label for="filterSearch" class="form-label fs-9 text-muted fw-semibold mb-1 d-block">Search</label>
+        <div class="input-group">
+          <span class="input-group-text bg-transparent border-end-0 text-muted" style="border-color: var(--border-light);">
+            <i class="bi bi-search"></i>
+          </span>
+          <input type="text" 
+                 id="filterSearch"
+                 name="search" 
+                 class="form-control border-start-0 fs-8" 
+                 style="background-color: var(--bg-card-subtle); border-color: var(--border-light); color: var(--text-main);"
+                 placeholder="Search tenant, unit, property, TXN..." 
+                 th:value="${filter.search}">
+        </div>
+      </div>
+
+      <!-- Status Filter Tabs / Select -->
+      <div class="col-lg-3 col-md-6">
+        <label for="filterStatus" class="form-label fs-9 text-muted fw-semibold mb-1 d-block">Status</label>
+        <select id="filterStatus"
+                name="status" 
+                class="form-select fs-8" 
+                style="background-color: var(--bg-card-subtle); border-color: var(--border-light); color: var(--text-main);"
+                onchange="document.getElementById('paymentFilterForm').submit()">
+          <option value="ALL" th:selected="${filter.status == null or filter.status == 'ALL'}">All Payment Statuses</option>
+          <option value="PAID" th:selected="${filter.status == 'PAID'}">Paid (Settled)</option>
+          <option value="PENDING" th:selected="${filter.status == 'PENDING'}">Pending (Upcoming)</option>
+          <option value="OVERDUE" th:selected="${filter.status == 'OVERDUE'}">Overdue (Delinquent)</option>
+        </select>
+      </div>
+
+      <!-- Start Date Range with small 'From' label -->
+      <div class="col-lg-2 col-md-4 col-6">
+        <label for="filterStartDate" class="form-label fs-9 text-muted fw-semibold mb-1 d-block">From</label>
+        <input type="date" 
+               id="filterStartDate"
+               name="startDate" 
+               class="form-control fs-8" 
+               style="background-color: var(--bg-card-subtle); border-color: var(--border-light); color: var(--text-main);"
+               th:value="${filter.startDate}"
+               title="Filter from due date">
+      </div>
+
+      <!-- End Date Range with small 'To' label -->
+      <div class="col-lg-2 col-md-4 col-6">
+        <label for="filterEndDate" class="form-label fs-9 text-muted fw-semibold mb-1 d-block">To</label>
+        <input type="date" 
+               id="filterEndDate"
+               name="endDate" 
+               class="form-control fs-8" 
+               style="background-color: var(--bg-card-subtle); border-color: var(--border-light); color: var(--text-main);"
+               th:value="${filter.endDate}"
+               title="Filter to due date">
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="col-lg-auto col-md-4 col-12 d-flex gap-1">
+        <button type="submit" class="btn btn-propio-primary py-2 px-3 fs-8 d-inline-flex align-items-center justify-content-center gap-1 text-white fw-semibold text-nowrap" style="color: #ffffff !important;" title="Apply Filters">
+          <i class="bi bi-funnel-fill text-white"></i>
+          <span class="text-white" style="color: #ffffff !important;">Filter</span>
+        </button>
+        <a th:href="@{/payments}" class="btn btn-propio-secondary py-2 px-2 fs-8 d-inline-flex align-items-center justify-content-center" title="Reset Filters">
+          <i class="bi bi-arrow-counterclockwise"></i>
+        </a>
+      </div>
+    </form>
+  </div>
+
+  <!-- Payments Table Ledger Card (Compact, Responsive, Short non-wrapping dates & refs) -->
+  <div class="card-propio p-0 overflow-hidden mb-4 fade-in-up stagger-3">
+    <div class="p-3 border-bottom d-flex align-items-center justify-content-between" style="border-color: var(--border-light) !important;">
+      <h5 class="fw-bold font-heading fs-7 mb-0 text-main">
+        <i class="bi bi-journal-text text-primary me-2"></i>Transactions Ledger
+      </h5>
+      <span class="fs-9 text-muted" th:if="${paymentPage != null}" th:text="${paymentPage.totalElements + ' Total Transactions'}">Records</span>
+    </div>
+
+    <!-- Empty State -->
+    <div th:if="${paymentPage == null or paymentPage.content.empty}" class="text-center py-5">
+      <div class="rounded-circle d-inline-flex align-items-center justify-content-center p-3 mb-2" style="background: rgba(108, 76, 241, 0.1);">
+        <i class="bi bi-wallet2 text-primary fs-2"></i>
+      </div>
+      <h6 class="fw-bold font-heading mb-1 text-main">No Invoices Found</h6>
+      <p class="text-muted fs-8 mb-3">No payment records match the current filter criteria.</p>
+      <a th:href="@{/payments}" class="btn-propio-secondary py-2 px-3 fs-8 text-decoration-none">Clear Filters</a>
+    </div>
+
+    <!-- Table Responsive with Min-Width for clean horizontal scroll on narrow viewports -->
+    <div th:if="${paymentPage != null and !paymentPage.content.empty}" class="table-responsive">
+      <table class="table table-hover align-middle mb-0 fs-8 table-propio" style="min-width: 980px; color: var(--text-main);">
+        <thead class="table-light fs-9 text-uppercase text-muted" style="background-color: var(--bg-card-subtle);">
+          <tr>
+            <th class="py-2 px-3 text-nowrap">Transaction Ref</th>
+            <th class="py-2 px-3 text-nowrap">Resident / Tenant</th>
+            <th class="py-2 px-3 text-nowrap">Premises / Unit</th>
+            <th class="py-2 px-3 text-nowrap">Due Date</th>
+            <th class="py-2 px-3 text-nowrap">Paid Date</th>
+            <th class="py-2 px-3 text-nowrap">Amount Due</th>
+            <th class="py-2 px-3 text-nowrap">Payment Method</th>
+            <th class="py-2 px-3 text-nowrap">Status</th>
+            <th class="py-2 px-3 text-nowrap text-end">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr th:each="p : ${paymentPage.content}">
+            <!-- Transaction Reference (monospace, nowrap) -->
+            <td class="py-2 px-3 fw-bold font-monospace text-primary text-nowrap" th:text="${p.transactionReference}">TXN-20261122-8F92A</td>
+
+            <!-- Tenant Details -->
+            <td class="py-2 px-3">
+              <div class="d-flex align-items-center gap-2">
+                <img th:if="${p.lease.tenant.avatarUrl != null and !p.lease.tenant.avatarUrl.isBlank()}" 
+                     th:src="${p.lease.tenant.avatarUrl}" 
+                     class="rounded-circle object-fit-cover shadow-sm flex-shrink-0" 
+                     style="width: 28px; height: 28px;" 
+                     th:alt="${p.lease.tenant.fullName}">
+                <div th:unless="${p.lease.tenant.avatarUrl != null and !p.lease.tenant.avatarUrl.isBlank()}"
+                     class="rounded-circle d-flex align-items-center justify-content-center text-white fw-bold fs-9 flex-shrink-0 shadow-sm"
+                     th:style="'background: ' + ${p.lease.tenant.avatarColor} + '; width: 28px; height: 28px; font-size: 0.72rem;'"
+                     th:text="${p.lease.tenant.initials}">MR</div>
+                <div>
+                  <a th:href="@{'/tenants/' + ${p.lease.tenant.id}}" class="fw-bold text-main text-decoration-none d-block text-truncate" style="max-width: 140px;" th:text="${p.lease.tenant.fullName}">Leslie Alexander</a>
+                  <span class="text-muted fs-9 d-block text-truncate" style="max-width: 140px;" th:text="${p.lease.tenant.email}">tenant@propio.com</span>
+                </div>
+              </div>
+            </td>
+
+            <!-- Premises / Property & Unit -->
+            <td class="py-2 px-3">
+              <span class="badge bg-primary-subtle text-primary fw-bold me-1" th:text="${p.lease.unit.unitNumber}">Apt 101</span>
+              <span class="text-muted fs-9 d-block text-truncate" style="max-width: 150px;" th:text="${p.lease.unit.property.name}">Oak Ridge</span>
+            </td>
+
+            <!-- Due Date (short, non-wrapping format e.g. 22 Dec 2026) -->
+            <td class="py-2 px-3 text-main fw-medium text-nowrap" th:text="${#temporals.format(p.dueDate, 'dd MMM yyyy')}">22 Dec 2026</td>
+
+            <!-- Paid Date (short, non-wrapping format e.g. 22 Dec 2026) -->
+            <td class="py-2 px-3 text-muted text-nowrap" th:text="${p.paidDate != null ? #temporals.format(p.paidDate, 'dd MMM yyyy') : '—'}">—</td>
+
+            <!-- Amount (with breakdown if late fee present) -->
+            <td class="py-2 px-3 text-nowrap">
+              <div class="fw-bold text-main" th:text="${'$' + #numbers.formatDecimal(p.amount, 1, 'COMMA', 2, 'POINT')}">$1,450.00</div>
+              <div th:if="${p.lateFee != null and p.lateFee > 0}" class="fs-9 text-danger">
+                Includes <span th:text="${'$' + #numbers.formatDecimal(p.lateFee, 1, 'COMMA', 2, 'POINT')}">$72.50</span> fee
+              </div>
+            </td>
+
+            <!-- Payment Method -->
+            <td class="py-2 px-3 text-nowrap">
+              <span th:if="${p.paymentMethod != null and p.paymentMethod != 'UNPAID'}" class="badge bg-secondary-subtle text-main border border-light px-2 py-1 fs-9 fw-semibold font-monospace" th:text="${p.paymentMethod}">CASH</span>
+              <span th:unless="${p.paymentMethod != null and p.paymentMethod != 'UNPAID'}" class="text-muted fs-9">—</span>
+            </td>
+
+            <!-- Status Badge -->
+            <td class="py-2 px-3 text-nowrap">
+              <span th:if="${p.status.name() == 'PAID'}" class="badge-status badge-status-paid">PAID</span>
+              <span th:if="${p.status.name() == 'PENDING'}" class="badge-status badge-status-pending">PENDING</span>
+              <span th:if="${p.status.name() == 'OVERDUE'}" class="badge-status badge-status-overdue">OVERDUE</span>
+            </td>
+
+            <!-- Actions: Small button style with icon so rows are not tall -->
+            <td class="py-2 px-3 text-end text-nowrap">
+              <!-- Record Payment button if Unpaid -->
+              <button th:if="${p.status.name() != 'PAID'}" 
+                      type="button" 
+                      class="btn btn-sm btn-propio-primary py-1 px-2 fs-9 rounded-2 text-nowrap d-inline-flex align-items-center gap-1"
+                      th:data-id="${p.id}"
+                      th:data-ref="${p.transactionReference}"
+                      th:data-tenant="${p.lease.tenant.fullName}"
+                      th:data-unit="${p.lease.unit.unitNumber}"
+                      th:data-prop="${p.lease.unit.property.name}"
+                      th:data-amount="${#numbers.formatDecimal(p.amount, 1, 'COMMA', 2, 'POINT')}"
+                      th:data-due="${#temporals.format(p.dueDate, 'dd MMM yyyy')}"
+                      onclick="openRecordPaymentModal(this)"
+                      title="Record Payment">
+                <i class="bi bi-cash-coin fs-9"></i> Record
+              </button>
+
+              <!-- View Receipt link if Paid -->
+              <a th:if="${p.status.name() == 'PAID'}" 
+                 th:href="@{'/payments/' + ${p.id} + '/receipt'}" 
+                 class="btn btn-sm btn-propio-secondary py-1 px-2 fs-9 rounded-2 text-nowrap d-inline-flex align-items-center gap-1"
+                 title="View Receipt">
+                <i class="bi bi-file-earmark-check fs-9"></i> Receipt
+              </a>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination Footer -->
+    <div th:if="${paymentPage != null and paymentPage.totalPages > 1}" class="p-3 border-top d-flex align-items-center justify-content-between" style="border-color: var(--border-light) !important;">
+      <span class="fs-9 text-muted" th:text="${'Showing page ' + (paymentPage.number + 1) + ' of ' + paymentPage.totalPages}">Page 1 of 5</span>
+      <div class="d-flex gap-1">
+        <a th:href="@{/payments(page=${paymentPage.number - 1}, size=${filter.size}, status=${filter.status}, search=${filter.search}, startDate=${filter.startDate}, endDate=${filter.endDate})}" 
+           class="btn btn-sm btn-propio-secondary py-1 px-3 fs-9"
+           th:classappend="${paymentPage.first} ? 'disabled' : ''">Previous</a>
+        <a th:href="@{/payments(page=${paymentPage.number + 1}, size=${filter.size}, status=${filter.status}, search=${filter.search}, startDate=${filter.startDate}, endDate=${filter.endDate})}" 
+           class="btn btn-sm btn-propio-secondary py-1 px-3 fs-9"
+           th:classappend="${paymentPage.last} ? 'disabled' : ''">Next</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Record Payment Modal (Placed INSIDE layout fragment #payment-content) -->
+  <div class="modal fade" id="recordPaymentModal" tabindex="-1" aria-labelledby="recordPaymentModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content card-propio p-0 overflow-hidden border-0 shadow-elevated">
+        <div class="modal-header border-bottom py-3 px-4" style="border-color: var(--border-light) !important; background: var(--bg-card-subtle);">
+          <h5 class="modal-title fw-bold font-heading fs-7 mb-0 text-main" id="recordPaymentModalLabel">
+            <i class="bi bi-credit-card text-primary me-2"></i>Record Manual Payment
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+
+        <form th:action="@{/payments/record}" method="post" id="recordPaymentForm">
+          <input type="hidden" id="modalPaymentId" name="paymentId" value="">
+
+          <div class="modal-body p-4">
+            <!-- Summary Callout -->
+            <div class="p-3 rounded-3 mb-3" style="background: var(--bg-card-subtle); border: 1px solid var(--border-light);">
+              <div class="d-flex align-items-center justify-content-between mb-1">
+                <span class="text-muted fs-9">Invoice Ref:</span>
+                <span class="fw-bold font-monospace fs-8 text-primary" id="modalTxnRef">TXN-0000</span>
+              </div>
+              <div class="d-flex align-items-center justify-content-between mb-1">
+                <span class="text-muted fs-9">Resident:</span>
+                <span class="fw-semibold fs-8 text-main" id="modalTenantName">Resident</span>
+              </div>
+              <div class="d-flex align-items-center justify-content-between mb-1">
+                <span class="text-muted fs-9">Premises:</span>
+                <span class="fw-semibold fs-8 text-main" id="modalPremises">Apt 101</span>
+              </div>
+              <div class="d-flex align-items-center justify-content-between pt-2 border-top border-light">
+                <span class="fw-bold fs-8 text-main">Amount Due:</span>
+                <span class="fw-bold font-heading fs-6 text-success" id="modalAmountDue">$0.00</span>
+              </div>
+            </div>
+
+            <!-- Payment Method Field -->
+            <div class="mb-3">
+              <label for="modalPaymentMethod" class="form-label fs-8 fw-semibold text-main">Payment Method <span class="text-danger">*</span></label>
+              <select class="form-select fs-8" id="modalPaymentMethod" name="paymentMethod" required style="background-color: var(--bg-card-subtle); border-color: var(--border-light); color: var(--text-main);">
+                <option value="CASH">Cash Payment</option>
+                <option value="BANK_TRANSFER" selected>Bank / Wire Transfer</option>
+                <option value="CARD">Debit / Credit Card (Terminal)</option>
+              </select>
+            </div>
+
+            <!-- Paid Date Field -->
+            <div class="mb-3">
+              <label for="modalPaidDate" class="form-label fs-8 fw-semibold text-main">Date Received <span class="text-danger">*</span></label>
+              <input type="date" class="form-control fs-8" id="modalPaidDate" name="paidDate" required style="background-color: var(--bg-card-subtle); border-color: var(--border-light); color: var(--text-main);">
+            </div>
+
+            <!-- Notes Field -->
+            <div class="mb-2">
+              <label for="modalNotes" class="form-label fs-8 fw-semibold text-main">Payment Notes / Memo (Optional)</label>
+              <textarea class="form-control fs-8" id="modalNotes" name="notes" rows="2" placeholder="e.g. Received by office desk, check #1042..." style="background-color: var(--bg-card-subtle); border-color: var(--border-light); color: var(--text-main);"></textarea>
+            </div>
+          </div>
+
+          <div class="modal-footer border-top py-3 px-4" style="border-color: var(--border-light) !important;">
+            <button type="button" class="btn btn-sm btn-propio-secondary py-2 px-3 fs-8" data-bs-dismiss="modal">Cancel</button>
+            <button type="submit" class="btn btn-sm btn-propio-primary py-2 px-3 fs-8">
+              <i class="bi bi-check2-circle me-1"></i> Confirm &amp; Mark PAID
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Confirm Run Engine Modal (Placed INSIDE layout fragment #payment-content) -->
+  <div class="modal fade" id="confirmRunEngineModal" tabindex="-1" aria-labelledby="confirmRunEngineModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content card-propio p-0 overflow-hidden border-0 shadow-elevated">
+        <div class="modal-header border-bottom py-3 px-4" style="border-color: var(--border-light) !important; background: var(--bg-card-subtle);">
+          <h5 class="modal-title fw-bold font-heading fs-7 mb-0 text-main" id="confirmRunEngineModalLabel">
+            <i class="bi bi-gear-wide-connected text-primary me-2"></i>Run Automated Rent Engine
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body p-4">
+          <p class="fs-8 text-main mb-2">Are you sure you want to trigger the automated billing engine now?</p>
+          <ul class="fs-8 text-muted mb-0 ps-3">
+            <li>Generates next month's pending invoices for all active leases (skips existing).</li>
+            <li>Checks unpaid invoices past their due date and marks them <strong class="text-danger">OVERDUE</strong>.</li>
+            <li>Assesses late fees according to active lease terms.</li>
+          </ul>
+        </div>
+        <div class="modal-footer border-top py-3 px-4" style="border-color: var(--border-light) !important;">
+          <button type="button" class="btn btn-sm btn-propio-secondary py-2 px-3 fs-8" data-bs-dismiss="modal">Cancel</button>
+          <button type="button" id="confirmRunEngineBtn" class="btn btn-sm btn-propio-primary py-2 px-3 fs-8 d-inline-flex align-items-center gap-2" onclick="executeRentEngine()">
+            <i class="bi bi-play-circle-fill"></i> Confirm &amp; Run
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Rent Engine Toast Notification Container (Placed INSIDE layout fragment #payment-content) -->
+  <div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 1090;">
+    <div id="rentEngineToast" class="toast align-items-center border-0 shadow-elevated rounded-3" role="alert" aria-live="assertive" aria-atomic="true" style="background: var(--bg-card); border: 1px solid var(--border-light) !important; min-width: 320px;">
+      <div class="p-3">
+        <div class="d-flex align-items-center justify-content-between mb-2">
+          <div class="d-flex align-items-center gap-2">
+            <div class="rounded-circle bg-success-subtle text-success p-1 d-flex align-items-center justify-content-center" style="width: 24px; height: 24px;">
+              <i class="bi bi-check2 fs-7 fw-bold"></i>
+            </div>
+            <span class="fw-bold font-heading fs-8 text-main">Rent Engine Result</span>
+          </div>
+          <button type="button" class="btn-close fs-9" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+        <div id="toastMetrics" class="fs-8 text-muted">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- JavaScript Placed INSIDE layout fragment so handlers always exist in DOM -->
+  <script>
+    function openRecordPaymentModal(btn) {
+      const id = btn.getAttribute('data-id');
+      const ref = btn.getAttribute('data-ref');
+      const tenant = btn.getAttribute('data-tenant');
+      const unit = btn.getAttribute('data-unit');
+      const prop = btn.getAttribute('data-prop');
+      const amount = btn.getAttribute('data-amount');
+
+      document.getElementById('modalPaymentId').value = id;
+      document.getElementById('modalTxnRef').textContent = ref;
+      document.getElementById('modalTenantName').textContent = tenant;
+      document.getElementById('modalPremises').textContent = unit + ' (' + prop + ')';
+      document.getElementById('modalAmountDue').textContent = '$' + amount;
+
+      // Set default paid date to today
+      const today = new Date().toISOString().split('T')[0];
+      document.getElementById('modalPaidDate').value = today;
+
+      const modalEl = document.getElementById('recordPaymentModal');
+      const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+      modal.show();
+    }
+
+    function openRunEngineModal() {
+      const modalEl = document.getElementById('confirmRunEngineModal');
+      const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+      modal.show();
+    }
+
+    function executeRentEngine() {
+      const btn = document.getElementById('confirmRunEngineBtn');
+      const triggerBtn = document.getElementById('btnRunRentEngine');
+
+      // Disable button while running to avoid double clicks
+      btn.disabled = true;
+      if (triggerBtn) triggerBtn.disabled = true;
+      btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Running...';
+
+      // Read Spring CSRF token
+      const tokenMeta = document.querySelector('meta[name="_csrf"]');
+      const headerMeta = document.querySelector('meta[name="_csrf_header"]');
+      const headers = {
+        'Accept': 'application/json',
+        'Content-Type': 'application/x-www-form-urlencoded'
+      };
+      if (tokenMeta && headerMeta) {
+        headers[headerMeta.getAttribute('content')] = tokenMeta.getAttribute('content');
+      }
+
+      fetch('/payments/run-engine', {
+        method: 'POST',
+        headers: headers
+      })
+      .then(response => {
+        if (!response.ok) {
+          throw new Error('Server returned HTTP ' + response.status);
+        }
+        return response.json();
+      })
+      .then(data => {
+        // Close modal
+        const modalEl = document.getElementById('confirmRunEngineModal');
+        const modal = bootstrap.Modal.getInstance(modalEl);
+        if (modal) modal.hide();
+
+        // Render toast metrics
+        const toastMetrics = document.getElementById('toastMetrics');
+        const invCreated = data.generatedInvoicesCount ?? data.invoicesCreated ?? 0;
+        const invOverdue = data.markedOverdueCount ?? data.invoicesMarkedOverdue ?? 0;
+        const feesApplied = data.lateFeesAppliedCount ?? data.lateFeesApplied ?? 0;
+        const feeAmt = data.totalLateFeesAssessed ?? data.totalLateFeesAmount ?? 0;
+        const dupes = data.skippedDuplicatesCount ?? 0;
+
+        toastMetrics.innerHTML = `
+          <div class="d-flex flex-column gap-2 pt-1">
+            <div class="d-flex justify-content-between align-items-center">
+              <span class="fs-9"><i class="bi bi-file-earmark-plus text-primary me-1"></i> Invoices created:</span>
+              <span class="badge bg-primary-subtle text-primary fw-bold fs-9">${invCreated}</span>
+            </div>
+            <div class="d-flex justify-content-between align-items-center">
+              <span class="fs-9"><i class="bi bi-exclamation-triangle text-warning me-1"></i> Marked overdue:</span>
+              <span class="badge bg-warning-subtle text-warning fw-bold fs-9">${invOverdue}</span>
+            </div>
+            <div class="d-flex justify-content-between align-items-center">
+              <span class="fs-9"><i class="bi bi-cash text-danger me-1"></i> Late fees applied:</span>
+              <span class="badge bg-danger-subtle text-danger fw-bold fs-9">${feesApplied} ($${Number(feeAmt).toFixed(2)})</span>
+            </div>
+            <div class="d-flex justify-content-between align-items-center">
+              <span class="fs-9"><i class="bi bi-skip-forward text-muted me-1"></i> Skipped duplicates:</span>
+              <span class="badge bg-secondary-subtle text-muted fw-bold fs-9">${dupes}</span>
+            </div>
+          </div>
+        `;
+
+        // Show toast
+        const toastEl = document.getElementById('rentEngineToast');
+        const toast = bootstrap.Toast.getOrCreateInstance(toastEl, { delay: 6000 });
+        toast.show();
+
+        // Reload page after 2.5 seconds to reflect newly created/updated data
+        setTimeout(() => {
+          window.location.reload();
+        }, 2500);
+      })
+      .catch(err => {
+        console.error('Rent engine execution failed:', err);
+        alert('Failed to execute rent engine: ' + err.message);
+        btn.disabled = false;
+        if (triggerBtn) triggerBtn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-play-circle-fill"></i> Confirm & Run';
+      });
+    }
+  </script>
+</div>
+
+</body>
+</html>

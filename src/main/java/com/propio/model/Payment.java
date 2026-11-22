@@ -34,6 +34,10 @@ public class Payment extends BaseEntity {
     @Column(name = "amount", nullable = false, precision = 12, scale = 2)
     private BigDecimal amount;
 
+    @Column(name = "late_fee", precision = 12, scale = 2)
+    @Builder.Default
+    private BigDecimal lateFee = BigDecimal.ZERO;
+
     @NotNull(message = "Due date is required")
     @Column(name = "due_date", nullable = false)
     private LocalDate dueDate;
@@ -54,4 +58,17 @@ public class Payment extends BaseEntity {
 
     @Column(name = "notes")
     private String notes;
+
+    public BigDecimal getLateFee() {
+        return lateFee != null ? lateFee : BigDecimal.ZERO;
+    }
+
+    public BigDecimal getBaseAmount() {
+        if (amount == null) return BigDecimal.ZERO;
+        return amount.subtract(getLateFee());
+    }
+
+    public boolean isOverdue() {
+        return status == PaymentStatus.OVERDUE || (status == PaymentStatus.PENDING && dueDate != null && dueDate.isBefore(LocalDate.now()));
+    }
 }

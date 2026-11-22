@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      th:replace="~{layout/main :: layout(~{::#receipt-content})}">
+<head>
+  <title>Payment Receipt | Propio</title>
+</head>
+<body>
+
+<div id="receipt-content">
+  <!-- Back Link & Header -->
+  <div class="mb-4 fade-in-up d-print-none">
+    <a th:href="@{/payments}" class="btn-propio-secondary py-2 px-3 fs-8 text-decoration-none d-inline-flex align-items-center gap-2 mb-3">
+      <i class="bi bi-arrow-left"></i> Back to Payments Ledger
+    </a>
+    <div class="d-flex align-items-center justify-content-between">
+      <div>
+        <h3 class="fw-bold font-heading mb-1 text-main">Payment Receipt</h3>
+        <p class="text-muted fs-8 mb-0">Official proof of payment and settlement for rental dues.</p>
+      </div>
+      <div class="d-flex gap-2">
+        <button type="button" class="btn btn-propio-secondary py-2 px-3 fs-8 d-inline-flex align-items-center gap-2" onclick="window.print()">
+          <i class="bi bi-printer"></i> Print Receipt
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Official Receipt Card -->
+  <div class="row justify-content-center">
+    <div class="col-lg-8">
+      <div class="card-propio p-4 p-md-5 fade-in-up stagger-1 shadow-elevated">
+        <!-- Receipt Top Header -->
+        <div class="d-flex align-items-start justify-content-between pb-4 mb-4 border-bottom" style="border-color: var(--border-light) !important;">
+          <div class="d-flex align-items-center gap-3">
+            <div class="rounded-3 p-3 bg-success-subtle text-success d-flex align-items-center justify-content-center" style="width: 52px; height: 52px;">
+              <i class="bi bi-check-circle-fill fs-3"></i>
+            </div>
+            <div>
+              <h4 class="fw-bold font-heading mb-1 text-main">Propio Management</h4>
+              <span class="fs-9 text-muted d-block font-monospace">OFFICIAL RENT RECEIPT</span>
+            </div>
+          </div>
+          <div class="text-end">
+            <span class="badge-status badge-status-paid fs-8 px-3 py-1">PAID & SETTLED</span>
+            <span class="fs-9 text-muted d-block mt-1 font-monospace" th:text="${payment.transactionReference}">TXN-0000</span>
+          </div>
+        </div>
+
+        <!-- Success Banner -->
+        <div class="p-3 rounded-3 mb-4 d-flex align-items-center gap-3" style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.25);">
+          <i class="bi bi-shield-check text-success fs-3 flex-shrink-0"></i>
+          <div>
+            <h6 class="fw-bold font-heading mb-0 text-success">Transaction Authorized Successfully</h6>
+            <p class="fs-9 text-muted mb-0">Your payment has been received and your invoice is marked as fully settled.</p>
+          </div>
+        </div>
+
+        <!-- Details Grid -->
+        <div class="row g-4 mb-4 fs-8">
+          <div class="col-sm-6">
+            <span class="text-muted fs-9 text-uppercase d-block fw-semibold mb-1">Billed To (Resident):</span>
+            <h6 class="fw-bold font-heading mb-1 text-main" th:text="${payment.lease.tenant.fullName}">Leslie Alexander</h6>
+            <span class="text-muted d-block" th:text="${payment.lease.tenant.email}">tenant@propio.com</span>
+            <span class="text-muted d-block" th:text="${payment.lease.tenant.phone}">(555) 234-5678</span>
+          </div>
+
+          <div class="col-sm-6 text-sm-end">
+            <span class="text-muted fs-9 text-uppercase d-block fw-semibold mb-1">Leased Premises:</span>
+            <h6 class="fw-bold font-heading mb-1 text-main" th:text="${payment.lease.unit.property.name}">Oak Ridge Apartments</h6>
+            <span class="badge bg-primary-subtle text-primary fw-bold" th:text="${'Unit ' + payment.lease.unit.unitNumber}">Unit Apt 101</span>
+            <span class="text-muted d-block mt-1" th:text="${payment.lease.unit.property.address + ', ' + payment.lease.unit.property.city}">Address</span>
+          </div>
+        </div>
+
+        <div class="row g-4 mb-4 fs-8 p-3 rounded-3" style="background: var(--bg-card-subtle); border: 1px solid var(--border-light);">
+          <div class="col-sm-3 col-6">
+            <span class="text-muted fs-9 text-uppercase d-block fw-semibold">Payment Date</span>
+            <strong class="text-main" th:text="${payment.paidDate != null ? #temporals.format(payment.paidDate, 'MMM dd, yyyy') : #temporals.format(#temporals.createNow(), 'MMM dd, yyyy')}">Nov 22, 2026</strong>
+          </div>
+          <div class="col-sm-3 col-6">
+            <span class="text-muted fs-9 text-uppercase d-block fw-semibold">Payment Method</span>
+            <strong class="text-main" th:text="${payment.paymentMethod != null ? payment.paymentMethod : 'CARD (Online)'}">CARD (Online)</strong>
+          </div>
+          <div class="col-sm-3 col-6">
+            <span class="text-muted fs-9 text-uppercase d-block fw-semibold">Original Due Date</span>
+            <strong class="text-main" th:text="${#temporals.format(payment.dueDate, 'MMM dd, yyyy')}">Nov 13, 2026</strong>
+          </div>
+          <div class="col-sm-3 col-6">
+            <span class="text-muted fs-9 text-uppercase d-block fw-semibold">Billing Period</span>
+            <strong class="text-main" th:text="${payment.dueDate.getMonth().name() + ' ' + payment.dueDate.getYear()}">NOV 2026</strong>
+          </div>
+        </div>
+
+        <!-- Line Items Table -->
+        <div class="table-responsive mb-4">
+          <table class="table align-middle fs-8 table-propio mb-0">
+            <thead class="table-light fs-9 text-uppercase text-muted" style="background-color: var(--bg-card-subtle);">
+              <tr>
+                <th class="py-2 px-3">Description</th>
+                <th class="py-2 px-3 text-end">Amount</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="px-3">
+                  <strong class="text-main" th:text="${payment.notes != null ? payment.notes : 'Monthly Rent'}">Monthly Rent</strong>
+                  <span class="fs-9 text-muted d-block">Contractual monthly rental schedule</span>
+                </td>
+                <td class="px-3 text-end fw-semibold text-main" th:text="${'$' + #numbers.formatDecimal(payment.baseAmount, 1, 'COMMA', 2, 'POINT')}">$1,450.00</td>
+              </tr>
+              <tr th:if="${payment.lateFee != null and payment.lateFee > 0}">
+                <td class="px-3">
+                  <strong class="text-danger">Late Penalty Fee</strong>
+                  <span class="fs-9 text-muted d-block">Assessed for overdue payment past due date</span>
+                </td>
+                <td class="px-3 text-end fw-bold text-danger" th:text="${'$' + #numbers.formatDecimal(payment.lateFee, 1, 'COMMA', 2, 'POINT')}">$72.50</td>
+              </tr>
+            </tbody>
+            <tfoot class="border-top" style="border-color: var(--border-light) !important;">
+              <tr>
+                <td class="px-3 py-3 fw-bold font-heading fs-7 text-main">Total Paid in Full:</td>
+                <td class="px-3 py-3 text-end fw-bold font-heading fs-6 text-success" th:text="${'$' + #numbers.formatDecimal(payment.amount, 1, 'COMMA', 2, 'POINT')}">$1,450.00</td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+
+        <!-- Receipt Footer Note -->
+        <div class="text-center pt-3 border-top" style="border-color: var(--border-light) !important;">
+          <p class="fs-9 text-muted mb-0">Thank you for your timely payment! For billing questions, contact accounting@propio.com.</p>
+          <span class="fs-9 text-muted font-monospace d-block mt-1">Generated by Propio Property Management Cloud</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

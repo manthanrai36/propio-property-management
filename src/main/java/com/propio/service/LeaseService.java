@@ -15,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -174,7 +175,10 @@ public class LeaseService {
                 status = PaymentStatus.PENDING;
             }
 
-            String ref = String.format("INV-%d-%02d%02d", lease.getId(), cur.getYear() % 100, cur.getMonthValue());
+            String ref = String.format("TXN-%s-%02d%03d",
+                    cur.format(DateTimeFormatter.ofPattern("yyyyMMdd")),
+                    (lease.getId() != null ? lease.getId() % 100 : 1),
+                    monthSeq % 1000);
             String propName = lease.getUnit() != null && lease.getUnit().getProperty() != null
                     ? lease.getUnit().getProperty().getName() : "Property";
             String unitNum = lease.getUnit() != null ? lease.getUnit().getUnitNumber() : "Unit";
@@ -185,6 +189,7 @@ public class LeaseService {
             Payment payment = Payment.builder()
                     .lease(lease)
                     .amount(lease.getMonthlyRent())
+                    .lateFee(BigDecimal.ZERO)
                     .dueDate(cur)
                     .status(status)
                     .paymentMethod("UNPAID")

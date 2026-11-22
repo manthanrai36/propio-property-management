@@ -81,9 +81,9 @@
 
       <!-- Filter Buttons -->
       <div class="col-lg-auto col-md-auto col-12 d-flex gap-2 justify-content-end">
-        <button type="submit" class="btn btn-propio-primary py-2 px-3 fs-8 d-inline-flex align-items-center justify-content-center gap-1 ripple" title="Apply filter">
-          <i class="bi bi-filter"></i>
-          <span>Filter</span>
+        <button type="submit" class="btn btn-propio-primary py-2 px-3 fs-8 d-inline-flex align-items-center justify-content-center gap-1 text-white fw-semibold text-nowrap ripple" style="color: #ffffff !important;" title="Apply filter">
+          <i class="bi bi-filter text-white"></i>
+          <span class="text-white" style="color: #ffffff !important;">Filter</span>
         </button>
         <a th:if="${(filter.search != null and !filter.search.isBlank()) or (filter.propertyType != null and !filter.propertyType.isBlank()) or (filter.status != null and filter.status != 'ALL')}" 
            th:href="@{/properties}" 
