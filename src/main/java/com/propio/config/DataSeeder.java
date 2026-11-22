@@ -4,6 +4,7 @@ import com.propio.model.*;
 import com.propio.repository.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
@@ -16,7 +17,8 @@ import java.util.List;
 
 /**
  * Seeds realistic property management data on initial application boot.
- * Populates Admin (Manthan), Tenants, 14 Properties with 56 units, Leases, Payments, and Maintenance Requests.
+ * Populates Admin, Tenants, 14 Properties with 56 units, Leases, Payments, and Maintenance Requests.
+ * Supports opt-in demo seeding (propio.seed.enabled) and bootstraps the first admin from env vars.
  */
 @Component
 @RequiredArgsConstructor
@@ -33,27 +35,39 @@ public class DataSeeder implements CommandLineRunner {
     private final DocumentRepository documentRepository;
     private final PasswordEncoder passwordEncoder;
 
+    @Value("${propio.seed.enabled:false}")
+    private boolean seedEnabled;
+
+    @Value("${propio.admin.email:${PROPIO_ADMIN_EMAIL:}}")
+    private String configuredAdminEmail;
+
+    @Value("${propio.admin.password:${PROPIO_ADMIN_PASSWORD:}}")
+    private String configuredAdminPassword;
+
+    @Value("${propio.admin.name:${PROPIO_ADMIN_NAME:System Administrator}}")
+    private String configuredAdminName;
+
     @Override
     @Transactional
     public void run(String... args) {
-        if (userRepository.count() > 0) {
-            log.info("Database already seeded with {} users. Skipping initial seed.", userRepository.count());
+        // 1. Bootstrap First Admin from Environment Variables / Configuration
+        ensureAdminUserExists();
+
+        // 2. Check if demo seeding is enabled (Opt-in)
+        if (!seedEnabled) {
+            log.info("[DataSeeder] Demo data seeding is disabled (propio.seed.enabled=false). Skipping demo entity creation.");
             return;
         }
 
-        log.info("Seeding realistic sample data for Propio SaaS (14 Properties, 56 Units, Tenants & Leases)...");
+        if (propertyRepository.count() > 0) {
+            log.info("[DataSeeder] Database already contains {} properties. Skipping demo data creation.", propertyRepository.count());
+            return;
+        }
 
-        // 1. Create Users
-        User adminUser = User.builder()
-                .fullName("Manthan")
-                .email("admin@propio.com")
-                .password(passwordEncoder.encode("admin123"))
-                .role(Role.ROLE_ADMIN)
-                .phone("+1 (555) 019-2834")
-                .avatarUrl("https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=120&h=120&q=80")
-                .enabled(true)
-                .build();
-        userRepository.save(adminUser);
+        log.info("[DataSeeder] propio.seed.enabled=true. Seeding realistic sample data for Propio SaaS (14 Properties, 56 Units, Tenants & Leases)...");
+
+        // Create Demo Tenants
+
 
         User tenantUser1 = User.builder()
                 .fullName("Leslie Alexander")
@@ -609,5 +623,39 @@ public class DataSeeder implements CommandLineRunner {
                 .property(property)
                 .build();
         return unitRepository.save(unit);
+    }
+
+    private void ensureAdminUserExists() {
+        boolean adminExists = userRepository.findAll().stream()
+                .anyMatch(u -> u.getRole() == Role.ROLE_ADMIN);
+
+        if (!adminExists) {
+            String adminEmail = (configuredAdminEmail != null && !configuredAdminEmail.isBlank())
+                    ? configuredAdminEmail.trim().toLowerCase()
+                    : "admin@propio.com";
+
+            String adminPassword = (configuredAdminPassword != null && !configuredAdminPassword.isBlank())
+                    ? configuredAdminPassword
+                    : "admin123";
+
+            String adminName = (configuredAdminName != null && !configuredAdminName.isBlank())
+                    ? configuredAdminName.trim()
+                    : "System Administrator";
+
+            User adminUser = User.builder()
+                    .fullName(adminName)
+                    .email(adminEmail)
+                    .password(passwordEncoder.encode(adminPassword))
+                    .role(Role.ROLE_ADMIN)
+                    .phone("+1 (555) 019-2834")
+                    .avatarUrl("https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=120&h=120&q=80")
+                    .enabled(true)
+                    .build();
+
+            userRepository.save(adminUser);
+            log.info("[DataSeeder] Initial administrator user successfully provisioned: {} (Name: '{}')", adminEmail, adminName);
+        } else {
+            log.debug("[DataSeeder] Administrator account already exists in database.");
+        }
     }
 }

@@ -4,6 +4,7 @@ import com.propio.dto.RegisterDto;
 import com.propio.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -22,12 +23,17 @@ public class AuthController {
 
     private final UserService userService;
 
+    @Value("${propio.demo-credentials.enabled:false}")
+    private boolean demoCredentialsEnabled;
+
     @GetMapping("/login")
     public String loginPage(@RequestParam(value = "error", required = false) String error,
                             @RequestParam(value = "logout", required = false) String logout,
                             @RequestParam(value = "registered", required = false) String registered,
                             Model model) {
-        if (error != null) {
+        if ("locked".equalsIgnoreCase(error)) {
+            model.addAttribute("errorMessage", "Account is temporarily locked due to 5 consecutive failed login attempts. Please wait 15 minutes before trying again.");
+        } else if (error != null) {
             model.addAttribute("errorMessage", "Invalid email or password. Please try again.");
         }
         if (logout != null) {
@@ -36,6 +42,7 @@ public class AuthController {
         if (registered != null) {
             model.addAttribute("successMessage", "Registration successful! You can now log in.");
         }
+        model.addAttribute("demoCredentialsEnabled", demoCredentialsEnabled);
         return "auth/login";
     }
 

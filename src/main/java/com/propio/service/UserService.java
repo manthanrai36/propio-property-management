@@ -74,6 +74,15 @@ public class UserService {
         return saved;
     }
 
+    private static final java.util.regex.Pattern PASSWORD_PATTERN =
+            java.util.regex.Pattern.compile("^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z]).{8,}$");
+
+    public static void validatePasswordStrength(String password) {
+        if (password == null || !PASSWORD_PATTERN.matcher(password).matches()) {
+            throw new IllegalArgumentException("Password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, and one number.");
+        }
+    }
+
     @Transactional
     public void changePassword(Long userId, ChangePasswordDto dto) {
         User user = getUserById(userId);
@@ -88,9 +97,7 @@ public class UserService {
             throw new IllegalArgumentException("New password and confirmation password do not match.");
         }
 
-        if (dto.getNewPassword().length() < 6) {
-            throw new IllegalArgumentException("New password must be at least 6 characters in length.");
-        }
+        validatePasswordStrength(dto.getNewPassword());
 
         // Hash new password with BCrypt
         user.setPassword(passwordEncoder.encode(dto.getNewPassword()));
@@ -125,6 +132,8 @@ public class UserService {
         if (!dto.getPassword().equals(dto.getConfirmPassword())) {
             throw new IllegalArgumentException("Passwords do not match.");
         }
+
+        validatePasswordStrength(dto.getPassword());
 
         User user = User.builder()
                 .fullName(dto.getFullName().trim())

@@ -2,10 +2,12 @@ package com.propio.config;
 
 import com.propio.service.CustomUserDetailsService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -16,9 +18,9 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 
 /**
- * Spring Security Configuration for Propio.
+ * Spring Security Configuration for Propio (Production Hardened).
  * Enforces role-based access control, BCrypt password hashing, session management,
- * custom styled login/registration, and remember-me authentication.
+ * brute-force lockout handling, remember-me token signing, and enterprise HTTP security headers.
  */
 @Configuration
 @EnableWebSecurity
@@ -27,6 +29,11 @@ import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 public class SecurityConfig {
 
     private final CustomUserDetailsService userDetailsService;
+    private final CustomAuthenticationFailureHandler authenticationFailureHandler;
+    private final CustomAuthenticationSuccessHandler authenticationSuccessHandler;
+
+    @Value("${propio.security.remember-me.key:${PROPIO_REMEMBER_ME_KEY:propio-production-secret-signing-key}}")
+    private String rememberMeKey;
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -55,6 +62,7 @@ public class SecurityConfig {
                     "/register",
                     "/error",
                     "/error/**",
+                    "/actuator/**",
                     "/css/**",
                     "/js/**",
                     "/images/**",
@@ -94,12 +102,12 @@ public class SecurityConfig {
                 .loginProcessingUrl("/login")
                 .usernameParameter("email")
                 .passwordParameter("password")
-                .defaultSuccessUrl("/dashboard", true)
-                .failureUrl("/login?error=true")
+                .successHandler(authenticationSuccessHandler)
+                .failureHandler(authenticationFailureHandler)
                 .permitAll()
             )
             .rememberMe(remember -> remember
-                .key("propio-remember-me-secret-key-2024")
+                .key(rememberMeKey)
                 .tokenValiditySeconds(86400 * 14) // 14 days
                 .userDetailsService(userDetailsService)
                 .rememberMeParameter("remember-me")
@@ -113,11 +121,19 @@ public class SecurityConfig {
                 .permitAll()
             )
             .csrf(csrf -> csrf
-                // Disable CSRF for H2 console frame access in dev
+                // Disable CSRF only for H2 console frame access in dev
                 .ignoringRequestMatchers("/h2-console/**")
             )
             .headers(headers -> headers
-                .frameOptions(frame -> frame.disable())
+                .frameOptions(frame -> frame.sameOrigin())
+                .contentTypeOptions(Customizer.withDefaults())
+                .httpStrictTransportSecurity(hsts -> hsts
+                    .includeSubDomains(true)
+                    .maxAgeInSeconds(31536000)
+                )
+                .contentSecurityPolicy(csp -> csp
+                    .policyDirectives("default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net; font-src 'self' https://fonts.gstatic.com https://cdn.jsdelivr.net data:; img-src 'self' data: https:; connect-src 'self'; frame-ancestors 'self'; form-action 'self';")
+                )
             );
 
         return http.build();

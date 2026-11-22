@@ -37,6 +37,10 @@ target/
 Thumbs.db
 
 uploads/
+cookies*.txt
+.env
+*.env
+
 
 run_app.ps1
 build.ps1
@@ -45,3 +49,7 @@ build.ps1
 *.ps1
 *.sh
 *.bat
+
+cookies*.txt
+*.log
+.env

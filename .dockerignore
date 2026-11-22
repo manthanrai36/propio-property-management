@@ -1,0 +1,32 @@
+# Build output & caches
+target/
+*.class
+*.jar
+*.war
+
+# Version control & IDE
+.git/
+.gitignore
+.idea/
+*.iml
+.vscode/
+.mvn/
+
+# Local data & logs
+*.log
+uploads/
+cookies*.txt
+.env
+*.env
+
+# Local helper scripts
+*.ps1
+*.sh
+*.bat
+
+# Documentation & artifacts
+brain/
+scratch/
+DEPLOYMENT.md
+README.md
+docs/
