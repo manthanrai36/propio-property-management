@@ -14,11 +14,11 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 @Slf4j
 public class GlobalExceptionHandler {
 
-    @ExceptionHandler(ResourceNotFoundException.class)
+    @ExceptionHandler({ResourceNotFoundException.class, org.springframework.web.servlet.resource.NoResourceFoundException.class})
     @ResponseStatus(HttpStatus.NOT_FOUND)
-    public String handleResourceNotFound(ResourceNotFoundException ex, Model model, HttpServletRequest request) {
+    public String handleResourceNotFound(Exception ex, Model model, HttpServletRequest request) {
         log.warn("Resource not found at {}: {}", request.getRequestURI(), ex.getMessage());
-        model.addAttribute("errorMessage", ex.getMessage());
+        model.addAttribute("errorMessage", "The requested page or resource '" + request.getRequestURI() + "' could not be found.");
         model.addAttribute("requestedUri", request.getRequestURI());
         model.addAttribute("status", 404);
         return "error/404";

@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -19,6 +20,9 @@ public interface TenantRepository extends JpaRepository<Tenant, Long> {
 
     @Query("SELECT t FROM Tenant t LEFT JOIN FETCH t.user WHERE t.id = :id")
     Optional<Tenant> findByIdWithUser(@Param("id") Long id);
+
+    @Query("SELECT DISTINCT t FROM Tenant t LEFT JOIN FETCH t.user WHERE t.id IN :ids")
+    List<Tenant> findAllByIdWithUser(@Param("ids") List<Long> ids);
 
     @Query(value = "SELECT t FROM Tenant t " +
                    "WHERE (:keyword IS NULL OR :keyword = '' " +

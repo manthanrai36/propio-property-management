@@ -20,6 +20,9 @@ public interface PropertyRepository extends JpaRepository<Property, Long> {
     @Query("SELECT p FROM Property p LEFT JOIN FETCH p.units WHERE p.id = :id")
     Optional<Property> findByIdWithUnits(@Param("id") Long id);
 
+    @Query("SELECT DISTINCT p FROM Property p LEFT JOIN FETCH p.units WHERE p.id IN :ids")
+    List<Property> findAllByIdWithUnits(@Param("ids") List<Long> ids);
+
     @Query("SELECT p FROM Property p WHERE " +
            "(:search IS NULL OR :search = '' OR " +
            "LOWER(p.name) LIKE LOWER(CONCAT('%', :search, '%')) OR " +

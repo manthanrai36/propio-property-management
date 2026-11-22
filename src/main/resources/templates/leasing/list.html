@@ -264,16 +264,16 @@
     </div>
   </div>
 
-</div>
+  <script>
+  function openTerminateModal(id, unit, tenant) {
+    document.getElementById('termUnit').innerText = unit;
+    document.getElementById('termTenant').innerText = tenant;
+    document.getElementById('termLeaseForm').action = '/leasing/' + id + '/terminate';
+    new bootstrap.Modal(document.getElementById('terminateLeaseModal')).show();
+  }
+  </script>
 
-<script>
-function openTerminateModal(id, unit, tenant) {
-  document.getElementById('termUnit').innerText = unit;
-  document.getElementById('termTenant').innerText = tenant;
-  document.getElementById('termLeaseForm').action = '/leasing/' + id + '/terminate';
-  new bootstrap.Modal(document.getElementById('terminateLeaseModal')).show();
-}
-</script>
+</div>
 
 </body>
 </html>

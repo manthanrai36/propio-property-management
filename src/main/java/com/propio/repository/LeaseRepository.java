@@ -32,6 +32,17 @@ public interface LeaseRepository extends JpaRepository<Lease, Long> {
            "ORDER BY l.endDate DESC")
     List<Lease> findActiveLeasesByTenantIdWithDetails(@Param("tenantId") Long tenantId);
 
+    @Query("SELECT l FROM Lease l " +
+           "LEFT JOIN FETCH l.unit u " +
+           "LEFT JOIN FETCH u.property p " +
+           "JOIN FETCH l.tenant t " +
+           "WHERE t.id IN :tenantIds AND l.active = true " +
+           "ORDER BY l.endDate DESC")
+    List<Lease> findActiveLeasesByTenantIdInWithDetails(@Param("tenantIds") List<Long> tenantIds);
+
+    @Query("SELECT DISTINCT l.tenant.id FROM Lease l WHERE l.tenant.id IN :tenantIds")
+    List<Long> findTenantIdsWithAnyLease(@Param("tenantIds") List<Long> tenantIds);
+
     default Optional<Lease> findActiveLeaseByTenantIdWithDetails(Long tenantId) {
         List<Lease> activeLeases = findActiveLeasesByTenantIdWithDetails(tenantId);
         return activeLeases.isEmpty() ? Optional.empty() : Optional.of(activeLeases.get(0));

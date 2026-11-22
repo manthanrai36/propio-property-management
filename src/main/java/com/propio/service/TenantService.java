@@ -45,8 +45,34 @@ public class TenantService {
     public Page<TenantSummaryDto> getTenantsPaged(String keyword, String filter, Pageable pageable) {
         Page<Tenant> page = tenantRepository.searchTenants(keyword != null ? keyword.trim() : "", pageable);
 
+        List<Long> tenantIds = page.getContent().stream()
+                .map(Tenant::getId)
+                .collect(Collectors.toList());
+
+        if (tenantIds.isEmpty()) {
+            return new PageImpl<>(Collections.emptyList(), pageable, 0);
+        }
+
+        Map<Long, Tenant> tenantMap = tenantRepository.findAllByIdWithUser(tenantIds).stream()
+                .collect(Collectors.toMap(Tenant::getId, t -> t));
+
+        Map<Long, List<Lease>> activeLeasesByTenant = leaseRepository.findActiveLeasesByTenantIdInWithDetails(tenantIds).stream()
+                .collect(Collectors.groupingBy(l -> l.getTenant().getId()));
+
+        Set<Long> tenantsWithAnyLease = new HashSet<>(leaseRepository.findTenantIdsWithAnyLease(tenantIds));
+
+        Map<Long, List<Payment>> paymentsByTenant = paymentRepository.findByTenantIdIn(tenantIds).stream()
+                .collect(Collectors.groupingBy(p -> p.getLease().getTenant().getId()));
+
         List<TenantSummaryDto> dtos = page.getContent().stream()
-                .map(this::mapToSummaryDto)
+                .map(t -> {
+                    Tenant hydratedTenant = tenantMap.getOrDefault(t.getId(), t);
+                    List<Lease> activeLeases = activeLeasesByTenant.getOrDefault(t.getId(), Collections.emptyList());
+                    Lease activeLease = activeLeases.isEmpty() ? null : activeLeases.get(0);
+                    boolean hasEverHadLease = tenantsWithAnyLease.contains(t.getId());
+                    List<Payment> payments = paymentsByTenant.getOrDefault(t.getId(), Collections.emptyList());
+                    return mapToSummaryDtoBatched(hydratedTenant, activeLease, hasEverHadLease, payments);
+                })
                 .filter(dto -> matchesFilter(dto, filter))
                 .collect(Collectors.toList());
 
@@ -71,7 +97,7 @@ public class TenantService {
 
     @Transactional(readOnly = true)
     public Tenant getTenantById(Long id) {
-        return tenantRepository.findById(id)
+        return tenantRepository.findByIdWithUser(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Tenant not found with ID: " + id));
     }
 
@@ -172,7 +198,7 @@ public class TenantService {
 
         if (activeLeases > 0) {
             throw new TenantDeletionBlockedException("Cannot delete tenant '" + tenant.getFullName() +
-                    "' because they currently have " + activeLeases + " active lease agreement(s). Terminate active leases first.");
+                    "' because they currently have " + activeLeases + " active lease agreement(s). Please terminate active leases or archive/move-out the resident first.");
         }
 
         User user = tenant.getUser();
@@ -186,7 +212,12 @@ public class TenantService {
     public TenantSummaryDto mapToSummaryDto(Tenant tenant) {
         List<Lease> activeLeases = leaseRepository.findActiveLeasesByTenantIdWithDetails(tenant.getId());
         Lease activeLease = activeLeases.isEmpty() ? null : activeLeases.get(0);
+        boolean hasEverHadLease = !leaseRepository.findByTenantId(tenant.getId()).isEmpty();
         List<Payment> payments = paymentRepository.findByLeaseTenantId(tenant.getId());
+        return mapToSummaryDtoBatched(tenant, activeLease, hasEverHadLease, payments);
+    }
+
+    private TenantSummaryDto mapToSummaryDtoBatched(Tenant tenant, Lease activeLease, boolean hasEverHadLease, List<Payment> payments) {
         if (payments == null) {
             payments = Collections.emptyList();
         }
@@ -210,12 +241,8 @@ public class TenantService {
             } else {
                 leaseStatus = "Active";
             }
-        } else {
-            // Check if they ever had a lease
-            List<Lease> allLeases = leaseRepository.findByTenantId(tenant.getId());
-            if (allLeases != null && !allLeases.isEmpty()) {
-                leaseStatus = "Moved Out";
-            }
+        } else if (hasEverHadLease) {
+            leaseStatus = "Moved Out";
         }
 
         BigDecimal balanceDue = payments.stream()

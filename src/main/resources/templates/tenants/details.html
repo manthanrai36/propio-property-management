@@ -277,7 +277,7 @@
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
         <div class="modal-body py-3">
-          <p class="fs-8 text-muted mb-0">Are you sure you want to delete <strong id="delName" class="text-main"></strong>? This will permanently delete the tenant profile and user account.</p>
+          <p class="fs-8 text-muted mb-0">Are you sure you want to delete <strong id="delName" class="text-main"></strong>? This will permanently delete the tenant profile and user account. Tenants with active lease agreements cannot be removed; please terminate active leases or archive/move-out first.</p>
         </div>
         <div class="modal-footer border-0 pt-0">
           <button type="button" class="btn-propio-secondary py-2 px-3 fs-8" data-bs-dismiss="modal">Cancel</button>
@@ -289,15 +289,15 @@
     </div>
   </div>
 
-</div>
+  <script>
+  function openDeleteModal(id, name) {
+    document.getElementById('delName').innerText = name;
+    document.getElementById('delForm').action = '/tenants/' + id + '/delete';
+    new bootstrap.Modal(document.getElementById('deleteTenantModal')).show();
+  }
+  </script>
 
-<script>
-function openDeleteModal(id, name) {
-  document.getElementById('delName').innerText = name;
-  document.getElementById('delForm').action = '/tenants/' + id + '/delete';
-  new bootstrap.Modal(document.getElementById('deleteTenantModal')).show();
-}
-</script>
+</div>
 
 </body>
 </html>

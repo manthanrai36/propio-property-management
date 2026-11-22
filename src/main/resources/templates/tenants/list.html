@@ -261,26 +261,26 @@
     </div>
   </div>
 
-</div>
-
-<!-- Inline helper script for copy password & modal setup -->
-<script>
-function copyPassword() {
-  const el = document.getElementById('tempPassText');
-  if (el) {
-    navigator.clipboard.writeText(el.innerText).then(() => {
-      alert('Temporary password copied to clipboard: ' + el.innerText);
-    });
+  <!-- Inline helper script for copy password & modal setup -->
+  <script>
+  function copyPassword() {
+    const el = document.getElementById('tempPassText');
+    if (el) {
+      navigator.clipboard.writeText(el.innerText).then(() => {
+        alert('Temporary password copied to clipboard: ' + el.innerText);
+      });
+    }
   }
-}
 
-function openDeleteTenantModal(id, name) {
-  document.getElementById('deleteTenantName').innerText = name;
-  document.getElementById('deleteTenantForm').action = '/tenants/' + id + '/delete';
-  const modal = new bootstrap.Modal(document.getElementById('deleteTenantModal'));
-  modal.show();
-}
-</script>
+  function openDeleteTenantModal(id, name) {
+    document.getElementById('deleteTenantName').innerText = name;
+    document.getElementById('deleteTenantForm').action = '/tenants/' + id + '/delete';
+    const modal = new bootstrap.Modal(document.getElementById('deleteTenantModal'));
+    modal.show();
+  }
+  </script>
+
+</div>
 
 </body>
 </html>

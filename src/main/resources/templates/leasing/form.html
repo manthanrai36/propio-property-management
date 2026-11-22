@@ -178,37 +178,38 @@
       </div>
     </div>
   </div>
-</div>
 
-<script>
-function onUnitSelected(select) {
-  const opt = select.options[select.selectedIndex];
-  if (opt && opt.value) {
-    const rent = opt.getAttribute('data-rent') || '0';
-    const deposit = opt.getAttribute('data-deposit') || rent;
-    const prop = opt.getAttribute('data-prop') || '';
+  <script>
+  function onUnitSelected(select) {
+    const opt = select.options[select.selectedIndex];
+    if (opt && opt.value) {
+      const rent = opt.getAttribute('data-rent') || '0';
+      const deposit = opt.getAttribute('data-deposit') || rent;
+      const prop = opt.getAttribute('data-prop') || '';
 
-    const rentInput = document.getElementById('monthlyRent');
-    const depInput = document.getElementById('securityDeposit');
+      const rentInput = document.getElementById('monthlyRent');
+      const depInput = document.getElementById('securityDeposit');
 
-    if (rentInput && (!rentInput.value || rentInput.value === '0')) {
-      rentInput.value = rent;
+      if (rentInput && (!rentInput.value || rentInput.value === '0')) {
+        rentInput.value = rent;
+      }
+      if (depInput && (!depInput.value || depInput.value === '0')) {
+        depInput.value = deposit;
+      }
+
+      const summaryProp = document.getElementById('summaryPropUnit');
+      if (summaryProp) summaryProp.innerText = opt.text;
+
+      const summaryRent = document.getElementById('summaryRent');
+      if (summaryRent) summaryRent.innerText = '$' + parseFloat(rent).toFixed(2);
+
+      const summaryDep = document.getElementById('summaryDeposit');
+      if (summaryDep) summaryDep.innerText = '$' + parseFloat(deposit).toFixed(2);
     }
-    if (depInput && (!depInput.value || depInput.value === '0')) {
-      depInput.value = deposit;
-    }
-
-    const summaryProp = document.getElementById('summaryPropUnit');
-    if (summaryProp) summaryProp.innerText = opt.text;
-
-    const summaryRent = document.getElementById('summaryRent');
-    if (summaryRent) summaryRent.innerText = '$' + parseFloat(rent).toFixed(2);
-
-    const summaryDep = document.getElementById('summaryDeposit');
-    if (summaryDep) summaryDep.innerText = '$' + parseFloat(deposit).toFixed(2);
   }
-}
-</script>
+  </script>
+
+</div>
 
 </body>
 </html>

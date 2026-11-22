@@ -13,6 +13,7 @@ import com.propio.repository.PropertyRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -21,7 +22,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -73,7 +77,19 @@ public class PropertyService {
                 search, propType, status, unitStatus, pageable
         );
 
-        return propertyPage.map(this::mapToCardDto);
+        List<Long> propIds = propertyPage.getContent().stream()
+                .map(Property::getId)
+                .collect(Collectors.toList());
+
+        Map<Long, Property> propertyMap = propIds.isEmpty() ? Collections.emptyMap() :
+                propertyRepository.findAllByIdWithUnits(propIds).stream()
+                        .collect(Collectors.toMap(Property::getId, p -> p));
+
+        List<PropertyCardDto> cardDtos = propertyPage.getContent().stream()
+                .map(p -> mapToCardDto(propertyMap.getOrDefault(p.getId(), p)))
+                .collect(Collectors.toList());
+
+        return new PageImpl<>(cardDtos, pageable, propertyPage.getTotalElements());
     }
 
     @Transactional(readOnly = true)
