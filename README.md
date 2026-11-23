@@ -129,16 +129,31 @@ $env:DB_PASSWORD = "your_mysql_password"
 .\build.ps1
 ```
 
-### Step 4: Run the Application
+### Step 4: Run the Application (Explicit Profile Required)
+Propio enforces a **safe default**: by default, no profile is active and demo accounts are **never** seeded. To start locally against MySQL with realistic test data, activate the `local` profile explicitly:
+
 ```powershell
+# Option A: Maven Spring Boot Plugin (Recommended)
+.\mvnw.cmd spring-boot:run "-Dspring-boot.run.profiles=local"
+
+# On Linux / macOS:
+./mvnw spring-boot:run -Dspring-boot.run.profiles=local
+
+# Option B: Run with Helper Script
+$env:SPRING_PROFILES_ACTIVE = "local"
 .\run_app.ps1
+
+# Option C: Packaged JAR
+java -jar target/propio-1.0.0-SNAPSHOT.jar --spring.profiles.active=local
 ```
 The application will start on `http://localhost:8080`.
 
-### Step 5: Default Test Credentials (Local Profile)
-When running with the `local` profile (`propio.seed.enabled=true`):
-- **Admin**: `admin@propio.com` / `admin123`
+### Step 5: Default Test Credentials (Local & Dev Profiles Only)
+Demo accounts and mock real estate entities are **strictly isolated** to the `local` and `dev` profiles (`propio.seed.enabled=true`):
+- **Admin (Manager)**: `admin@propio.com` / `admin123`
 - **Tenant**: `tenant@propio.com` / `tenant123`
+
+In production or when running with default configuration, demo accounts are never seeded.
 
 ---
 
@@ -146,7 +161,7 @@ When running with the `local` profile (`propio.seed.enabled=true`):
 
 | Variable | Description | Default |
 | :--- | :--- | :--- |
-| `SPRING_PROFILES_ACTIVE` | Active Spring profile (`local`, `prod`, `dev`) | `dev` |
+| `SPRING_PROFILES_ACTIVE` | Active Spring profile (`local`, `prod`, `dev`) | *None (Safe default: no demo accounts seeded)* |
 | `PORT` | Web server listening port | `8080` |
 | `DB_URL` | JDBC connection URL for MySQL | `jdbc:mysql://localhost:3306/propio_db` |
 | `DB_USERNAME` | Database username | `root` |

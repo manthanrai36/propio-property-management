@@ -1,134 +1,168 @@
-# Production Deployment Guide: Render & Railway with MySQL
+# Production Deployment Guide: Railway & Render with MySQL
 
-This guide walks you through deploying **Propio** as a containerized Spring Boot service with a managed **MySQL 8** database on **Railway** or **Render**.
+This guide walks you through deploying **Propio** as a containerized Spring Boot 3 enterprise application with a managed **MySQL 8** database on **Railway** or **Render**.
 
 ---
 
 ## 1. Architecture Overview
 
 ```
- [ Client Browser ]
-        │ HTTPS (SSL Termination)
-        ▼
- [ Reverse Proxy (Render / Railway) ]
-        │ Native Header Forwarding
-        ▼
- [ Propio Spring Boot Container (port 8080) ]
-        │ HikariCP Connection Pool (SSL enabled)
-        ▼
+ [ Client Browser (HTTPS) ]
+         │
+         ▼
+ [ Reverse Proxy / Cloud Load Balancer (SSL Termination) ]
+         │ (Native Header Forwarding)
+         ▼
+ [ Propio Spring Boot Container (Port: ${PORT}) ]
+         │ (HikariCP Connection Pool with SSL)
+         ▼
  [ Managed MySQL 8 Database (propio_db) ]
 ```
 
-- **Base Profile**: `prod` (`application-prod.properties`)
-- **Container**: Multi-stage Docker image running Eclipse Temurin 17 JRE as an unprivileged user (`spring`).
-- **Healthcheck**: Public `/actuator/health` endpoint returning JSON DB status and disk headroom.
-- **Security**: Zero stack trace exposure, CSP/HSTS/Frame security headers, encrypted cookies, login rate limiting.
+- **Active Profile**: `prod` (`application-prod.properties`), activated strictly through the `SPRING_PROFILES_ACTIVE` environment variable.
+- **Container**: Multi-stage Docker image using `maven:3.9-eclipse-temurin-17` for building and `eclipse-temurin:17-jre-jammy` minimal JRE for runtime.
+- **Container Security**: Runs as an unprivileged, non-root system user (`spring:spring`, UID 1001).
+- **JVM Constraints**: Tuned for 512 MB memory limit (`-XX:+UseContainerSupport -XX:MaxRAMPercentage=70.0 -XX:+UseSerialGC -Xss512k -XX:+ExitOnOutOfMemoryError`).
+- **Healthcheck**: Public `/actuator/health` endpoint returning database readiness and disk space.
+- **Security Baseline**: CSP, HSTS, X-Frame-Options (`SAMEORIGIN`), X-Content-Type-Options (`nosniff`), encrypted `HttpOnly; Secure; SameSite=Lax` cookies, and brute-force lockout protection (5 failed attempts).
 
 ---
 
-## 2. Environment Variables Reference
+## 2. Complete Environment Variables Reference
 
-Configure the following environment variables in your cloud provider's dashboard:
+Every parameter in `application-prod.properties` is configured via environment variables. Configure these in your cloud provider's environment variables dashboard:
 
-| Variable | Description | Example / Recommended Value | Required |
-| :--- | :--- | :--- | :---: |
-| `SPRING_PROFILES_ACTIVE` | Spring Boot active profile | `prod` | Yes |
-| `PORT` | HTTP server port | `8080` (automatically set by Render/Railway) | Yes |
-| `DB_URL` | JDBC MySQL connection URL | `jdbc:mysql://${MYSQLHOST}:${MYSQLPORT}/${MYSQLDATABASE}?useSSL=true&allowPublicKeyRetrieval=true&serverTimezone=UTC` | Yes |
-| `DB_USERNAME` | MySQL database user | `${MYSQLUSER}` (e.g. `root`) | Yes |
-| `DB_PASSWORD` | MySQL database password | `${MYSQLPASSWORD}` | Yes |
-| `JPA_DDL_AUTO` | Hibernate schema strategy | `update` (initial) or `validate` (strict) | Yes |
-| `PROPIO_ADMIN_EMAIL` | Email for initial administrator bootstrap | `admin@yourdomain.com` | Yes |
-| `PROPIO_ADMIN_PASSWORD` | Strong initial admin password (min 8 chars, 1 upper, 1 lower, 1 digit) | `<CHOOSE-A-STRONG-PASSWORD>` | Yes |
-| `PROPIO_ADMIN_NAME` | Initial administrator full name | `Property Manager` | No |
-| `PROPIO_SEED_ENABLED` | Populate mock tenants/properties | `false` (Production) / `true` (Staging) | No |
-| `PROPIO_REMEMBER_ME_KEY`| Secret signing key for Remember-Me tokens | High-entropy 64-char random hex string | Yes |
-| `PROPIO_MAIL_ENABLED` | Enable live SMTP email dispatch | `true` (Production) / `false` (Log-only) | No |
-| `SMTP_HOST` | Outbound mail server hostname | `smtp.sendgrid.net` or `smtp.mailgun.org` | When mail on |
-| `SMTP_PORT` | Outbound mail server port | `587` | When mail on |
-| `SMTP_USERNAME` | Outbound mail username | `apikey` | When mail on |
-| `SMTP_PASSWORD` | Outbound mail password / API key | Secret API token | When mail on |
-| `PROPIO_MAIL_FROM` | Sender email address | `noreply@yourdomain.com` | When mail on |
+### Core Application & Server
+| Variable | Description | Required | Default / Example Value |
+| :--- | :--- | :---: | :--- |
+| `SPRING_PROFILES_ACTIVE` | Active Spring profile | **Yes** | `prod` |
+| `PORT` | HTTP server port | **Yes** | `8080` (automatically set by Railway/Render) |
+| `PROPIO_UPLOAD_DIR` | Directory path for uploaded photos/documents | No | `/app/uploads` |
+
+### Database & Persistence (MySQL 8)
+| Variable | Description | Required | Default / Example Value |
+| :--- | :--- | :---: | :--- |
+| `DB_URL` | MySQL JDBC Connection URL | **Yes** | `jdbc:mysql://${MYSQLHOST}:${MYSQLPORT}/${MYSQLDATABASE}?useSSL=true&allowPublicKeyRetrieval=true&serverTimezone=UTC` |
+| `DB_USERNAME` | Database username | **Yes** | `${MYSQLUSER}` (from managed database) |
+| `DB_PASSWORD` | Database password | **Yes** | `${MYSQLPASSWORD}` (from managed database) |
+| `JPA_DDL_AUTO` | Hibernate schema creation mode | **Yes** | `update` (first run to create tables) then `validate` |
+| `DB_POOL_MAX` | HikariCP maximum connection pool size | No | `15` |
+| `DB_POOL_MIN` | HikariCP minimum idle connections | No | `3` |
+
+### Administrator Bootstrap & Security
+| Variable | Description | Required | Default / Example Value |
+| :--- | :--- | :---: | :--- |
+| `PROPIO_ADMIN_EMAIL` | Initial administrator login email | **Yes** | `<SET-INITIAL-ADMIN-EMAIL>` |
+| `PROPIO_ADMIN_PASSWORD` | Initial administrator password (min 8 chars, mixed case + digit) | **Yes** | `<SET-STRONG-ADMIN-PASSWORD>` |
+| `PROPIO_ADMIN_NAME` | Initial administrator full name | No | `System Administrator` |
+| `PROPIO_SEED_ENABLED` | Populate mock tenants/properties (Disabled in prod) | No | `false` |
+| `PROPIO_REMEMBER_ME_KEY` | Secret signing key for remember-me tokens | **Yes** | `<GENERATE-RANDOM-64-HEX-STRING>` |
+
+### Rent Engine & Billing Scheduler
+| Variable | Description | Required | Default / Example Value |
+| :--- | :--- | :---: | :--- |
+| `PROPIO_BILLING_ENABLED` | Enable automated recurring rent engine | No | `true` |
+| `PROPIO_LATE_FEE_PCT` | Late fee percentage assessed on overdue rent | No | `5.0` |
+
+### Outbound Email (Spring Mail via SMTP)
+| Variable | Description | Required | Default / Example Value |
+| :--- | :--- | :---: | :--- |
+| `PROPIO_MAIL_ENABLED` | Enable live SMTP email dispatch (`false` = safe log fallback) | No | `false` (or `true` with SMTP credentials) |
+| `PROPIO_MAIL_FROM` | Outbound sender email address | When mail on | `<SET-SENDER-EMAIL>` |
+| `PROPIO_MAIL_FROM_NAME` | Outbound sender display name | No | `Propio Property Management` |
+| `SMTP_HOST` | Outbound mail server hostname | When mail on | `<SET-SMTP-HOST>` |
+| `SMTP_PORT` | Outbound mail server port | When mail on | `587` |
+| `SMTP_USERNAME` | SMTP authentication username | When mail on | `<SET-SMTP-USERNAME>` |
+| `SMTP_PASSWORD` | SMTP authentication password or API key | When mail on | `<SET-SMTP-PASSWORD>` |
+| `SMTP_AUTH` | Require SMTP authentication | No | `true` |
+| `SMTP_STARTTLS` | Require STARTTLS encryption | No | `true` |
 
 ---
 
-## 3. Deployment on Railway
+## 3. Step-by-Step Deployment on Railway
 
-### Step 1: Provision Managed MySQL
-1. Log in to [Railway](https://railway.app).
-2. Click **New Project** → **Provision MySQL**.
-3. Once the database is online, navigate to the **Variables** tab to view your credentials:
+### Step 1: Create Railway Project and Provision MySQL
+1. Log in to your [Railway Dashboard](https://railway.app).
+2. Click **New Project** $\rightarrow$ **Provision MySQL**.
+3. Railway starts a dedicated MySQL 8 instance. Click on the MySQL card and go to the **Variables** tab to observe Railway's auto-generated database connection variables:
    - `MYSQLHOST`
    - `MYSQLPORT`
    - `MYSQLUSER`
    - `MYSQLPASSWORD`
    - `MYSQLDATABASE`
 
-### Step 2: Deploy Propio Service
-1. In the same project, click **New** → **GitHub Repo** → select your `propio` repository.
-2. Railway automatically detects the `Dockerfile` at root.
-3. In the service **Settings**:
-   - Set **Healthcheck Path** to `/actuator/health`.
-   - Set **Healthcheck Timeout** to `100`.
-4. In the service **Variables** tab, add:
-   ```properties
-   SPRING_PROFILES_ACTIVE=prod
-   DB_URL=jdbc:mysql://${{MySQL.MYSQLHOST}}:${{MySQL.MYSQLPORT}}/${{MySQL.MYSQLDATABASE}}?useSSL=true&allowPublicKeyRetrieval=true&serverTimezone=UTC
-   DB_USERNAME=${{MySQL.MYSQLUSER}}
-   DB_PASSWORD=${{MySQL.MYSQLPASSWORD}}
-   JPA_DDL_AUTO=update
-   PROPIO_SEED_ENABLED=false
-   PROPIO_ADMIN_EMAIL=admin@yourdomain.com
-   PROPIO_ADMIN_PASSWORD=<CHOOSE-A-STRONG-PASSWORD>
-   PROPIO_ADMIN_NAME=Head Administrator
-   PROPIO_REMEMBER_ME_KEY=a7d8e9f2b1c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9
-   ```
-5. Click **Deploy**. Railway will build the multi-stage Docker image and start the service.
-6. Under **Settings** → **Networking**, click **Generate Domain** (e.g. `propio-production.up.railway.app`).
+### Step 2: Deploy the Propio Service from Git
+1. In the same Railway project canvas, click **Create** $\rightarrow$ **GitHub Repo**.
+2. Select your `propio` repository.
+3. Railway automatically detects the root `Dockerfile` and configures Docker build mode.
 
----
-
-## 4. Deployment on Render
-
-### Step 1: Create MySQL Database
-1. In Render, you can attach an external managed MySQL database (such as PlanetScale, Aiven, or Railway MySQL) or provision a containerized MySQL service.
-2. Note your connection details: `host`, `port`, `database`, `user`, and `password`.
-
-### Step 2: Create Web Service
-1. In the Render Dashboard, click **New +** → **Web Service**.
-2. Connect your Git repository.
-3. Choose:
-   - **Environment**: `Docker`
-   - **Region**: Select closest to your database.
-   - **Branch**: `main`
-   - **Plan**: Starter or Standard.
-4. Under **Advanced** → **Health Check Path**, enter:
-   ```
+### Step 3: Configure Service Healthcheck
+1. Click on the newly added Propio service card $\rightarrow$ open **Settings**.
+2. Scroll to **Healthcheck Path** and enter:
+   ```text
    /actuator/health
    ```
-5. Under **Environment Variables**, define:
-   ```properties
-   SPRING_PROFILES_ACTIVE=prod
-   PORT=8080
-   DB_URL=jdbc:mysql://<MYSQL_HOST>:<MYSQL_PORT>/<MYSQL_DATABASE>?useSSL=true&allowPublicKeyRetrieval=true&serverTimezone=UTC
-   DB_USERNAME=<MYSQL_USER>
-   DB_PASSWORD=<MYSQL_PASSWORD>
-   JPA_DDL_AUTO=update
-   PROPIO_SEED_ENABLED=false
-   PROPIO_ADMIN_EMAIL=admin@yourdomain.com
-   PROPIO_ADMIN_PASSWORD=<CHOOSE-A-STRONG-PASSWORD>
-   PROPIO_ADMIN_NAME=Enterprise Admin
-   PROPIO_REMEMBER_ME_KEY=f4c8b2a1e9d3c5f7a0b2c4d6e8f1a3b5c7d9e0f2a4b6c8d0e2f4a6b8c0d2e4f6
-   ```
-6. Click **Create Web Service**. Render builds the image and conducts the health check.
+3. Set **Healthcheck Timeout** to `120` seconds (allowing Spring Boot and Hibernate to initialize).
+
+### Step 4: Configure Environment Variables
+1. Navigate to the **Variables** tab of the Propio service.
+2. Click **Raw Editor** and paste the following configuration (Railway automatically resolves `${{MySQL...}}` references to your MySQL service):
+
+```properties
+SPRING_PROFILES_ACTIVE=prod
+DB_URL=jdbc:mysql://${{MySQL.MYSQLHOST}}:${{MySQL.MYSQLPORT}}/${{MySQL.MYSQLDATABASE}}?useSSL=true&allowPublicKeyRetrieval=true&serverTimezone=UTC
+DB_USERNAME=${{MySQL.MYSQLUSER}}
+DB_PASSWORD=${{MySQL.MYSQLPASSWORD}}
+JPA_DDL_AUTO=update
+PROPIO_SEED_ENABLED=false
+PROPIO_ADMIN_EMAIL=<SET-INITIAL-ADMIN-EMAIL>
+PROPIO_ADMIN_PASSWORD=<SET-STRONG-ADMIN-PASSWORD>
+PROPIO_ADMIN_NAME=System Administrator
+PROPIO_REMEMBER_ME_KEY=<GENERATE-RANDOM-64-HEX-STRING>
+PROPIO_MAIL_ENABLED=false
+```
+
+3. Click **Save Changes**.
+
+### Step 5: Deploy & Generate Public Domain
+1. Railway automatically triggers a build using the multi-stage `Dockerfile`.
+2. Under **Settings** $\rightarrow$ **Networking**, click **Generate Domain** to obtain your public HTTPS URL (e.g., `https://propio-production.up.railway.app`).
+3. Once the build completes, Railway runs the container and probes `/actuator/health`. When it returns `HTTP 200 OK`, the service transitions to **Active**.
 
 ---
 
-## 5. First Boot & Verification
+## 4. Step-by-Step Deployment on Render
 
-1. **Verify Healthcheck**:
+### Step 1: Provision MySQL Database
+1. Provision a managed MySQL 8 database instance (via Render PostgreSQL/MySQL add-on or external managed provider).
+2. Note your host, port, database name, username, and password.
+
+### Step 2: Create Web Service
+1. In the Render Dashboard, click **New +** $\rightarrow$ **Web Service**.
+2. Connect your Git repository.
+3. Select **Environment**: `Docker`.
+4. Under **Advanced** $\rightarrow$ **Health Check Path**, enter `/actuator/health`.
+5. Under **Environment Variables**, define:
+   - `SPRING_PROFILES_ACTIVE`: `prod`
+   - `DB_URL`: `jdbc:mysql://<DB_HOST>:<DB_PORT>/<DB_NAME>?useSSL=true&allowPublicKeyRetrieval=true&serverTimezone=UTC`
+   - `DB_USERNAME`: `<DB_USERNAME>`
+   - `DB_PASSWORD`: `<DB_PASSWORD>`
+   - `JPA_DDL_AUTO`: `update`
+   - `PROPIO_SEED_ENABLED`: `false`
+   - `PROPIO_ADMIN_EMAIL`: `<SET-INITIAL-ADMIN-EMAIL>`
+   - `PROPIO_ADMIN_PASSWORD`: `<SET-STRONG-ADMIN-PASSWORD>`
+   - `PROPIO_ADMIN_NAME`: `System Administrator`
+   - `PROPIO_REMEMBER_ME_KEY`: `<GENERATE-RANDOM-64-HEX-STRING>`
+   - `PROPIO_MAIL_ENABLED`: `false`
+6. Click **Create Web Service**.
+
+---
+
+## 5. Post-Deployment Verification
+
+1. **Verify Health Endpoint**:
    ```bash
-   curl -i https://your-propio-domain/actuator/health
+   curl -i https://<YOUR-APP-DOMAIN>/actuator/health
    ```
    Expected response (`HTTP/1.1 200 OK`):
    ```json
@@ -148,18 +182,12 @@ Configure the following environment variables in your cloud provider's dashboard
      }
    }
    ```
-2. **Access Administrator Dashboard**:
-   - Navigate to `https://your-propio-domain/login`.
-   - Notice that Quick Demo Credentials are **not visible** in production.
-   - Log in using your configured `PROPIO_ADMIN_EMAIL` and `PROPIO_ADMIN_PASSWORD`.
-   - Access is granted directly to `/dashboard`.
 
----
+2. **Verify Admin Authentication**:
+   - Open `https://<YOUR-APP-DOMAIN>/login` in your browser.
+   - Confirm the Quick Demo Credentials card is **not present**.
+   - Sign in using your `PROPIO_ADMIN_EMAIL` and `PROPIO_ADMIN_PASSWORD`.
+   - Access to `/dashboard` is granted with full administrative privileges.
 
-## 6. Backup & Maintenance
-
-1. **Database Backups**: Schedule automated daily MySQL dumps via cloud backup or CLI:
-   ```bash
-   mysqldump -h <HOST> -u <USER> -p<PASS> propio_db --single-transaction --quick > backup_$(date +%F).sql
-   ```
-2. **File Storage**: In clustered production environments, set `PROPIO_UPLOAD_DIR` to a shared persistent volume or mount AWS S3 / Cloudflare R2 bucket.
+3. **Schema Lockdown (Post-Initialization)**:
+   - Once all tables have been verified on initial boot, update `JPA_DDL_AUTO=validate` in the environment variables to lock the production database schema against accidental modifications.

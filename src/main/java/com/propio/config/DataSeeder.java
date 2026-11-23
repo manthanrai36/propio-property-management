@@ -6,6 +6,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.core.env.Environment;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -13,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -34,6 +36,7 @@ public class DataSeeder implements CommandLineRunner {
     private final MaintenanceRequestRepository maintenanceRequestRepository;
     private final DocumentRepository documentRepository;
     private final PasswordEncoder passwordEncoder;
+    private final Environment environment;
 
     @Value("${propio.seed.enabled:false}")
     private boolean seedEnabled;
@@ -47,15 +50,25 @@ public class DataSeeder implements CommandLineRunner {
     @Value("${propio.admin.name:${PROPIO_ADMIN_NAME:System Administrator}}")
     private String configuredAdminName;
 
+    private boolean isDevOrLocalProfileActive() {
+        if (environment == null) {
+            return false;
+        }
+        return Arrays.stream(environment.getActiveProfiles())
+                .anyMatch(p -> "dev".equalsIgnoreCase(p) || "local".equalsIgnoreCase(p));
+    }
+
     @Override
     @Transactional
     public void run(String... args) {
         // 1. Bootstrap First Admin from Environment Variables / Configuration
         ensureAdminUserExists();
 
-        // 2. Check if demo seeding is enabled (Opt-in)
-        if (!seedEnabled) {
-            log.info("[DataSeeder] Demo data seeding is disabled (propio.seed.enabled=false). Skipping demo entity creation.");
+        // 2. Demo accounts and entities are ONLY created if 'dev' or 'local' profile is active AND seed is enabled
+        boolean devOrLocal = isDevOrLocalProfileActive();
+        if (!devOrLocal || !seedEnabled) {
+            log.info("[DataSeeder] Demo accounts seeding is disabled (active profiles: {}; propio.seed.enabled={}). Demo accounts are only created when 'dev' or 'local' profile is explicitly active and seed is enabled.",
+                    (environment != null ? Arrays.toString(environment.getActiveProfiles()) : "[]"), seedEnabled);
             return;
         }
 
@@ -64,7 +77,7 @@ public class DataSeeder implements CommandLineRunner {
             return;
         }
 
-        log.info("[DataSeeder] propio.seed.enabled=true. Seeding realistic sample data for Propio SaaS (14 Properties, 56 Units, Tenants & Leases)...");
+        log.info("[DataSeeder] Active profile is dev/local and propio.seed.enabled=true. Seeding realistic sample data for Propio SaaS (14 Properties, 56 Units, Tenants & Leases)...");
 
         // Create Demo Tenants
 
@@ -630,6 +643,16 @@ public class DataSeeder implements CommandLineRunner {
                 .anyMatch(u -> u.getRole() == Role.ROLE_ADMIN);
 
         if (!adminExists) {
+            boolean devOrLocal = isDevOrLocalProfileActive();
+            boolean hasConfiguredAdmin = (configuredAdminEmail != null && !configuredAdminEmail.isBlank())
+                    && (configuredAdminPassword != null && !configuredAdminPassword.isBlank());
+
+            // Never create default demo admin123 unless dev or local profile is active
+            if (!hasConfiguredAdmin && !devOrLocal) {
+                log.warn("[DataSeeder] No administrator credentials configured via PROPIO_ADMIN_EMAIL / PROPIO_ADMIN_PASSWORD and neither 'dev' nor 'local' profile is active. Skipping default admin account creation for safety.");
+                return;
+            }
+
             String adminEmail = (configuredAdminEmail != null && !configuredAdminEmail.isBlank())
                     ? configuredAdminEmail.trim().toLowerCase()
                     : "admin@propio.com";
