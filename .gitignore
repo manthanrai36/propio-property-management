@@ -49,6 +49,7 @@ build.ps1
 *.ps1
 *.sh
 *.bat
+mvn.cmd
 
 cookies*.txt
 *.log

@@ -41,7 +41,7 @@ if not exist "%WRAPPER_JAR%" (
     powershell -Command "[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; $webClient = New-Object System.Net.WebClient; $webClient.DownloadFile('https://repo.maven.apache.org/maven2/org/apache/maven/wrapper/maven-wrapper/3.2.0/maven-wrapper-3.2.0.jar', '%WRAPPER_JAR%')"
 )
 
-"%JAVACMD%" -Dfile.encoding=UTF-8 -jar "%WRAPPER_JAR%" %*
+"%JAVACMD%" -Dfile.encoding=UTF-8 "-Dmaven.multiModuleProjectDirectory=%MAVEN_PROJECTBASEDIR:~0,-1%" -cp "%WRAPPER_JAR%" %WRAPPER_LAUNCHER% %*
 if ERRORLEVEL 1 goto error
 goto end
 

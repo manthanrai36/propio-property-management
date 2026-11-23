@@ -301,7 +301,7 @@
             <div class="text-muted fs-8">Rent from Dec 2023</div>
           </div>
           <div>
-            <button class="btn btn-propio-outline w-100 py-2 fs-8">View profile</button>
+            <a th:href="@{/tenants/1}" class="btn btn-propio-outline w-100 py-2 fs-8 text-decoration-none justify-content-center d-flex">View profile</a>
           </div>
         </div>
       </div>
@@ -419,10 +419,10 @@
         <p class="text-muted fs-8 mb-0">Here is your lease overview, active billing, and maintenance tickets.</p>
       </div>
       <div>
-        <button class="btn-propio-primary py-2 px-3 fs-8" type="button">
+        <a th:href="@{/maintenance/new}" class="btn-propio-primary py-2 px-3 fs-8 text-decoration-none">
           <i class="bi bi-plus-circle"></i>
           <span>Report an Issue</span>
-        </button>
+        </a>
       </div>
     </div>
 
@@ -483,10 +483,10 @@
             <span th:if="${tenantDashboard?.currentBalanceDue == null or tenantDashboard.currentBalanceDue == 0}" class="text-success fs-8 fw-semibold">Paid</span>
           </div>
           <p class="text-muted fs-9 mb-3">Due date is the 1st of every month. Clear balance online securely.</p>
-          <button class="btn-propio-primary w-100 py-2 justify-content-center fs-8">
+          <a th:href="@{/tenant/payments}" class="btn-propio-primary w-100 py-2 justify-content-center fs-8 text-decoration-none">
             <i class="bi bi-wallet2"></i>
             <span>Pay Rent Online</span>
-          </button>
+          </a>
         </div>
       </div>
 
@@ -523,7 +523,7 @@
               No active service tickets.
             </div>
           </div>
-          <a th:href="@{/maintenance}" class="btn btn-propio-outline w-100 py-2 fs-8 mt-2">View Maintenance History</a>
+          <a th:href="@{/maintenance/my-requests}" class="btn btn-propio-outline w-100 py-2 fs-8 mt-2 text-decoration-none justify-content-center d-flex">View Maintenance History</a>
         </div>
       </div>
     </div>
