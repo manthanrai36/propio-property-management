@@ -1,4 +1,4 @@
-﻿# Production Deployment Guide: Render & Railway with MySQL
+# Production Deployment Guide: Render & Railway with MySQL
 
 This guide walks you through deploying **Propio** as a containerized Spring Boot service with a managed **MySQL 8** database on **Railway** or **Render**.
 
@@ -8,14 +8,14 @@ This guide walks you through deploying **Propio** as a containerized Spring Boot
 
 ```
  [ Client Browser ]
-        â”‚ HTTPS (SSL Termination)
-        â–¼
+        │ HTTPS (SSL Termination)
+        ▼
  [ Reverse Proxy (Render / Railway) ]
-        â”‚ Native Header Forwarding
-        â–¼
+        │ Native Header Forwarding
+        ▼
  [ Propio Spring Boot Container (port 8080) ]
-        â”‚ HikariCP Connection Pool (SSL enabled)
-        â–¼
+        │ HikariCP Connection Pool (SSL enabled)
+        ▼
  [ Managed MySQL 8 Database (propio_db) ]
 ```
 
@@ -56,7 +56,7 @@ Configure the following environment variables in your cloud provider's dashboard
 
 ### Step 1: Provision Managed MySQL
 1. Log in to [Railway](https://railway.app).
-2. Click **New Project** â†’ **Provision MySQL**.
+2. Click **New Project** → **Provision MySQL**.
 3. Once the database is online, navigate to the **Variables** tab to view your credentials:
    - `MYSQLHOST`
    - `MYSQLPORT`
@@ -65,7 +65,7 @@ Configure the following environment variables in your cloud provider's dashboard
    - `MYSQLDATABASE`
 
 ### Step 2: Deploy Propio Service
-1. In the same project, click **New** â†’ **GitHub Repo** â†’ select your `propio` repository.
+1. In the same project, click **New** → **GitHub Repo** → select your `propio` repository.
 2. Railway automatically detects the `Dockerfile` at root.
 3. In the service **Settings**:
    - Set **Healthcheck Path** to `/actuator/health`.
@@ -84,7 +84,7 @@ Configure the following environment variables in your cloud provider's dashboard
    PROPIO_REMEMBER_ME_KEY=a7d8e9f2b1c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9
    ```
 5. Click **Deploy**. Railway will build the multi-stage Docker image and start the service.
-6. Under **Settings** â†’ **Networking**, click **Generate Domain** (e.g. `propio-production.up.railway.app`).
+6. Under **Settings** → **Networking**, click **Generate Domain** (e.g. `propio-production.up.railway.app`).
 
 ---
 
@@ -95,14 +95,14 @@ Configure the following environment variables in your cloud provider's dashboard
 2. Note your connection details: `host`, `port`, `database`, `user`, and `password`.
 
 ### Step 2: Create Web Service
-1. In the Render Dashboard, click **New +** â†’ **Web Service**.
+1. In the Render Dashboard, click **New +** → **Web Service**.
 2. Connect your Git repository.
 3. Choose:
    - **Environment**: `Docker`
    - **Region**: Select closest to your database.
    - **Branch**: `main`
    - **Plan**: Starter or Standard.
-4. Under **Advanced** â†’ **Health Check Path**, enter:
+4. Under **Advanced** → **Health Check Path**, enter:
    ```
    /actuator/health
    ```

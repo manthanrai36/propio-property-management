@@ -1,4 +1,4 @@
-﻿# Propio â€” Enterprise Property Management SaaS Platform
+# Propio — Enterprise Property Management SaaS Platform
 
 [![Java](https://img.shields.io/badge/Java-17%2B-orange.svg)](https://openjdk.org/)
 [![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.2.5-brightgreen.svg)](https://spring.io/projects/spring-boot)
@@ -14,19 +14,19 @@
 
 ## 1. Key Features & Capabilities
 
-### ðŸ¢ Property & Unit Portfolio Management
+### 🏢 Property & Unit Portfolio Management
 - Multi-unit residential and commercial property management.
 - Unit-level specifications (bedrooms, bathrooms, square footage, rent, deposit).
 - Occupancy tracking, status changes (Available, Occupied, Under Maintenance), and image uploads.
 - Real-time aggregated portfolio metrics (Occupancy rate, total units, overdue counts).
 
-### ðŸ“„ Comprehensive Lease Lifecycle
+### 📄 Comprehensive Lease Lifecycle
 - Digital lease creation with start/end terms, rent, security deposit, and automated late fee terms.
 - Lease termination modal with date validation and unit vacancy state updates.
 - One-click lease renewal with term updates.
 - Dynamic lease agreement PDF generation with signature blocks.
 
-### ðŸ’³ Payments & Automated Rent Engine
+### 💳 Payments & Automated Rent Engine
 - Recurring scheduled billing engine (`0 0 1 1 * ?`) and manual "Run Rent Engine" trigger.
 - Automatic invoice generation with idempotency checks to prevent duplicate billings.
 - Automated overdue marking and late fee calculation.
@@ -34,13 +34,13 @@
 - Online credit/debit card simulated payments for tenants (zero card data stored in MySQL).
 - Instant OpenPDF payment receipt generation with official PAID stamp.
 
-### ðŸ› ï¸ Maintenance Request Workflow
-- Role-based maintenance workflow with strict state machine (`OPEN` â†’ `IN_PROGRESS` â†’ `RESOLVED` â†’ `CLOSED`).
+### 🛠️ Maintenance Request Workflow
+- Role-based maintenance workflow with strict state machine (`OPEN` → `IN_PROGRESS` → `RESOLVED` → `CLOSED`).
 - Tenant issue submission with priority levels, categories, and optional photo upload.
 - Admin assignment to maintenance technicians with status notes.
 - Bi-directional comment threads with full timestamped audit trails.
 
-### ðŸ“Š Real-Time Analytics & Financial Reports
+### 📊 Real-Time Analytics & Financial Reports
 - Interactive Chart.js dashboards:
   - Monthly Revenue trends.
   - Occupancy breakdown by property.
@@ -49,7 +49,7 @@
 - CSV export for Payments and Tenant ledgers.
 - PDF Financial Report export.
 
-### ðŸ”” Notifications & Email Service
+### 🔔 Notifications & Email Service
 - In-app notification center with dynamic unread badges and one-click mark-as-read.
 - Async Spring Mail dispatch (`@Async`) with exponential retry mechanism.
 - Responsive HTML Thymeleaf email templates:
@@ -62,7 +62,7 @@
 - Safe local fallback: logs formatted emails when SMTP is disabled (`propio.mail.enabled=false`).
 - Email audit log table with administrative resend actions.
 
-### ðŸ”’ Enterprise Security Hardening
+### 🔒 Enterprise Security Hardening
 - **Authentication**: Role-based access control (`ROLE_ADMIN`, `ROLE_TENANT`) with BCrypt hashing.
 - **Brute-Force Protection**: Account lockout after 5 consecutive failed login attempts (15-minute lockout).
 - **Password Policy**: Enforces minimum 8 characters with lowercase, uppercase, and numeric complexity.
@@ -169,17 +169,17 @@ When running with the `local` profile (`propio.seed.enabled=true`):
 
 | Feature / Resource | Role: ADMIN | Role: TENANT | Anonymous |
 | :--- | :---: | :---: | :---: |
-| Property Management (Add, Edit, Units) | âœ… Full Access | âŒ Forbidden (403) | âŒ Redirect to Login |
-| Lease Creation & Termination | âœ… Full Access | âŒ Forbidden (403) | âŒ Redirect to Login |
-| Run Automated Rent Engine | âœ… Full Access | âŒ Forbidden (403) | âŒ Redirect to Login |
-| Offline Payment Recording | âœ… Full Access | âŒ Forbidden (403) | âŒ Redirect to Login |
-| Pay Rent Online | âŒ N/A | âœ… Own Invoices Only | âŒ Redirect to Login |
-| Download Receipts & Agreements | âœ… All Records | âœ… Own Documents Only | âŒ Redirect to Login |
-| Maintenance Board & Assignment | âœ… Full Access | âŒ Forbidden (403) | âŒ Redirect to Login |
-| Submit Maintenance Request | âœ… Allowed | âœ… Allowed (Own Unit) | âŒ Redirect to Login |
-| Email Audit Log (`/emails`) | âœ… Full Access | âŒ Forbidden (403) | âŒ Redirect to Login |
-| Analytics & Reports (`/reports`) | âœ… Full Access | âŒ Forbidden (403) | âŒ Redirect to Login |
-| Health Check (`/actuator/health`)| âœ… Allowed | âœ… Allowed | âœ… Allowed (200 OK) |
+| Property Management (Add, Edit, Units) | ✅ Full Access | ❌ Forbidden (403) | ❌ Redirect to Login |
+| Lease Creation & Termination | ✅ Full Access | ❌ Forbidden (403) | ❌ Redirect to Login |
+| Run Automated Rent Engine | ✅ Full Access | ❌ Forbidden (403) | ❌ Redirect to Login |
+| Offline Payment Recording | ✅ Full Access | ❌ Forbidden (403) | ❌ Redirect to Login |
+| Pay Rent Online | ❌ N/A | ✅ Own Invoices Only | ❌ Redirect to Login |
+| Download Receipts & Agreements | ✅ All Records | ✅ Own Documents Only | ❌ Redirect to Login |
+| Maintenance Board & Assignment | ✅ Full Access | ❌ Forbidden (403) | ❌ Redirect to Login |
+| Submit Maintenance Request | ✅ Allowed | ✅ Allowed (Own Unit) | ❌ Redirect to Login |
+| Email Audit Log (`/emails`) | ✅ Full Access | ❌ Forbidden (403) | ❌ Redirect to Login |
+| Analytics & Reports (`/reports`) | ✅ Full Access | ❌ Forbidden (403) | ❌ Redirect to Login |
+| Health Check (`/actuator/health`)| ✅ Allowed | ✅ Allowed | ✅ Allowed (200 OK) |
 
 ---
 
@@ -187,27 +187,27 @@ When running with the `local` profile (`propio.seed.enabled=true`):
 
 ```
 propio/
-â”œâ”€â”€ Dockerfile                      # Multi-stage production container build
-â”œâ”€â”€ .dockerignore                   # Docker exclusion rules
-â”œâ”€â”€ DEPLOYMENT.md                   # Railway & Render deployment guide
-â”œâ”€â”€ pom.xml                         # Maven dependencies & build plugins
-â”œâ”€â”€ src/
-â”‚   â”œâ”€â”€ main/
-â”‚   â”‚   â”œâ”€â”€ java/com/propio/
-â”‚   â”‚   â”‚   â”œâ”€â”€ config/             # Security, Seeder, Auth Handlers
-â”‚   â”‚   â”‚   â”œâ”€â”€ controller/         # Spring MVC & REST Controllers
-â”‚   â”‚   â”‚   â”œâ”€â”€ dto/                # Data Transfer Objects & Validators
-â”‚   â”‚   â”‚   â”œâ”€â”€ exception/          # Custom Exceptions & Global Handler
-â”‚   â”‚   â”‚   â”œâ”€â”€ model/              # JPA Entities & Enums
-â”‚   â”‚   â”‚   â”œâ”€â”€ repository/         # Spring Data JPA Repositories
-â”‚   â”‚   â”‚   â””â”€â”€ service/            # Business Logic & Transactional Services
-â”‚   â”‚   â””â”€â”€ resources/
-â”‚   â”‚       â”œâ”€â”€ application.properties        # Shared default properties
-â”‚   â”‚       â”œâ”€â”€ application-local.properties  # Local MySQL profile
-â”‚   â”‚       â”œâ”€â”€ application-prod.properties   # Cloud production profile
-â”‚   â”‚       â”œâ”€â”€ static/                       # CSS, JS, Branding Icons
-â”‚   â”‚       â””â”€â”€ templates/                    # Thymeleaf HTML Templates
-â”‚   â””â”€â”€ test/java/com/propio/       # JUnit 5 Unit & Integration Tests
-â””â”€â”€ docs/
-    â””â”€â”€ architecture_and_diagrams.md # Mermaid ER, Use Case, and Class Diagrams
+├── Dockerfile                      # Multi-stage production container build
+├── .dockerignore                   # Docker exclusion rules
+├── DEPLOYMENT.md                   # Railway & Render deployment guide
+├── pom.xml                         # Maven dependencies & build plugins
+├── src/
+│   ├── main/
+│   │   ├── java/com/propio/
+│   │   │   ├── config/             # Security, Seeder, Auth Handlers
+│   │   │   ├── controller/         # Spring MVC & REST Controllers
+│   │   │   ├── dto/                # Data Transfer Objects & Validators
+│   │   │   ├── exception/          # Custom Exceptions & Global Handler
+│   │   │   ├── model/              # JPA Entities & Enums
+│   │   │   ├── repository/         # Spring Data JPA Repositories
+│   │   │   └── service/            # Business Logic & Transactional Services
+│   │   └── resources/
+│   │       ├── application.properties        # Shared default properties
+│   │       ├── application-local.properties  # Local MySQL profile
+│   │       ├── application-prod.properties   # Cloud production profile
+│   │       ├── static/                       # CSS, JS, Branding Icons
+│   │       └── templates/                    # Thymeleaf HTML Templates
+│   └── test/java/com/propio/       # JUnit 5 Unit & Integration Tests
+└── docs/
+    └── architecture_and_diagrams.md # Mermaid ER, Use Case, and Class Diagrams
 ```
