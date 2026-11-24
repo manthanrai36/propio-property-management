@@ -43,7 +43,7 @@ public class CustomErrorController implements ErrorController {
         return "error/error";
     }
 
-    @GetMapping("/error/403")
+    @RequestMapping("/error/403")
     public String error403(Model model, HttpServletRequest request) {
         model.addAttribute("status", 403);
         model.addAttribute("requestedUri", request.getRequestURI());
@@ -51,7 +51,7 @@ public class CustomErrorController implements ErrorController {
         return "error/403";
     }
 
-    @GetMapping("/error/404")
+    @RequestMapping("/error/404")
     public String error404(Model model, HttpServletRequest request) {
         model.addAttribute("status", 404);
         model.addAttribute("requestedUri", request.getRequestURI());
@@ -59,7 +59,7 @@ public class CustomErrorController implements ErrorController {
         return "error/404";
     }
 
-    @GetMapping("/error/500")
+    @RequestMapping("/error/500")
     public String error500(Model model, HttpServletRequest request) {
         model.addAttribute("status", 500);
         model.addAttribute("requestedUri", request.getRequestURI());
